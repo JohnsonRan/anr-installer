@@ -23,7 +23,8 @@ go run ./tools/genicon                # render assets/logo.svg into the app icon
 
 The release tier installs, upgrades, uninstalls and downgrades real packages in scratch folders: set
 `ANR_PKG_DIR` to a folder holding the newest release's `anr-fg-*-full.zip` and `anr-fg-*-addon.zip`, and
-`ANR_OLD_PKG` to an older `anr-fg-*-full.zip`.
+`ANR_OLD_PKG` to an older `anr-fg-*-full.zip`. With an `nr-record-*-windows.zip` in `ANR_PKG_DIR` as well,
+it also installs nr-record into a scratch folder and removes it; without one, that test is skipped.
 
 ## Rules
 
