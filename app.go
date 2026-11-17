@@ -9,6 +9,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/markdown"
 
 	"anr-installer/internal/detect"
 	"anr-installer/internal/pkg"
@@ -87,11 +88,15 @@ type app struct {
 	loadingGames bool
 	noSteam      bool
 	query        string
-	show         int  // which games the list shows: showAll, showSupported or showInstalled
-	advanced     bool // the advanced install options are open
-	logOpen      bool // the activity log is open
-	aboutOpen    bool // the About dialog is open
-	autoCheck    bool // the About dialog's copy of the updater's automatic checks
+	show         int              // which games the list shows: showAll, showSupported or showInstalled
+	advanced     bool             // the advanced install options are open
+	logOpen      bool             // the activity log is open
+	onlyOutdated bool             // the list shows only the games whose ANR FG can be upgraded
+	aboutOpen    bool             // the About dialog is open
+	notesRel     *pkg.Release     // the release whose notes the dialog shows, or nil
+	md           markdown.Options // how the notes are drawn
+	queue        []*game          // games waiting to be upgraded by "Update all"
+	autoCheck    bool             // the About dialog's copy of the updater's automatic checks
 	list         ui.ListState
 	row          int // the row chosen in the filtered list, -1 none
 	visible      []int
@@ -240,6 +245,10 @@ const (
 )
 
 func (a *app) shows(g *game) bool {
+	if a.onlyOutdated {
+		_, ok := a.outdated(g.Scan)
+		return ok
+	}
 	if g.Scan == nil {
 		return a.show != showInstalled
 	}

@@ -12,10 +12,12 @@ const (
 )
 
 const (
-	padPage    = space4 // around a page's content, and the title bar's ends
-	padPanel   = space3 // around the list of games
-	gapSection = space4 // between the sections of a page
-	gapCards   = space3 // between cards side by side
+	padPage     = space4          // around a page's content, and the title bar's ends
+	padPageX    = space6 + space2 // at the sides of a game's page
+	padPanel    = space3          // around the list of games
+	gapSection  = space4          // between the sections of a page
+	gapCards    = space3          // between cards side by side
+	gapCardRows = space1          // between the cards of one group, as Windows 11's Settings stacks them
 
 	padCardY  = space3 // inside a card, a callout or a header, above and below
 	padCardX  = space4 // inside a card, a callout or a header, at the sides
@@ -34,6 +36,21 @@ const (
 
 // Sizes that are not spacing but that spacing lines up with.
 const (
-	labelWidth = 72 // the label column of a card's fields
-	heroFade   = 56 // how far the banner's darkening reaches up from its text
+	labelWidth        = 72  // the label column of a card's fields
+	headerIcon        = 64  // the game's icon in its page's header
+	heroHeight        = 200 // the header card of a game with library art
+	heroLogoW         = 280 // the box the game's logo fits in on it
+	heroLogoH         = 80
+	heroFade          = 64 // how far its darkening reaches up from the logo
+	rowIcon           = 20 // the icon of a settings row or an info bar
+	settingsRowHeight = 68 // a settings row, as Windows 11's Settings draws one
+	statusDot         = 8
+	progressWidth     = 160
+	noticeRadius      = 6
+	cardRadius        = 8
+	notesWidth        = 600 // the release notes dialog
+	notesHeight       = 420
+	titleLogo         = 24
+	navPillW          = 3 // the bar beside the chosen game in the list
+	navPillH          = 16
 )

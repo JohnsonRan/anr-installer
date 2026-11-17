@@ -25,6 +25,9 @@ type Data struct {
 	Games []Game `json:"games"`
 	// ExeDirs maps a Steam game's folder (lower-cased) to the .exe folder the user chose for it.
 	ExeDirs map[string]string `json:"exe_dirs,omitempty"`
+	// SeenRelease is the tag of the newest ANR FG release whose notes the window has opened by itself, so that it
+	// opens them once a release.
+	SeenRelease string `json:"seen_release,omitempty"`
 }
 
 // Path is the file the data is kept in.

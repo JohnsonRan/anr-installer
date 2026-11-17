@@ -33,27 +33,19 @@ func mustSVG(data []byte) *ui.SVG {
 
 const titleBarHeight = 52
 
-// titleBar draws the window's title bar in place of the system's: the logo, the title, the latest release, and
-// the window buttons. Its empty parts drag the window, and a double click maximizes it.
+// titleBar draws the window's title bar in place of the system's: the logo, the title, the app's version, which
+// opens the About dialog, and the window buttons. Its empty parts drag the window, and a double click maximizes
+// it. The ANR FG releases and their errors are on the game page, by the install button.
 func (a *app) titleBar(c *ui.Context, t *ui.Theme) {
 	bar := c.TitleBar() // zero while the view draws the buttons, as here
 	ui.Row(c).Height(titleBarHeight).Padding(0, bar.Right, 0, bar.Left+padPage).Gap(gapGroup).DragWindow().Children(func() {
-		ui.Image(c, logo).Size(28, 28)
-		ui.Row(c).Grow(1).Shrink(1).Gap(gapControls).AlignItems(ui.Baseline).Children(func() {
-			roleBodyStrong.on(t, ui.Text(c, T("title"))).NoWrap()
-			roleSmall.on(t, ui.Text(c, T("subtitle"))).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Shrink(1)
-		})
-		switch {
-		case a.relLoading:
+		ui.Image(c, logo).Size(titleLogo, titleLogo)
+		roleBodyStrong.on(t, ui.Text(c, T("title"))).NoWrap().Grow(1).Shrink(1)
+		if a.relLoading {
 			ui.Spinner(c).Label(T("latest.loading"))
-		case a.relErr != "":
-			roleSmall.on(t, ui.Text(c, T("latest.error", a.relErr))).TextColor(t.Danger).MaxLines(1).Ellipsis("…").MaxWidth(320).Tooltip(a.relErr)
-			ui.Button(c, T("refresh")).OnClick(a.fetchRelease)
-		case a.rel != nil:
-			ui.Badge(c, T("latest", a.rel.Version)).Background(t.Accent).TextColor(t.AccentText)
 		}
 		if v := mygo.App.Version(); v != "" {
-			ui.Button(c.Key("app-version"), "v"+v).Tooltip(T("about.open")).Label(T("about.open")).OnClick(a.openAbout)
+			a.versionButton(c, t, "v"+v)
 		}
 		if a.win == nil { // tests: no window to drive
 			return
@@ -90,4 +82,15 @@ func (a *app) windowButton(c *ui.Context, t *ui.Theme, icon *ui.SVG, key string,
 		ui.Icon(c, icon).Size(10, 10).TextColor(fg)
 	})
 	return b
+}
+
+// versionButton is the app's version as quiet text in the title bar, which opens the About dialog.
+func (a *app) versionButton(c *ui.Context, t *ui.Theme, label string) {
+	b := ui.ButtonBase(c.Key("app-version")).Padding(space1, space2).Radius(noticeRadius).Label(T("about.open")).Tooltip(T("about.open"))
+	if b.Hovered() {
+		b.Background(t.Text.Alpha(0.07))
+	}
+	b.OnClick(a.openAbout).Children(func() {
+		roleSmall.on(t, ui.Text(c, label)).TextColor(t.TextMuted)
+	})
 }

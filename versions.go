@@ -346,10 +346,91 @@ func (a *app) run(g *game, steps []step) {
 				a.logLines = append(a.logLines, a.status)
 			}
 			a.rescan(g)
+			a.next()
 		})
 	}()
 }
 
 func (a *app) logf(format string, args ...any) {
 	a.logLines = append(a.logLines, fmt.Sprintf(format, args...))
+}
+
+// outdated returns the newest version when the version of ANR FG installed in r is known and older than it.
+// An unknown version is not reported: it may be a build GitHub does not list.
+func (a *app) outdated(r *detect.Result) (string, bool) {
+	if r == nil || a.rel == nil || r.Installed == detect.KindNone {
+		return "", false
+	}
+	iv := a.versionOf(r)
+	if iv == "" || pkg.Number(iv) >= pkg.Number(a.rel.Version) {
+		return "", false
+	}
+	return a.rel.Version, true
+}
+
+// outdatedCount is how many games in the list have an older ANR FG than the newest release.
+func (a *app) outdatedCount() int {
+	n := 0
+	for _, g := range a.games {
+		if _, ok := a.outdated(g.Scan); ok {
+			n++
+		}
+	}
+	return n
+}
+
+// upgradable returns the games whose ANR FG is older than the newest release and can be upgraded together, and
+// the names of those left out because they ship anti-cheat: each of them needs its own confirmation.
+func (a *app) upgradable() (games []*game, anticheat []string) {
+	for _, g := range a.games {
+		if _, ok := a.outdated(g.Scan); !ok || g.Scanning {
+			continue
+		}
+		if len(g.Scan.AntiCheat) > 0 {
+			anticheat = append(anticheat, g.Name)
+			continue
+		}
+		if ok, _ := g.Scan.CanInstall(g.Scan.Installed); ok {
+			games = append(games, g)
+		}
+	}
+	return games, anticheat
+}
+
+// upgradeAll upgrades the games to the newest release one after the other, each with the kind it has.
+func (a *app) upgradeAll() {
+	games, _ := a.upgradable()
+	if len(games) == 0 || a.busy {
+		return
+	}
+	a.logf("%s", T("queue.start", len(games), a.rel.Version))
+	a.queue = games
+	a.next()
+}
+
+// next starts the upgrade of the next game in the queue.
+func (a *app) next() {
+	for len(a.queue) > 0 && !a.busy {
+		g := a.queue[0]
+		a.queue = a.queue[1:]
+		if _, ok := a.outdated(g.Scan); !ok || a.rel == nil {
+			continue
+		}
+		a.run(g, []step{{pkg.Install, g.Scan.Installed, a.rel, ""}})
+	}
+}
+
+// autoNotes opens the notes of a new ANR FG release by themselves, once a release, when a game runs an older one.
+func (a *app) autoNotes() {
+	if a.rel == nil || a.saved == nil || a.saved.SeenRelease == a.rel.Tag || a.notesRel != nil || a.aboutOpen || a.busy {
+		return
+	}
+	if games, _ := a.upgradable(); len(games) == 0 && a.outdatedCount() == 0 {
+		return
+	}
+	a.saved.SeenRelease = a.rel.Tag
+	if err := a.saved.Save(); err != nil {
+		a.logf("%s", T("save.failed", err.Error()))
+	}
+	a.showNotes(a.rel)
 }

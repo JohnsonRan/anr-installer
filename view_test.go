@@ -27,6 +27,7 @@ func testApp(t *testing.T) *app {
 	}
 	a.setReleases(rels)
 	a.providers["aa"] = "V.B18"
+	a.saved.SeenRelease = "FG-V.B19" // the notes of B19 have been seen: no dialog opens by itself
 	a.games = []*game{
 		{Name: "Alpha", Dir: `C:\g\alpha`, Scan: &detect.Result{Root: `C:\g\alpha`, ExeDir: `C:\g\alpha`, DLSSG: []string{`C:\g\alpha\nvngx_dlssg.dll`}}},
 		{Name: "Beta", Dir: `C:\g\beta`, Scan: &detect.Result{Root: `C:\g\beta`, ExeDir: `C:\g\beta`}},
@@ -42,7 +43,7 @@ func TestViewFiltersAndSelects(t *testing.T) {
 	if tt.HasText("Beta") {
 		t.Error("Beta has no DLSS-G and should be hidden under Supported")
 	}
-	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("ANR B18 · full") {
+	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("ANR B18 → B19 · upgrade available") {
 		t.Fatalf("texts %q", tt.Texts())
 	}
 	if g := a.selected(); g == nil || g.Name != "Alpha" {
@@ -69,13 +70,13 @@ func TestViewFiltersAndSelects(t *testing.T) {
 	if g := a.selected(); g == nil || g.Name != "Gamma" {
 		t.Fatalf("selected %+v", g)
 	}
-	if !tt.HasText("Install V.B19") || !tt.HasText("Yours") || !tt.HasText("x") {
+	if !tt.HasText("Install V.B19") || !tt.HasText("Installed by you") || !tt.HasText("x") {
 		t.Errorf("texts %q", tt.Texts())
 	}
-	if err := tt.Click("Advanced"); err != nil {
+	if err := tt.Click("Advanced options"); err != nil {
 		t.Fatal(err)
 	}
-	if !tt.HasText("Auto (addon)") {
+	if !tt.HasText("Automatic (addon)") {
 		t.Errorf("Advanced shows %q", tt.Texts())
 	}
 	a.kind = kindFull
@@ -144,7 +145,7 @@ func TestViewDowngrade(t *testing.T) {
 	if err := tt.Click("Delta"); err != nil {
 		t.Fatal(err)
 	}
-	for _, s := range []string{"Upgrade to V.B19", "Uninstall", "V.B18", "Full package · OptiScaler as dxgi.dll", T("note.ini.reset"), T("note.nrrecord")} {
+	for _, s := range []string{"Upgrade to V.B19", "Uninstall", "V.B18", "Full package · OptiScaler loads as dxgi.dll", T("note.ini.reset"), T("note.nrrecord")} {
 		if !tt.HasText(s) {
 			t.Errorf("missing %q in %q", s, tt.Texts())
 		}
@@ -190,7 +191,7 @@ func TestManualGames(t *testing.T) {
 	if err := tt.Click("Mine"); err != nil {
 		t.Fatal(err)
 	}
-	if !tt.HasText("Added by hand") || !tt.HasText("DLSS frame generation · added") {
+	if !tt.HasText("Added manually") || !tt.HasText("Supports DLSS frame generation · added manually") {
 		t.Errorf("texts %q", tt.Texts())
 	}
 	if err := tt.Click("Remove from list"); err != nil {
@@ -221,7 +222,7 @@ func TestAntiCheatWarning(t *testing.T) {
 	if !tt.HasText(T("anticheat.found", "EA Javelin Anticheat")) {
 		t.Errorf("no anti-cheat warning: %q", tt.Texts())
 	}
-	if !tt.HasText("DLSS frame generation · anti-cheat") {
+	if !tt.HasText("Supports DLSS frame generation · anti-cheat") {
 		t.Errorf("the list does not mark the game: %q", tt.Texts())
 	}
 	if err := tt.Click("Gamma"); err != nil {
@@ -250,5 +251,78 @@ func TestAboutDialog(t *testing.T) {
 	}
 	if a.aboutOpen || tt.HasText(T("about.updates")) {
 		t.Error("Close did not close the dialog")
+	}
+}
+
+func TestUpdateReminders(t *testing.T) {
+	a := testApp(t) // Delta has V.B18; the newest release is V.B19
+	tt := ui.NewTester(a.view, 1040, 760)
+	if !tt.HasText(T("updates.count", 1, "V.B19")) {
+		t.Fatalf("no updates bar: %q", tt.Texts())
+	}
+	if !tt.HasText("ANR B18 → B19 · upgrade available") {
+		t.Errorf("the row does not mark the upgrade: %q", tt.Texts())
+	}
+	if err := tt.Click(T("updates.count", 1, "V.B19")); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if tt.HasText("Alpha") || !tt.HasText("Delta") {
+		t.Errorf("the bar should show only Delta: %q", tt.Texts())
+	}
+	if !tt.HasText(T("update.available", "V.B19", "V.B18")) {
+		t.Errorf("Delta's page does not say the new version is out: %q", tt.Texts())
+	}
+	// An unknown installed version is not taken for an old one.
+	a.games[3].Scan.ANRHash = "unknown"
+	a.onlyOutdated = false
+	tt.Frame()
+	if tt.HasText(T("updates.count", 1, "V.B19")) {
+		t.Error("an unknown version counted as outdated")
+	}
+}
+
+func TestReleaseNotesDialog(t *testing.T) {
+	a := testApp(t)
+	a.releases[0].Notes = "## Changes\n\n- Faster frame generation"
+	tt := ui.NewTester(a.view, 1040, 760)
+	if err := tt.Click("Delta"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click(T("notes.whatsnew")); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText(T("notes.title", "V.B19")) || !tt.HasText("Faster frame generation") {
+		t.Errorf("notes not shown: %q", tt.Texts())
+	}
+	if err := tt.Click(T("about.close")); err != nil {
+		t.Fatal(err)
+	}
+	if a.notesRel != nil {
+		t.Error("Close did not close the notes")
+	}
+}
+
+func TestNewReleaseOpensNotes(t *testing.T) {
+	a := testApp(t)
+	a.saved.SeenRelease = "FG-V.B18"
+	a.games[2].Scan.Installed, a.games[2].Scan.ANRHash = detect.KindAddon, "aa" // Gamma: B18 too
+	a.games[3].Scan.AntiCheat = []string{"EasyAntiCheat"}                       // Delta
+	tt := ui.NewTester(a.view, 1040, 760)
+	if !tt.HasText(T("notes.title", "V.B19")) {
+		t.Fatalf("the notes of a new release did not open: %q", tt.Texts())
+	}
+	if !tt.HasText(T("notes.updateAll", 1)) || !tt.HasText(T("notes.anticheat", "Delta")) {
+		t.Errorf("Update all should take Gamma alone and name Delta: %q", tt.Texts())
+	}
+	if err := tt.Click(T("about.close")); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if tt.HasText(T("notes.title", "V.B19")) || a.saved.SeenRelease != "FG-V.B19" {
+		t.Error("the notes should open once a release")
+	}
+	if games, _ := a.upgradable(); len(games) != 1 || games[0].Name != "Gamma" {
+		t.Errorf("upgradable %v", games)
 	}
 }
