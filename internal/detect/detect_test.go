@@ -65,3 +65,24 @@ func TestUserOptiScaler(t *testing.T) {
 		t.Fatalf("%+v", r)
 	}
 }
+
+func TestOldLayout(t *testing.T) {
+	root := t.TempDir()
+	write(t, filepath.Join(root, "game.exe"), "x")
+	write(t, filepath.Join(root, "OptiScaler.ini"), "")
+	write(t, filepath.Join(root, "OptiScaler", "nr_fg_install.json"), `{}`)
+	write(t, filepath.Join(root, "OptiScaler", "custom", OldANRDir, "dlssg", "nvngx_dlssg.dll"), "b01")
+	if r := Scan(root, ""); r.Installed != KindFull || r.ANRHash == "" {
+		t.Fatalf("full in custom/nrfg: %+v", r)
+	}
+
+	root = t.TempDir()
+	write(t, filepath.Join(root, "game.exe"), "x")
+	write(t, filepath.Join(root, "OptiScaler.ini"), "")
+	write(t, filepath.Join(root, "OptiScaler", "OptiScaler.dll"), "x")
+	write(t, filepath.Join(root, "OptiScaler", "custom", OldANRDir, "nr_fg_install.json"), "{}")
+	write(t, filepath.Join(root, "OptiScaler", "custom", OldANRDir, "dlssg", "nvngx_dlssg.dll"), "b02")
+	if r := Scan(root, ""); r.Installed != KindAddon || r.ANRHash == "" {
+		t.Fatalf("add-on in custom/nrfg: %+v", r)
+	}
+}

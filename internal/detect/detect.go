@@ -17,6 +17,9 @@ import (
 // ANRDir is the folder ANR FG installs into, under OptiScaler's custom/ folder.
 const ANRDir = "Apex Neural Rendering FG"
 
+// OldANRDir is the folder V.B01 to V.B03 installed into.
+const OldANRDir = "nrfg"
+
 // Kind is an ANR FG package kind.
 type Kind string
 
@@ -229,13 +232,16 @@ func (r *Result) inspectInstall() {
 				r.Proxy = rec.Proxy
 			}
 		}
-		r.ANRDll = filepath.Join(dir, "OptiScaler", "custom", ANRDir, "dlssg", "nvngx_dlssg.dll")
+		r.ANRDll = providerIn(filepath.Join(dir, "OptiScaler", "custom"))
 	} else if r.OptiINI {
 		r.UserOpti = true
 		main := OptiMainDir(dir, ini)
-		if exists(filepath.Join(main, "custom", ANRDir, "nr_fg_install.json")) {
-			r.Installed = KindAddon
-			r.ANRDll = filepath.Join(main, "custom", ANRDir, "dlssg", "nvngx_dlssg.dll")
+		for _, name := range []string{ANRDir, OldANRDir} {
+			if exists(filepath.Join(main, "custom", name, "nr_fg_install.json")) {
+				r.Installed = KindAddon
+				r.ANRDll = filepath.Join(main, "custom", name, "dlssg", "nvngx_dlssg.dll")
+				break
+			}
 		}
 	}
 	if r.ANRDll != "" {
@@ -245,6 +251,17 @@ func (r *Result) inspectInstall() {
 		r.Replacement = IniValue(ini, "FrameGen", "FGNvngxReplacement")
 		r.NRRecord = strings.EqualFold(r.Replacement, "nr-record")
 	}
+}
+
+// providerIn returns the ANR FG provider under an OptiScaler custom/ folder, in the current layout or, for
+// V.B01 to V.B03, in custom/nrfg.
+func providerIn(custom string) string {
+	for _, name := range []string{ANRDir, OldANRDir} {
+		if p := filepath.Join(custom, name, "dlssg", "nvngx_dlssg.dll"); exists(p) {
+			return p
+		}
+	}
+	return filepath.Join(custom, ANRDir, "dlssg", "nvngx_dlssg.dll")
 }
 
 // OptiMainDir returns the folder of OptiScaler's files, as the add-on installer finds it from OptiDllPath.
