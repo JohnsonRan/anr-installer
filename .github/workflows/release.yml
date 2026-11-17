@@ -54,6 +54,9 @@ jobs:
           pkgs="$RUNNER_TEMP/anr"
           gh release download "$newest" --repo apex-compute/ANR -D "$pkgs/new" -p 'anr-fg-*-full.zip' -p 'anr-fg-*-addon.zip'
           gh release download "$older" --repo apex-compute/ANR -D "$pkgs/old" -p 'anr-fg-*-full.zip'
+          # nr-record's package, for its install test; a release without one leaves that test skipped.
+          gh release download "$newest" --repo apex-compute/ANR -D "$pkgs/new" -p 'nr-record-*-windows.zip' ||
+            echo "$newest has no nr-record package: its install test is skipped"
           echo "ANR_PKG_DIR=$pkgs/new" >> "$GITHUB_ENV"
           echo "ANR_OLD_PKG=$(ls "$pkgs"/old/anr-fg-*-full.zip)" >> "$GITHUB_ENV"
       - name: Release gate
