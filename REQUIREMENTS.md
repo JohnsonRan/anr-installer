@@ -32,7 +32,7 @@ baseline plus a margin (start at 20%).
 
 | Tier | Command | Runs (where, when) | Wall-time limit | Baseline (date, host, load) |
 | --- | --- | --- | --- | --- |
-| Pre-commit | `scripts/check.sh --fast` | locally, before every commit | 3.5 s | 2.6 s, from 2.6 to 2.9 s over three runs (2026-11-18, dev PC, Windows 11, CPU load 1%) |
+| Pre-commit | `scripts/check.sh --fast` | locally, before every commit | 4.5 s | 3.8 s, from 3.8 to 3.9 s over three runs (2026-11-18, dev PC, Windows 11, CPU load 62 to 78%); 2.6 s before the scale checks at CPU load 1% |
 | Merge gate | `scripts/check.sh` | locally, before every merge into main | 6 s | 4.3 s (2026-11-18, dev PC, Windows 11, CPU load 1%) |
 | Release | `scripts/check.sh --release` | locally, before every release, with ANR_PKG_DIR and ANR_OLD_PKG set | 55 s | 36 s, from 34 to 45 s over three runs, the NSIS installer included (2026-11-18, dev PC, Windows 11, CPU load 1%) |
 
@@ -45,7 +45,7 @@ meanwhile.
 | Item | Limit | Baseline (date, host, load) | Enforced by |
 | --- | --- | --- | --- |
 | Type scale (role: size / line height) | title 1.6× / 1.2, heading 1.15× / 1.25, body 1× / the theme's, small 0.86× / 1.35, caption 0.79× / 1.3, of the theme's FontSize (22, 16, 14, 12 and 11 DIP at 14) | a setting, not measured | `type.go`; `scripts/check.sh --fast` fails on a size or weight set elsewhere |
-| Spacing scale (section, card, inside card, label to field) | | | design system |
+| Spacing scale (section, card, inside card, label to field) | steps of 4, 8, 12, 16 and 24 DIP; between sections 16, between cards 12, inside a card 12 / 16 with 8 between its lines, label to field 12 | a setting, not measured | `spacing.go`; `scripts/check.sh --fast` fails on a number in a padding, gap or margin |
 | Window size (minimum; default) | 760 × 520 DIP; 1040 × 760 DIP | a setting, not measured | `main.go`, WindowOptions |
 | Scan of every game in the Steam libraries | 1 s | 0.62 s for 17 games in 3 libraries (2026-11-18, dev PC, CPU load 0%) | review |
 | Slowest test package | 0.3 s | 0.24 s, the main package (2026-11-18, dev PC, CPU load 0%) | review of `go test -v` |
@@ -128,7 +128,6 @@ body.
 
 | Row | Current state | Plan | Due |
 | --- | --- | --- | --- |
-| Numbers: Spacing scale (section, card, inside card, label to field) | view.go sets literal paddings and gaps | name the gaps in one scale and replace the literals | 2026-12-31 |
 
 ## Example (illustrative values; measure your own)
 

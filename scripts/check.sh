@@ -27,11 +27,22 @@ if [ -n "$unformatted" ]; then
 	echo "$unformatted" >&2
 	exit 1
 fi
+# The interface files the scale checks look at: tracked Go files, not tests and not the scales themselves.
+go_files() { git ls-files --cached --others --exclude-standard -- "*.go" ":!:*_test.go" ":!:$1"; }
+
 # The type scale (UI.md, "Layout, type and loading"): text sizes and weights are set in type.go only.
-literals=$(grep -rn -E '\.(FontSize|FontWeight)\(|\.Bold\(\)' --include='*.go' --exclude=type.go --exclude='*_test.go' .) && found=0 || found=$?
+literals=$(grep -n -E '\.(FontSize|FontWeight)\(|\.Bold\(\)' $(go_files type.go)) && found=0 || found=$?
 [ "$found" -le 1 ] || { echo "type scale: grep failed" >&2; exit 2; }
 if [ -n "$literals" ]; then
 	echo "type scale: set text size and weight through a role in type.go:" >&2
+	echo "$literals" >&2
+	exit 1
+fi
+# The spacing scale: paddings, gaps and margins take a name from spacing.go, never a number but 0.
+literals=$(grep -n -E '\.(Padding|Gap|Margin)[A-Za-z]*\(([^)]*[ ,+*/-])?[0-9]*[1-9]' $(go_files spacing.go)) && found=0 || found=$?
+[ "$found" -le 1 ] || { echo "spacing scale: grep failed" >&2; exit 2; }
+if [ -n "$literals" ]; then
+	echo "spacing scale: use a name from spacing.go:" >&2
 	echo "$literals" >&2
 	exit 1
 fi

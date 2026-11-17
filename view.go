@@ -22,7 +22,7 @@ func (a *app) view(c *ui.Context) {
 		a.titleBar(c, t)
 		ui.Divider(c)
 		ui.Row(c).Grow(1).AlignItems(ui.Stretch).Children(func() {
-			ui.Column(c).Width(300).Padding(12).Gap(10).Background(t.Text.Alpha(0.025)).Children(func() { a.sidebar(c, t) })
+			ui.Column(c).Width(300).Padding(padPanel).Gap(gapControls).Background(t.Text.Alpha(0.025)).Children(func() { a.sidebar(c, t) })
 			ui.Divider(c).Vertical()
 			ui.Column(c).Grow(1).Shrink(1).Children(func() {
 				g := a.selected()
@@ -30,7 +30,7 @@ func (a *app) view(c *ui.Context) {
 					a.empty(c, t)
 				} else {
 					ui.Scroll(c.Key(g)).Grow(1).Children(func() {
-						ui.Column(c).Padding(16, 20, 20, 20).Gap(16).Children(func() { a.detail(c, t, g) })
+						ui.Column(c).Padding(padPage).Gap(gapSection).Children(func() { a.detail(c, t, g) })
 					})
 				}
 				a.activity(c, t)
@@ -57,7 +57,7 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 			case a.noSteam && len(a.games) == 0:
 				msg = T("no.steam")
 			}
-			roleSmall.on(t, ui.Text(c, msg)).TextColor(t.TextMuted).Padding(12).TextAlign(ui.Center)
+			roleSmall.on(t, ui.Text(c, msg)).TextColor(t.TextMuted).Padding(padPanel).TextAlign(ui.Center)
 		}
 	})
 	supported, installed := 0, 0
@@ -69,8 +69,8 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 			installed++
 		}
 	}
-	roleSmall.on(t, ui.Text(c, T("games.count", len(a.games), supported, installed))).TextColor(t.TextMuted).PaddingX(4)
-	ui.Row(c).Gap(8).Children(func() {
+	roleSmall.on(t, ui.Text(c, T("games.count", len(a.games), supported, installed))).TextColor(t.TextMuted).PaddingX(space1)
+	ui.Row(c).Gap(gapControls).Children(func() {
 		ui.Button(c, T("add.game")).Grow(1).Tooltip(T("add.game.tip")).OnClick(a.addFolder)
 		ui.Button(c, T("refresh")).Disabled(a.loadingGames || a.busy).Tooltip(T("refresh.tip")).OnClick(a.scanSteam)
 	})
@@ -81,7 +81,7 @@ func (a *app) gameRow(c *ui.Context, t *ui.Theme, g *game, selected bool) {
 	if selected {
 		text = t.AccentText
 	}
-	row := ui.Row(c).Padding(8, 10).Gap(10)
+	row := ui.Row(c).Padding(padRowY, padRowX).Gap(gapGroup)
 	if g.Manual {
 		row.ContextMenu(func(m *ui.Menu) {
 			if m.Item(T("open.folder")).Chosen() {
@@ -95,7 +95,7 @@ func (a *app) gameRow(c *ui.Context, t *ui.Theme, g *game, selected bool) {
 	}
 	row.Children(func() {
 		gameIcon(c, t, g, 36)
-		ui.Column(c).Grow(1).Shrink(1).Gap(3).Children(func() {
+		ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
 			roleBodyStrong.on(t, ui.Text(c, g.Name)).TextColor(text).MaxLines(1).Ellipsis("…")
 			status, color := a.rowStatus(t, g)
 			if selected {
@@ -147,7 +147,7 @@ func gameIcon(c *ui.Context, t *ui.Theme, g *game, size float32) {
 // --- nothing to show ---
 
 func (a *app) empty(c *ui.Context, t *ui.Theme) {
-	ui.Column(c).Grow(1).Center().Gap(10).Padding(24).Children(func() {
+	ui.Column(c).Grow(1).Center().Gap(gapControls).Padding(padEmpty).Children(func() {
 		ui.Image(c, logo).Size(72, 72)
 		if a.loadingGames {
 			roleHeading.on(t, ui.Text(c, T("scanning.steam")))
@@ -165,14 +165,14 @@ func (a *app) detail(c *ui.Context, t *ui.Theme, g *game) {
 	a.hero(c, t, g)
 	r := g.Scan
 	if r == nil {
-		ui.Row(c).Gap(8).Children(func() {
+		ui.Row(c).Gap(gapControls).Children(func() {
 			ui.Spinner(c)
 			ui.Text(c, T("scanning")).TextColor(t.TextMuted)
 		})
 		return
 	}
 	a.callouts(c, t, g)
-	ui.Row(c).Gap(12).AlignItems(ui.Stretch).Wrap().Children(func() {
+	ui.Row(c).Gap(gapCards).AlignItems(ui.Stretch).Wrap().Children(func() {
 		a.anrCard(c, t, r)
 		a.dlssCard(c, t, r)
 		a.optiCard(c, t, r)
@@ -185,7 +185,7 @@ func (a *app) detail(c *ui.Context, t *ui.Theme, g *game) {
 // and what to do. A game without pictures gets a plain header of its icon and name.
 func (a *app) hero(c *ui.Context, t *ui.Theme, g *game) {
 	if g.Hero == nil {
-		ui.Row(c).FillWidth().Padding(16, 18).Gap(14).Radius(10).Background(t.Text.Alpha(0.035)).Border(1, t.Border.Alpha(0.6)).Children(func() {
+		ui.Row(c).FillWidth().Padding(padCardY, padCardX).Gap(gapGroup).Radius(10).Background(t.Text.Alpha(0.035)).Border(1, t.Border.Alpha(0.6)).Children(func() {
 			gameIcon(c, t, g, 52)
 			a.title(c, t, g, t.Text, t.TextMuted)
 			a.actions(c, g, false)
@@ -195,10 +195,10 @@ func (a *app) hero(c *ui.Context, t *ui.Theme, g *game) {
 	white := ui.RGB(255, 255, 255)
 	ui.Column(c).FillWidth().Height(250).Radius(10).Clip().Justify(ui.End).Children(func() {
 		ui.Image(c, g.Hero).Absolute().Top(0).Left(0).Right(0).Bottom(0).Fit(ui.Cover).ObjectPosition(0.5, 0.3)
-		ui.Row(c).FillWidth().ZIndex(1).Padding(56, 20, 16, 20).Gap(14).AlignItems(ui.End).
+		ui.Row(c).FillWidth().ZIndex(1).Padding(heroFade, padCardX, padCardY, padCardX).Gap(gapGroup).AlignItems(ui.End).
 			Gradient(ui.RGBA(0, 0, 0, 0), ui.RGBA(0, 0, 0, 0.72), 180).Children(func() {
 			if g.Logo != nil && !g.Manual {
-				ui.Column(c).Grow(1).Shrink(1).Gap(6).Children(func() {
+				ui.Column(c).Grow(1).Shrink(1).Gap(gapInCard).Children(func() {
 					ui.Image(c, g.Logo).Size(320, 96).Fit(ui.Contain).ObjectPosition(0, 1).Label(g.Name)
 					roleSmall.on(t, ui.Text(c, a.meta(g))).TextColor(white.Alpha(0.75))
 				})
@@ -212,7 +212,7 @@ func (a *app) hero(c *ui.Context, t *ui.Theme, g *game) {
 
 // title is the game's name, which the user can rename for a game added by hand, and where it comes from.
 func (a *app) title(c *ui.Context, t *ui.Theme, g *game, color, muted ui.Color) {
-	ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
+	ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
 		if g.Manual {
 			if roleTitle.on(t, ui.EditableText(c.Key("name"), &g.Name)).TextColor(color).Tooltip(T("rename.tip")).Changed() {
 				a.renamed(g)
@@ -239,7 +239,7 @@ func (a *app) meta(g *game) string {
 func (a *app) actions(c *ui.Context, g *game, overArt bool) {
 	white := ui.RGB(255, 255, 255)
 	r := g.Scan
-	ui.Row(c).Gap(8).Children(func() {
+	ui.Row(c).Gap(gapControls).Children(func() {
 		if a.busy {
 			ui.Spinner(c).Label(T("busy"))
 			if a.progress >= 0 {
@@ -309,7 +309,7 @@ func (a *app) callouts(c *ui.Context, t *ui.Theme, g *game) {
 }
 
 func callout(c *ui.Context, t *ui.Theme, color ui.Color, s string) {
-	ui.Row(c).Gap(10).Padding(10, 12).Radius(8).Background(color.Alpha(0.10)).Border(1, color.Alpha(0.35)).AlignItems(ui.Start).Children(func() {
+	ui.Row(c).Gap(gapControls).Padding(padCardY, padCardX).Radius(8).Background(color.Alpha(0.10)).Border(1, color.Alpha(0.35)).AlignItems(ui.Start).Children(func() {
 		ui.Column(c).Size(4, 16).Radius(2).Background(color)
 		roleSmall.on(t, ui.Text(c, s)).Grow(1).Shrink(1)
 	})
@@ -317,7 +317,7 @@ func callout(c *ui.Context, t *ui.Theme, color ui.Color, s string) {
 
 // card is a panel with a small title.
 func card(c *ui.Context, t *ui.Theme, title string, body func()) ui.Element {
-	return ui.Column(c).Padding(14, 16).Gap(8).Radius(10).Background(t.Text.Alpha(0.035)).Border(1, t.Border.Alpha(0.6)).Children(func() {
+	return ui.Column(c).Padding(padCardY, padCardX).Gap(gapInCard).Radius(10).Background(t.Text.Alpha(0.035)).Border(1, t.Border.Alpha(0.6)).Children(func() {
 		roleCaption.on(t, ui.Text(c, title)).TextColor(t.TextMuted)
 		body()
 	})
@@ -326,7 +326,7 @@ func card(c *ui.Context, t *ui.Theme, title string, body func()) ui.Element {
 // statCard is a card of one value and a line about it.
 func statCard(c *ui.Context, t *ui.Theme, title, value string, color ui.Color, detail string) {
 	card(c, t, title, func() {
-		ui.Row(c).Gap(8).Children(func() {
+		ui.Row(c).Gap(gapControls).Children(func() {
 			ui.Column(c).Size(8, 8).Radius(4).Background(color)
 			roleHeading.on(t, ui.Text(c, value)).MaxLines(1).Ellipsis("…").Shrink(1)
 		})
@@ -384,8 +384,8 @@ func (a *app) optiCard(c *ui.Context, t *ui.Theme, r *detect.Result) {
 func (a *app) installCard(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
 	card(c, t, T("install.title"), func() {
-		ui.Row(c).Gap(10).Wrap().Children(func() {
-			ui.Text(c, T("version")).Width(72).TextColor(t.TextMuted)
+		ui.Row(c).Gap(gapLabelField).Wrap().Children(func() {
+			ui.Text(c, T("version")).Width(labelWidth).TextColor(t.TextMuted)
 			switch {
 			case a.source == sourceLocal:
 				if a.local != nil {
@@ -407,21 +407,21 @@ func (a *app) installCard(c *ui.Context, t *ui.Theme, g *game) {
 			}
 		})
 		ui.Collapsible(c, T("advanced"), &a.advanced, func() {
-			ui.Column(c).Gap(10).PaddingY(6).Children(func() {
-				ui.Row(c).Gap(10).Children(func() {
-					ui.Text(c, T("package")).Width(72).TextColor(t.TextMuted)
+			ui.Column(c).Gap(gapInCard).PaddingY(space1).Children(func() {
+				ui.Row(c).Gap(gapLabelField).Children(func() {
+					ui.Text(c, T("package")).Width(labelWidth).TextColor(t.TextMuted)
 					ui.Segmented(c, &a.kind, T("kind.auto", r.Recommended()), "full", "addon").Label(T("package")).Disabled(a.busy)
 				})
-				roleSmall.on(t, ui.Text(c, T("package.help"))).TextColor(t.TextMuted).PaddingStart(82)
-				ui.Row(c).Gap(10).Children(func() {
-					ui.Text(c, T("source")).Width(72).TextColor(t.TextMuted)
+				roleSmall.on(t, ui.Text(c, T("package.help"))).TextColor(t.TextMuted).PaddingStart(labelWidth + gapLabelField)
+				ui.Row(c).Gap(gapLabelField).Children(func() {
+					ui.Text(c, T("source")).Width(labelWidth).TextColor(t.TextMuted)
 					ui.Segmented(c, &a.source, T("source.github0"), T("source.local")).Label(T("source")).Disabled(a.busy)
 					if a.source == sourceLocal {
 						ui.Button(c, T("choose.zip")).Disabled(a.busy).OnClick(a.chooseZip)
 					}
 				})
 				if a.localErr != "" && a.source == sourceLocal {
-					roleSmall.on(t, ui.Text(c, a.localErr)).TextColor(t.Danger).PaddingStart(82)
+					roleSmall.on(t, ui.Text(c, a.localErr)).TextColor(t.Danger).PaddingStart(labelWidth + gapLabelField)
 				}
 			})
 		})
@@ -436,7 +436,7 @@ func (a *app) locationCard(c *ui.Context, t *ui.Theme, g *game) {
 		if r.Exe != "" {
 			roleSmall.on(t, ui.Text(c, filepath.Base(r.Exe))).TextColor(t.TextMuted)
 		}
-		ui.Row(c).Gap(8).Children(func() {
+		ui.Row(c).Gap(gapControls).Children(func() {
 			ui.Button(c, T("change")).Disabled(a.busy || g.Scanning).OnClick(func() { a.changeExeDir(g) })
 			if g.ExeDir != "" {
 				ui.Button(c, T("auto.exe")).Disabled(a.busy || g.Scanning).Tooltip(T("auto.exe.tip")).OnClick(func() { a.resetExeDir(g) })
@@ -458,7 +458,7 @@ func (a *app) locationCard(c *ui.Context, t *ui.Theme, g *game) {
 func (a *app) activity(c *ui.Context, t *ui.Theme) {
 	ui.Divider(c)
 	ui.Column(c).Background(t.Text.Alpha(0.025)).Children(func() {
-		head := ui.Row(c.Key("activity")).Padding(8, 16).Gap(10).Cursor(ui.CursorPointer).Label(T("log"))
+		head := ui.Row(c.Key("activity")).Padding(padRowY, padPage).Gap(gapControls).Cursor(ui.CursorPointer).Label(T("log"))
 		if head.Clicked() {
 			a.logOpen = !a.logOpen
 		}
@@ -486,10 +486,10 @@ func (a *app) activity(c *ui.Context, t *ui.Theme) {
 		})
 		if a.logOpen {
 			ui.List(c, &a.logList, len(a.logLines), func(i int) {
-				roleSmall.on(t, ui.Text(c, a.logLines[i])).Font("monospace").Selectable().Padding(1, 16)
-			}).Height(180).PaddingY(4).Children(func() {
+				roleSmall.on(t, ui.Text(c, a.logLines[i])).Font("monospace").Selectable().Padding(0, padPage)
+			}).Height(180).PaddingY(space1).Children(func() {
 				if len(a.logLines) == 0 {
-					roleSmall.on(t, ui.Text(c, T("log.empty"))).TextColor(t.TextMuted).Padding(8, 16)
+					roleSmall.on(t, ui.Text(c, T("log.empty"))).TextColor(t.TextMuted).Padding(padRowY, padPage)
 				}
 			})
 		}

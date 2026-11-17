@@ -31,9 +31,9 @@ const titleBarHeight = 52
 // the window buttons. Its empty parts drag the window, and a double click maximizes it.
 func (a *app) titleBar(c *ui.Context, t *ui.Theme) {
 	bar := c.TitleBar() // zero while the view draws the buttons, as here
-	ui.Row(c).Height(titleBarHeight).Padding(0, bar.Right, 0, bar.Left+16).Gap(12).DragWindow().Children(func() {
+	ui.Row(c).Height(titleBarHeight).Padding(0, bar.Right, 0, bar.Left+padPage).Gap(gapGroup).DragWindow().Children(func() {
 		ui.Image(c, logo).Size(28, 28)
-		ui.Row(c).Grow(1).Shrink(1).Gap(10).AlignItems(ui.Baseline).Children(func() {
+		ui.Row(c).Grow(1).Shrink(1).Gap(gapControls).AlignItems(ui.Baseline).Children(func() {
 			roleBodyStrong.on(t, ui.Text(c, T("title"))).NoWrap()
 			roleSmall.on(t, ui.Text(c, T("subtitle"))).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Shrink(1)
 		})
@@ -49,7 +49,7 @@ func (a *app) titleBar(c *ui.Context, t *ui.Theme) {
 		if a.win == nil { // tests: no window to drive
 			return
 		}
-		ui.Row(c).AlignSelf(ui.Stretch).Margin(0, 0, 0, 4).Children(func() {
+		ui.Row(c).AlignSelf(ui.Stretch).Margin(0, 0, 0, space1).Children(func() {
 			a.windowButton(c, t, iconMin, "minimize", false, a.win.Minimize)
 			if a.win.IsMaximized() {
 				a.windowButton(c, t, iconRestore, "restore", false, a.win.Unmaximize).MaximizeButton()
