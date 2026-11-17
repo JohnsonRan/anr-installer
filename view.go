@@ -10,7 +10,6 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"anr-installer/internal/detect"
-	"anr-installer/internal/pkg"
 )
 
 func (a *app) view(c *ui.Context) {
@@ -95,10 +94,12 @@ func (a *app) badges(c *ui.Context, t *ui.Theme, g *game, selected bool) {
 		badge(T("badge.supported"), t.Success)
 	}
 	switch r.Installed {
-	case detect.KindFull:
-		badge(T("badge.full"), t.Accent)
-	case detect.KindAddon:
-		badge(T("badge.addon"), t.Accent)
+	case detect.KindFull, detect.KindAddon:
+		s := T("badge." + string(r.Installed))
+		if v := a.versionOf(r); v != "" {
+			s += " " + strings.TrimPrefix(v, "V.")
+		}
+		badge(s, t.Accent)
 	default:
 		if r.UserOpti {
 			badge(T("badge.opti"), ui.Color{})
@@ -197,12 +198,14 @@ func (a *app) detail(c *ui.Context, t *ui.Theme) {
 		})
 	})
 	section(c, t, T("source"), func() {
-		gh := T("source.github0")
-		if a.rel != nil {
-			gh = T("source.github", a.rel.Version)
-		}
 		ui.Row(c).Gap(10).Children(func() {
-			ui.Segmented(c, &a.source, gh, T("source.local")).Label(T("source")).Disabled(a.busy)
+			ui.Segmented(c, &a.source, T("source.github0"), T("source.local")).Label(T("source")).Disabled(a.busy)
+			if a.source == sourceGitHub && len(a.versionLabels) > 0 {
+				ui.Select(c, &a.versionSel, a.versionLabels).Label(T("version")).Disabled(a.busy).MinWidth(220)
+				if rel := a.target(); rel != nil {
+					ui.Button(c, T("release.notes")).OnClick(func() { mygo.Shell.OpenExternal(rel.URL) })
+				}
+			}
 			if a.source == sourceLocal {
 				ui.Button(c, T("choose.zip")).Disabled(a.busy).OnClick(a.chooseZip)
 				switch {
@@ -219,18 +222,15 @@ func (a *app) detail(c *ui.Context, t *ui.Theme) {
 
 	k := a.chosenKind(g)
 	why := a.blocked(g, k)
-	label := T("install")
-	if r.Installed != detect.KindNone {
-		label = T("reinstall")
-		if v := a.targetVersion(); v != "" && a.installedVersion(r) != v {
-			label = T("upgrade", v)
-		}
+	plan := a.plan(r)
+	if why == "" && plan.uninstallsFirst() {
+		why = a.uninstallBlocked(r.Installed)
 	}
+	label := a.planLabel(plan)
 	ui.Row(c).Gap(10).Children(func() {
-		ui.PrimaryButton(c, label).Disabled(a.busy || why != "" || g.Scanning).OnClick(func() { a.run(g, pkg.Install, k) })
+		ui.PrimaryButton(c, label).Disabled(a.busy || why != "" || g.Scanning).OnClick(func() { a.install(g, k) })
 		if r.Installed != detect.KindNone {
-			uk := r.Installed
-			ui.Button(c, T("uninstall")).Disabled(a.busy || a.sourceBlocked(uk) != "" || g.Scanning).OnClick(func() { a.run(g, pkg.Uninstall, uk) })
+			ui.Button(c, T("uninstall")).Disabled(a.busy || a.uninstallBlocked(r.Installed) != "" || g.Scanning).OnClick(func() { a.uninstall(g) })
 		}
 		if a.busy {
 			ui.Spinner(c).Label(T("busy"))
@@ -240,7 +240,14 @@ func (a *app) detail(c *ui.Context, t *ui.Theme) {
 		ui.Text(c, why).TextColor(t.Warning)
 	}
 	var notes []string
-	if r.Installed == detect.KindFull && k == detect.KindFull && r.OptiINI {
+	switch {
+	case plan.uninstallsFirst():
+		latest := ""
+		if a.rel != nil {
+			latest = a.rel.Version
+		}
+		notes = append(notes, T("note.downgrade", latest, a.targetVersion()))
+	case r.Installed == detect.KindFull && k == detect.KindFull && r.OptiINI:
 		notes = append(notes, T("note.ini.reset"))
 	}
 	if r.NRRecord {

@@ -250,12 +250,3 @@ func fetch(ctx context.Context, url, dest string, size int64, progress Progress)
 	}
 	return f.Close()
 }
-
-// Latest returns the newest release.
-func Latest(ctx context.Context) (*Release, error) {
-	rels, err := Releases(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return rels[0], nil
-}

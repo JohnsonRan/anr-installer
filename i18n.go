@@ -70,14 +70,12 @@ var messages = map[string][2]string{
 	"inst.full":           {"ANR FG installed (full package, OptiScaler as %s)", "已安装 ANR FG（full 版，OptiScaler 以 %s 加载）"},
 	"inst.addon":          {"ANR FG installed (add-on to your OptiScaler)", "已安装 ANR FG（addon 版，加在你的 OptiScaler 上）"},
 	"inst.version":        {"Installed version: %s", "已安装版本：%s"},
-	"inst.version.old":    {"older than %s", "旧于 %s"},
 	"inst.version.unk":    {"unknown (check after a download)", "未知（下载安装包后可比对）"},
 	"opti.user":           {"OptiScaler you installed is here: use the add-on package", "这里有你自己装的 OptiScaler：请用 addon 版"},
 	"nrrecord.on":         {"nr-record is active (FGNvngxReplacement=nr-record)", "nr-record 正在使用（FGNvngxReplacement=nr-record）"},
 	"package":             {"Package", "安装包类型"},
 	"kind.auto":           {"Auto (%s)", "自动（%s）"},
 	"source":              {"Source", "安装包来源"},
-	"source.github":       {"GitHub %s", "GitHub %s"},
 	"source.github0":      {"GitHub", "GitHub"},
 	"source.local":        {"Local zip", "本地 zip"},
 	"choose.zip":          {"Choose zip…", "选择 zip…"},
@@ -100,13 +98,9 @@ var messages = map[string][2]string{
 	"log":                 {"Log", "日志"},
 	"clear":               {"Clear", "清空"},
 	"downloading":         {"Downloading %s… %s", "正在下载 %s… %s"},
-	"verifying":           {"Checking %s…", "正在校验 %s…"},
-	"extracting":          {"Unpacking…", "正在解压…"},
-	"running":             {"Running %s…", "正在运行 %s…"},
 	"done.install":        {"Done: ANR FG %s is installed in %s.", "完成：ANR FG %s 已安装到 %s。"},
 	"done.uninstall":      {"Done: ANR FG is removed from %s.", "完成：已从 %s 卸载 ANR FG。"},
 	"failed":              {"Failed: %s", "失败：%s"},
-	"backup.ini":          {"Backed up OptiScaler.ini to %s", "已备份 OptiScaler.ini 到 %s"},
 	"warn.nrrecord":       {"nr-record was active before: run nr-record's install again to restore it.", "之前启用了 nr-record：如需恢复，请重新运行 nr-record 的安装程序。"},
 	"pick.folder.title":   {"Folder of the game's .exe", "游戏 .exe 所在文件夹"},
 	"pick.zip.title":      {"ANR FG package", "ANR FG 安装包"},
@@ -118,4 +112,26 @@ func init() {
 	messages["win.maximize"] = [2]string{"Maximize", "最大化"}
 	messages["win.restore"] = [2]string{"Restore", "还原"}
 	messages["win.close"] = [2]string{"Close", "关闭"}
+}
+
+func init() {
+	for k, v := range map[string][2]string{
+		"version":              {"Version", "版本"},
+		"version.latest":       {"%s (latest)", "%s（最新）"},
+		"release.notes":        {"Release notes", "发布说明"},
+		"install.v":            {"Install %s", "安装 %s"},
+		"downgrade":            {"Downgrade to %s", "降级到 %s"},
+		"switch":               {"Switch to %s", "切换到 %s"},
+		"inst.version.probing": {"identifying…", "正在识别…"},
+		"probe.failed":         {"Couldn't read the release versions: %s", "无法读取各版本信息：%s"},
+		"note.downgrade": {
+			"Going to an older version uninstalls the installed one first (with %s's uninstaller), then installs %s. OptiScaler.ini and nr_fg.ini are backed up next to the .exe; settings in nr_fg.ini are not carried over.",
+			"降级会先卸载当前版本（使用 %s 的卸载程序），再安装 %s。OptiScaler.ini 和 nr_fg.ini 会先备份到 .exe 旁边；nr_fg.ini 中的自定义设置不会带到旧版本。",
+		},
+		"backup.file":       {"Backed up %s to %s", "已备份 %s 到 %s"},
+		"running.install":   {"Installing %s (%s)…", "正在安装 %s（%s 版）…"},
+		"running.uninstall": {"Uninstalling with %s's uninstaller (%s)…", "正在使用 %s 的卸载程序卸载（%s 版）…"},
+	} {
+		messages[k] = v
+	}
 }

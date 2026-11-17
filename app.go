@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -80,9 +77,17 @@ type app struct {
 	row           int // the row chosen in the filtered list, -1 none
 	visible       []int
 
-	rel        *pkg.Release
-	relErr     string
-	relLoading bool
+	rel           *pkg.Release   // the newest release
+	releases      []*pkg.Release // every release, newest first
+	relErr        string
+	relLoading    bool
+	versionSel    string         // the label of the version to install, from versionLabels
+	versionRel    []*pkg.Release // the releases offered, as versionLabels lists them
+	versionLabels []string
+
+	// versions caches what each published package says of itself; probing reads the packages it lacks.
+	versions *pkg.VersionCache
+	probing  bool
 
 	kind     int
 	source   int
@@ -110,6 +115,10 @@ func newApp() *app {
 	}
 	a.list.Selected = &a.row
 	a.logList.FollowEnd = true
+	a.versions = pkg.LoadVersionCache()
+	for _, info := range a.versions.Infos {
+		a.providers[info.ProviderSHA256] = info.Version
+	}
 	return a
 }
 
@@ -186,21 +195,6 @@ func (a *app) rescan(g *game) {
 		r := detect.Scan(dir, exeDir)
 		a.win.Update(func() { g.Scan, g.Scanning = r, false })
 		a.pictures(g, r)
-	}()
-}
-
-func (a *app) fetchRelease() {
-	a.relLoading, a.relErr = true, ""
-	go func() {
-		rel, err := pkg.Latest(context.Background())
-		a.win.Update(func() {
-			a.relLoading = false
-			if err != nil {
-				a.relErr = err.Error()
-				return
-			}
-			a.rel = rel
-		})
 	}()
 }
 
@@ -321,147 +315,4 @@ func (a *app) blocked(g *game, k detect.Kind) string {
 		return T("why." + why)
 	}
 	return a.sourceBlocked(k)
-}
-
-func (a *app) sourceBlocked(k detect.Kind) string {
-	if a.source == sourceLocal {
-		if a.local == nil {
-			return T("why.no-zip")
-		}
-		if a.local.Kind != k {
-			return T("why.zip-kind", a.local.Kind, k)
-		}
-		return ""
-	}
-	if a.rel == nil {
-		return T("why.no-release")
-	}
-	return ""
-}
-
-// targetVersion is the version an install would put in.
-func (a *app) targetVersion() string {
-	if a.source == sourceLocal && a.local != nil {
-		return a.local.Version
-	}
-	if a.rel != nil {
-		return a.rel.Version
-	}
-	return ""
-}
-
-func (a *app) logf(format string, args ...any) {
-	a.logLines = append(a.logLines, fmt.Sprintf(format, args...))
-}
-
-// run installs or uninstalls the package of kind k in g, in the background.
-func (a *app) run(g *game, action pkg.Action, k detect.Kind) {
-	if a.busy || g.Scan == nil {
-		return
-	}
-	a.busy, a.progress = true, -1
-	scan := g.Scan
-	gameDir := scan.ExeDir
-	source, rel, localZip := a.source, a.rel, a.localZip
-	a.logf("── %s · %s · %s", g.Name, action, k)
-	a.logf("%s", gameDir)
-
-	update := func(fn func()) { a.win.Update(fn) }
-	say := func(format string, args ...any) {
-		line := fmt.Sprintf(format, args...)
-		update(func() { a.status = line; a.logLines = append(a.logLines, line) })
-	}
-	go func() {
-		err := func() error {
-			ctx := context.Background()
-			zipPath := localZip
-			if source == sourceGitHub {
-				name := rel.AssetName(k)
-				update(func() { a.status = T("downloading", name, "") })
-				p, err := pkg.Download(ctx, rel, k, func(done, total int64) {
-					update(func() {
-						if total > 0 {
-							a.progress = float64(done) / float64(total)
-						}
-						a.status = T("downloading", name, fmt.Sprintf("%.1f / %.1f MB", float64(done)/1e6, float64(total)/1e6))
-					})
-				})
-				if err != nil {
-					return err
-				}
-				zipPath = p
-				say("%s ✓ SHA-256", name)
-			}
-			update(func() { a.progress = -1 })
-			info, err := pkg.ReadInfo(zipPath)
-			if err != nil {
-				return err
-			}
-			if info.Kind != k {
-				return fmt.Errorf("%s", T("why.zip-kind", info.Kind, k))
-			}
-			update(func() { a.providers[info.ProviderSHA256] = info.Version })
-			say("%s", T("extracting"))
-			dir, err := pkg.Extract(zipPath)
-			if err != nil {
-				return err
-			}
-			if action == pkg.Install && k == detect.KindFull && scan.Installed == detect.KindFull && scan.OptiINI {
-				ini := filepath.Join(gameDir, "OptiScaler.ini")
-				bak := ini + ".bak-" + time.Now().Format("20060102-150405")
-				if data, err := os.ReadFile(ini); err == nil {
-					if err := os.WriteFile(bak, data, 0o644); err != nil {
-						return err
-					}
-					say("%s", T("backup.ini", filepath.Base(bak)))
-				}
-			}
-			say("%s", T("running", string(action)))
-			if err := pkg.Run(ctx, dir, action, gameDir, func(line string) {
-				update(func() { a.logLines = append(a.logLines, "  "+line) })
-			}); err != nil {
-				return err
-			}
-			if action == pkg.Install {
-				say("%s", T("done.install", info.Version, gameDir))
-				if scan.NRRecord {
-					say("%s", T("warn.nrrecord"))
-				}
-			} else {
-				say("%s", T("done.uninstall", gameDir))
-			}
-			return nil
-		}()
-		update(func() {
-			a.busy, a.progress = false, -2
-			if err != nil {
-				a.status = T("failed", err.Error())
-				a.logLines = append(a.logLines, a.status)
-			}
-			a.rescan(g)
-		})
-	}()
-}
-
-// installedVersion describes the version of ANR FG installed in r.
-func (a *app) installedVersion(r *detect.Result) string {
-	if r.ANRHash == "" {
-		return T("inst.version.unk")
-	}
-	if v, ok := a.providers[r.ANRHash]; ok {
-		return v
-	}
-	if latest := a.targetVersion(); latest != "" && a.knowsVersion(latest) {
-		return T("inst.version.old", latest)
-	}
-	return T("inst.version.unk")
-}
-
-func (a *app) knowsVersion(v string) bool {
-	for _, known := range a.providers {
-		if known == v {
-			return true
-		}
-	}
-	return false
 }
