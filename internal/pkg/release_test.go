@@ -66,7 +66,7 @@ func newFakeGitHub(t *testing.T, versions ...string) *fakeGitHub {
 		}
 		f.sums["/sums/"+v] = sums.String()
 		assets = append(assets, fmt.Sprintf(`{"name":"SHA256SUMS.txt","browser_download_url":"%s/sums/%s","size":1}`, f.srv.URL, v))
-		rels = append(rels, fmt.Sprintf(`{"tag_name":"FG-%s","html_url":"u","published_at":"2026-11-17T00:20:54Z","assets":[%s]}`, v, strings.Join(assets, ",")))
+		rels = append(rels, fmt.Sprintf(`{"tag_name":"FG-%s","html_url":"u","published_at":"2026-11-17T00:20:54Z","body":"notes of %[1]s","assets":[%s]}`, v, strings.Join(assets, ",")))
 	}
 	rels = append(rels, `{"tag_name":"FG-V.B99","prerelease":true,"assets":[]}`, `{"tag_name":"nr-record-1.3","assets":[]}`)
 	f.files["/repos/"+Repo+"/releases"] = []byte("[" + strings.Join(rels, ",") + "]")
@@ -122,6 +122,9 @@ func TestReleasesNewestFirst(t *testing.T) {
 	}
 	if rels[0].Published.IsZero() {
 		t.Error("no publish date")
+	}
+	if rels[0].Notes != "notes of V.B19" {
+		t.Errorf("notes %q", rels[0].Notes)
 	}
 	if Number("V.B04") != 4 || Number("V.Bx") != 0 {
 		t.Error("Number")

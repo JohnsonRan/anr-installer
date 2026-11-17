@@ -29,6 +29,7 @@ type Release struct {
 	Version   string // V.B19
 	URL       string
 	Published time.Time
+	Notes     string // the release notes, in Markdown
 	Assets    map[string]Asset
 }
 
@@ -93,6 +94,7 @@ func Releases(ctx context.Context) ([]*Release, error) {
 		Prerelease bool      `json:"prerelease"`
 		HTMLURL    string    `json:"html_url"`
 		Published  time.Time `json:"published_at"`
+		Body       string    `json:"body"`
 		Assets     []struct {
 			Name string `json:"name"`
 			URL  string `json:"browser_download_url"`
@@ -107,7 +109,7 @@ func Releases(ctx context.Context) ([]*Release, error) {
 		if r.Draft || r.Prerelease || !strings.HasPrefix(r.Tag, "FG-V.") {
 			continue
 		}
-		rel := &Release{Tag: r.Tag, Version: strings.TrimPrefix(r.Tag, "FG-"), URL: r.HTMLURL, Published: r.Published, Assets: map[string]Asset{}}
+		rel := &Release{Tag: r.Tag, Version: strings.TrimPrefix(r.Tag, "FG-"), URL: r.HTMLURL, Published: r.Published, Notes: r.Body, Assets: map[string]Asset{}}
 		for _, a := range r.Assets {
 			rel.Assets[a.Name] = Asset{a.Name, a.URL, a.Size}
 		}
