@@ -205,44 +205,62 @@ func (a *app) detail(c *ui.Context, t *ui.Theme, g *game) {
 	a.locationCard(c, t, g)
 }
 
-// hero is the game's banner: its store art, its name and what to do.
+// hero is the game's banner, as Steam's library heads a game's page: its hero picture with its logo over it,
+// and what to do. A game without pictures gets a plain header of its icon and name.
 func (a *app) hero(c *ui.Context, t *ui.Theme, g *game) {
-	white := ui.RGB(255, 255, 255)
-	box := ui.Column(c).FillWidth().Height(196).Radius(12).Clip().Justify(ui.End)
-	if g.Header == nil {
-		box.LinearGradient(brandGradient(0.45))
-	}
-	box.Children(func() {
-		if g.Header != nil {
-			ui.Image(c, g.Header).Absolute().Top(0).Left(0).Right(0).Bottom(0).Fit(ui.Cover)
-		}
-		ui.Row(c).FillWidth().ZIndex(1).Padding(40, 18, 16, 18).Gap(14).
-			Gradient(ui.RGBA(0, 0, 0, 0), ui.RGBA(0, 0, 0, 0.82), 180).Children(func() {
+	if g.Hero == nil {
+		ui.Row(c).FillWidth().Padding(16, 18).Gap(14).Radius(10).Background(t.Text.Alpha(0.035)).Border(1, t.Border.Alpha(0.6)).Children(func() {
 			gameIcon(c, t, g, 52)
-			ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
-				if g.Manual {
-					if ui.EditableText(c.Key("name"), &g.Name).FontSize(22).Bold().TextColor(white).Tooltip(T("rename.tip")).Changed() {
-						a.renamed(g)
-					}
-				} else {
-					ui.Text(c, g.Name).FontSize(22).Bold().TextColor(white).MaxLines(1).Ellipsis("…")
-				}
-				meta := "Steam"
-				if g.AppID != "" {
-					meta += " · " + g.AppID
-				}
-				if g.Manual {
-					meta = T("manual.long")
-				}
-				ui.Text(c, meta).FontSize(12).TextColor(white.Alpha(0.7))
-			})
-			a.actions(c, g)
+			a.title(c, t, g, t.Text, t.TextMuted)
+			a.actions(c, g, false)
+		})
+		return
+	}
+	white := ui.RGB(255, 255, 255)
+	ui.Column(c).FillWidth().Height(250).Radius(10).Clip().Justify(ui.End).Children(func() {
+		ui.Image(c, g.Hero).Absolute().Top(0).Left(0).Right(0).Bottom(0).Fit(ui.Cover).ObjectPosition(0.5, 0.3)
+		ui.Row(c).FillWidth().ZIndex(1).Padding(56, 20, 16, 20).Gap(14).AlignItems(ui.End).
+			Gradient(ui.RGBA(0, 0, 0, 0), ui.RGBA(0, 0, 0, 0.72), 180).Children(func() {
+			if g.Logo != nil && !g.Manual {
+				ui.Column(c).Grow(1).Shrink(1).Gap(6).Children(func() {
+					ui.Image(c, g.Logo).Size(320, 96).Fit(ui.Contain).ObjectPosition(0, 1).Label(g.Name)
+					ui.Text(c, a.meta(g)).FontSize(12).TextColor(white.Alpha(0.75))
+				})
+			} else {
+				a.title(c, t, g, white, white.Alpha(0.75))
+			}
+			a.actions(c, g, true)
 		})
 	})
 }
 
-// actions are the buttons on the banner, or the progress while something runs.
-func (a *app) actions(c *ui.Context, g *game) {
+// title is the game's name, which the user can rename for a game added by hand, and where it comes from.
+func (a *app) title(c *ui.Context, t *ui.Theme, g *game, color, muted ui.Color) {
+	ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
+		if g.Manual {
+			if ui.EditableText(c.Key("name"), &g.Name).FontSize(22).Bold().TextColor(color).Tooltip(T("rename.tip")).Changed() {
+				a.renamed(g)
+			}
+		} else {
+			ui.Text(c, g.Name).FontSize(22).Bold().TextColor(color).MaxLines(1).Ellipsis("…")
+		}
+		ui.Text(c, a.meta(g)).FontSize(12).TextColor(muted)
+	})
+}
+
+func (a *app) meta(g *game) string {
+	if g.Manual {
+		return T("manual.long")
+	}
+	if g.AppID != "" {
+		return "Steam · " + g.AppID
+	}
+	return "Steam"
+}
+
+// actions are the buttons of the banner, or the progress while something runs. Over a picture the secondary
+// buttons are translucent.
+func (a *app) actions(c *ui.Context, g *game, overArt bool) {
 	white := ui.RGB(255, 255, 255)
 	r := g.Scan
 	ui.Row(c).Gap(8).Children(func() {
@@ -254,6 +272,9 @@ func (a *app) actions(c *ui.Context, g *game) {
 			return
 		}
 		ghost := func(e ui.Element) ui.Element {
+			if !overArt {
+				return e
+			}
 			return e.Background(white.Alpha(0.14)).TextColor(white).Border(1, white.Alpha(0.2))
 		}
 		if g.Manual {

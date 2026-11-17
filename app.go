@@ -27,31 +27,44 @@ type game struct {
 	Scan     *detect.Result
 	Scanning bool
 	Icon     *ui.Bitmap // Steam's icon of the game, or its .exe's; nil: none
-	Header   *ui.Bitmap // Steam's header picture; nil: none
+	Hero     *ui.Bitmap // the picture Steam's library shows at the top of the game's page, else its store header; nil: none
+	Logo     *ui.Bitmap // the game's logo, which Steam's library draws over the hero; nil: none
 }
 
-// pictures reads the game's pictures: Steam's cached icon and header, else the icon of its .exe. It runs off the
-// main thread; the bitmaps are made on it.
-func (a *app) pictures(g *game, r *detect.Result) {
-	im := steam.GameImages(g.AppID)
-	var icon, header []byte
-	if im.Icon != "" {
-		icon, _ = os.ReadFile(im.Icon)
+// steamLanguage is the language Steam names its localized pictures by, for the window's language.
+func steamLanguage() string {
+	if lang == "zh" {
+		return "schinese"
 	}
-	if im.Header != "" {
-		header, _ = os.ReadFile(im.Header)
+	return "english"
+}
+
+// pictures reads the game's pictures: Steam's cached icon, hero (else header) and logo, else the icon of its
+// .exe. It runs off the main thread; the bitmaps are made on it.
+func (a *app) pictures(g *game, r *detect.Result) {
+	im := steam.GameImages(g.AppID, steamLanguage())
+	read := func(p string) []byte {
+		if p == "" {
+			return nil
+		}
+		b, _ := os.ReadFile(p)
+		return b
+	}
+	icon, hero, logo := read(im.Icon), read(im.Hero), read(im.Logo)
+	if hero == nil {
+		hero = read(im.Header)
 	}
 	if icon == nil && r != nil && r.Exe != "" {
 		icon, _ = mygo.Shell.FileIcon(r.Exe, 64)
 	}
-	a.win.Update(func() {
-		if icon != nil {
-			g.Icon, _ = ui.DecodeBitmap(icon)
+	decode := func(b []byte) *ui.Bitmap {
+		if b == nil {
+			return nil
 		}
-		if header != nil {
-			g.Header, _ = ui.DecodeBitmap(header)
-		}
-	})
+		bm, _ := ui.DecodeBitmap(b)
+		return bm
+	}
+	a.win.Update(func() { g.Icon, g.Hero, g.Logo = decode(icon), decode(hero), decode(logo) })
 }
 
 const (
