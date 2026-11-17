@@ -269,7 +269,7 @@ func (a *app) run(g *game, steps []step) {
 	if a.busy || g.Scan == nil || len(steps) == 0 {
 		return
 	}
-	a.busy, a.progress = true, -1
+	a.busy, a.progress, a.logOpen = true, -1, true
 	scan := g.Scan
 	gameDir := scan.ExeDir
 	a.logf("── %s", g.Name)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -12,57 +11,63 @@ import (
 	"anr-installer/internal/detect"
 )
 
+// brand is the accent of the app, between the logo's cyan and violet.
+var brand = ui.Hex("#5B6CFF")
+
+var themeLight, themeDark *ui.Theme
+
+// theme returns the system's theme in the app's accent, made once for each appearance.
+func theme(c *ui.Context) *ui.Theme {
+	base := c.Theme()
+	cached := &themeLight
+	if base.Dark {
+		cached = &themeDark
+	}
+	if *cached == nil {
+		t := base.WithAccent(brand)
+		t.Radius = 8
+		*cached = t
+	}
+	return *cached
+}
+
 func (a *app) view(c *ui.Context) {
+	t := theme(c)
+	c.SetTheme(t)
 	a.filter()
-	t := c.Theme()
+	if a.row < 0 && len(a.visible) > 0 {
+		a.row = 0 // a game is always shown, the first one at start
+	}
 	ui.Column(c).Fill().Children(func() {
 		a.titleBar(c, t)
 		ui.Divider(c)
 		ui.Row(c).Grow(1).AlignItems(ui.Stretch).Children(func() {
-			ui.Column(c).Width(340).Padding(16).Gap(10).Children(func() { a.sidebar(c, t) })
+			ui.Column(c).Width(300).Padding(12).Gap(10).Background(t.Text.Alpha(0.025)).Children(func() { a.sidebar(c, t) })
 			ui.Divider(c).Vertical()
 			ui.Column(c).Grow(1).Shrink(1).Children(func() {
-				ui.Scroll(c).Grow(1).Children(func() {
-					ui.Column(c).Padding(16, 20).Gap(14).Children(func() { a.detail(c, t) })
-				})
-				ui.Column(c).Height(210).Padding(0, 20, 16, 20).Children(func() { a.logPanel(c, t) })
+				g := a.selected()
+				if g == nil {
+					a.empty(c, t)
+				} else {
+					ui.Scroll(c.Key(g)).Grow(1).Children(func() {
+						ui.Column(c).Padding(16, 20, 20, 20).Gap(16).Children(func() { a.detail(c, t, g) })
+					})
+				}
+				a.activity(c, t)
 			})
 		})
 	})
 }
 
+// --- the list of games ---
+
 func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 	ui.SearchField(c, &a.query).Label(T("search")).Placeholder(T("search"))
-	ui.Checkbox(c, &a.onlySupported, T("only.supported"))
+	ui.Segmented(c, &a.show, T("show.all"), T("show.supported"), T("show.installed")).FillEqually().Label(T("show"))
 	a.filter()
-	ui.List(c, &a.list, len(a.visible)).Grow(1).Border(1, t.Border).Radius(8).Rows(func(r ui.ListRow) {
+	ui.List(c, &a.list, len(a.visible)).Grow(1).Rows(func(r ui.ListRow) {
 		g := a.games[a.visible[r.Index]]
-		muted, text := t.TextMuted, t.Text
-		if r.Selected() {
-			muted, text = t.AccentText, t.AccentText
-		}
-		row := ui.Row(c).Padding(8, 10).Gap(10)
-		if g.Manual {
-			row.ContextMenu(func(m *ui.Menu) {
-				if m.Item(T("remove")).Disabled(a.busy).Chosen() {
-					a.removeGame(g)
-				}
-			})
-		}
-		row.Children(func() {
-			gameIcon(c, t, g, 34)
-			ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
-				ui.Text(c, g.Name).TextColor(text).MaxLines(1).Ellipsis("…")
-				ui.Row(c).Gap(6).Children(func() {
-					switch {
-					case g.Scanning || g.Scan == nil:
-						ui.Text(c, T("scanning")).FontSize(11).TextColor(muted)
-					default:
-						a.badges(c, t, g, r.Selected())
-					}
-				})
-			})
-		})
+		a.gameRow(c, t, g, r.Selected())
 	}).Children(func() {
 		if len(a.visible) == 0 {
 			msg := T("no.games")
@@ -72,95 +77,369 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 			case a.noSteam && len(a.games) == 0:
 				msg = T("no.steam")
 			}
-			ui.Text(c, msg).TextColor(t.TextMuted).Padding(12)
+			ui.Text(c, msg).FontSize(12).TextColor(t.TextMuted).Padding(12).TextAlign(ui.Center)
 		}
 	})
-	supported := 0
+	supported, installed := 0, 0
 	for _, g := range a.games {
 		if g.Scan != nil && g.Scan.Supported() {
 			supported++
 		}
+		if g.Scan != nil && g.Scan.Installed != detect.KindNone {
+			installed++
+		}
 	}
-	ui.Text(c, T("games.count", len(a.games), supported)).FontSize(12).TextColor(t.TextMuted)
+	ui.Text(c, T("games.count", len(a.games), supported, installed)).FontSize(11).TextColor(t.TextMuted).PaddingX(4)
 	ui.Row(c).Gap(8).Children(func() {
-		ui.Button(c, T("add.folder")).Grow(1).OnClick(a.addFolder)
-		ui.Button(c, T("refresh")).Disabled(a.loadingGames || a.busy).OnClick(a.scanSteam)
+		ui.Button(c, T("add.game")).Grow(1).Tooltip(T("add.game.tip")).OnClick(a.addFolder)
+		ui.Button(c, T("refresh")).Disabled(a.loadingGames || a.busy).Tooltip(T("refresh.tip")).OnClick(a.scanSteam)
 	})
 }
 
-func (a *app) badges(c *ui.Context, t *ui.Theme, g *game, selected bool) {
-	r := g.Scan
-	badge := func(s string, bg ui.Color) {
-		b := ui.Badge(c, s).FontSize(11)
-		if selected {
-			b.Background(t.AccentText.Alpha(0.25)).TextColor(t.AccentText)
-		} else if bg != (ui.Color{}) {
-			b.Background(bg).TextColor(t.AccentText)
-		}
+func (a *app) gameRow(c *ui.Context, t *ui.Theme, g *game, selected bool) {
+	text := t.Text
+	if selected {
+		text = t.AccentText
 	}
-	if r.Supported() {
-		badge(T("badge.supported"), t.Success)
-	}
-	switch r.Installed {
-	case detect.KindFull, detect.KindAddon:
-		s := T("badge." + string(r.Installed))
-		if v := a.versionOf(r); v != "" {
-			s += " " + strings.TrimPrefix(v, "V.")
-		}
-		badge(s, t.Accent)
-	default:
-		if r.UserOpti {
-			badge(T("badge.opti"), ui.Color{})
-		}
-	}
+	row := ui.Row(c).Padding(8, 10).Gap(10)
 	if g.Manual {
-		badge(T("badge.manual"), ui.Color{})
-	}
-}
-
-func (a *app) detail(c *ui.Context, t *ui.Theme) {
-	g := a.selected()
-	if g == nil {
-		ui.Column(c).Height(200).Center().Children(func() {
-			ui.Text(c, T("pick.game")).TextColor(t.TextMuted)
-		})
-		return
-	}
-	if g.Header != nil {
-		// The store header as a banner, the name over its darkened bottom.
-		ui.Column(c).FillWidth().Height(150).Radius(10).Clip().Justify(ui.End).Children(func() {
-			ui.Image(c, g.Header).Absolute().Top(0).Left(0).Right(0).Bottom(0).Fit(ui.Cover)
-			ui.Row(c).Padding(28, 16, 12, 16).Gap(10).FillWidth().ZIndex(1).Gradient(ui.RGBA(0, 0, 0, 0), ui.RGBA(0, 0, 0, 0.75), 180).Children(func() {
-				gameIcon(c, t, g, 32)
-				ui.Text(c, g.Name).FontSize(20).Bold().TextColor(ui.RGB(255, 255, 255)).MaxLines(1).Ellipsis("…").Shrink(1)
-			})
-		})
-	} else {
-		ui.Row(c).Gap(12).Children(func() {
-			gameIcon(c, t, g, 40)
-			if g.Manual {
-				if ui.EditableText(c.Key("name"), &g.Name).FontSize(20).Bold().Tooltip(T("rename.tip")).Grow(1).Changed() {
-					a.renamed(g)
-				}
-				ui.Button(c, T("remove")).Disabled(a.busy).Tooltip(T("remove.tip")).OnClick(func() { a.removeGame(g) })
-			} else {
-				ui.Text(c, g.Name).FontSize(20).Bold().MaxLines(1).Ellipsis("…").Shrink(1)
+		row.ContextMenu(func(m *ui.Menu) {
+			if m.Item(T("open.folder")).Chosen() {
+				mygo.Shell.OpenPath(g.Dir)
+			}
+			m.Separator()
+			if m.Item(T("remove")).Disabled(a.busy).Chosen() {
+				a.removeGame(g)
 			}
 		})
 	}
-	if g.Scan == nil {
+	row.Children(func() {
+		gameIcon(c, t, g, 36)
+		ui.Column(c).Grow(1).Shrink(1).Gap(3).Children(func() {
+			ui.Text(c, g.Name).FontSize(13).FontWeight(500).TextColor(text).MaxLines(1).Ellipsis("…")
+			status, color := a.rowStatus(t, g)
+			if selected {
+				color = t.AccentText.Alpha(0.8)
+			}
+			ui.Text(c, status).FontSize(11).TextColor(color).MaxLines(1).Ellipsis("…")
+		})
+	})
+}
+
+// rowStatus is the line under a game's name: what is installed, else whether ANR FG can work in it.
+func (a *app) rowStatus(t *ui.Theme, g *game) (string, ui.Color) {
+	r := g.Scan
+	suffix := ""
+	if g.Manual {
+		suffix = " · " + T("manual")
+	}
+	switch {
+	case g.Scanning || r == nil:
+		return T("scanning"), t.TextMuted
+	case r.Installed != detect.KindNone:
+		v := "ANR FG"
+		if iv := a.versionOf(r); iv != "" {
+			v = "ANR " + strings.TrimPrefix(iv, "V.")
+		}
+		return v + " · " + string(r.Installed) + suffix, t.Accent
+	case r.Supported():
+		return T("row.supported") + suffix, t.Success
+	}
+	return T("row.unsupported") + suffix, t.TextMuted
+}
+
+// gameIcon shows the game's icon, or its initial on a tile when it has none.
+func gameIcon(c *ui.Context, t *ui.Theme, g *game, size float32) {
+	if g.Icon != nil {
+		ui.Image(c, g.Icon).Size(size, size).Fit(ui.Cover).Radius(size / 5)
+		return
+	}
+	initial := "?"
+	for _, r := range g.Name {
+		initial = strings.ToUpper(string(r))
+		break
+	}
+	ui.Column(c).Size(size, size).Radius(size / 5).Center().LinearGradient(brandGradient(0.75)).Children(func() {
+		ui.Text(c, initial).FontSize(size * 0.45).Bold().TextColor(ui.RGB(255, 255, 255))
+	})
+}
+
+func brandGradient(alpha float32) ui.LinearGradient {
+	return ui.LinearGradient{From: ui.Hex("#22D3EE").Alpha(alpha), To: ui.Hex("#8B5CF6").Alpha(alpha), Angle: 135}
+}
+
+// --- nothing to show ---
+
+func (a *app) empty(c *ui.Context, t *ui.Theme) {
+	ui.Column(c).Grow(1).Center().Gap(10).Padding(24).Children(func() {
+		ui.Image(c, logo).Size(72, 72)
+		if a.loadingGames {
+			ui.Text(c, T("scanning.steam")).FontSize(16).Bold()
+			return
+		}
+		ui.Text(c, T("empty.title")).FontSize(16).Bold()
+		ui.Text(c, T("empty.body")).TextColor(t.TextMuted).TextAlign(ui.Center).MaxWidth(420)
+		ui.PrimaryButton(c, T("add.game")).OnClick(a.addFolder)
+	})
+}
+
+// --- a game ---
+
+func (a *app) detail(c *ui.Context, t *ui.Theme, g *game) {
+	a.hero(c, t, g)
+	r := g.Scan
+	if r == nil {
 		ui.Row(c).Gap(8).Children(func() {
 			ui.Spinner(c)
 			ui.Text(c, T("scanning")).TextColor(t.TextMuted)
 		})
 		return
 	}
-	r := g.Scan
+	a.callouts(c, t, g)
+	ui.Row(c).Gap(12).AlignItems(ui.Stretch).Wrap().Children(func() {
+		a.anrCard(c, t, r)
+		a.dlssCard(c, t, r)
+		a.optiCard(c, t, r)
+	})
+	a.installCard(c, t, g)
+	a.locationCard(c, t, g)
+}
 
-	// Where the installer goes.
-	section(c, t, T("exe.folder"), func() {
+// hero is the game's banner: its store art, its name and what to do.
+func (a *app) hero(c *ui.Context, t *ui.Theme, g *game) {
+	white := ui.RGB(255, 255, 255)
+	box := ui.Column(c).FillWidth().Height(196).Radius(12).Clip().Justify(ui.End)
+	if g.Header == nil {
+		box.LinearGradient(brandGradient(0.45))
+	}
+	box.Children(func() {
+		if g.Header != nil {
+			ui.Image(c, g.Header).Absolute().Top(0).Left(0).Right(0).Bottom(0).Fit(ui.Cover)
+		}
+		ui.Row(c).FillWidth().ZIndex(1).Padding(40, 18, 16, 18).Gap(14).
+			Gradient(ui.RGBA(0, 0, 0, 0), ui.RGBA(0, 0, 0, 0.82), 180).Children(func() {
+			gameIcon(c, t, g, 52)
+			ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
+				if g.Manual {
+					if ui.EditableText(c.Key("name"), &g.Name).FontSize(22).Bold().TextColor(white).Tooltip(T("rename.tip")).Changed() {
+						a.renamed(g)
+					}
+				} else {
+					ui.Text(c, g.Name).FontSize(22).Bold().TextColor(white).MaxLines(1).Ellipsis("…")
+				}
+				meta := "Steam"
+				if g.AppID != "" {
+					meta += " · " + g.AppID
+				}
+				if g.Manual {
+					meta = T("manual.long")
+				}
+				ui.Text(c, meta).FontSize(12).TextColor(white.Alpha(0.7))
+			})
+			a.actions(c, g)
+		})
+	})
+}
+
+// actions are the buttons on the banner, or the progress while something runs.
+func (a *app) actions(c *ui.Context, g *game) {
+	white := ui.RGB(255, 255, 255)
+	r := g.Scan
+	ui.Row(c).Gap(8).Children(func() {
+		if a.busy {
+			ui.Spinner(c).Label(T("busy"))
+			if a.progress >= 0 {
+				ui.Progress(c, a.progress).Width(140).Label(a.status)
+			}
+			return
+		}
+		ghost := func(e ui.Element) ui.Element {
+			return e.Background(white.Alpha(0.14)).TextColor(white).Border(1, white.Alpha(0.2))
+		}
+		if g.Manual {
+			ghost(ui.Button(c, T("remove"))).Tooltip(T("remove.tip")).OnClick(func() { a.removeGame(g) })
+		}
+		if r == nil {
+			return
+		}
+		if r.Installed != detect.KindNone {
+			ghost(ui.Button(c, T("uninstall"))).Disabled(a.uninstallBlocked(r.Installed) != "" || g.Scanning).OnClick(func() { a.uninstall(g) })
+		}
+		k := a.chosenKind(g)
+		why := a.why(g, k)
+		b := ui.PrimaryButton(c, a.planLabel(a.plan(r))).Disabled(why != "" || g.Scanning).OnClick(func() { a.install(g, k) })
+		if why != "" {
+			b.Tooltip(why)
+		}
+	})
+}
+
+// why returns why installing kind k into g cannot run now, or "".
+func (a *app) why(g *game, k detect.Kind) string {
+	why := a.blocked(g, k)
+	if why == "" && g.Scan != nil && a.plan(g.Scan).uninstallsFirst() {
+		why = a.uninstallBlocked(g.Scan.Installed)
+	}
+	return why
+}
+
+// callouts say what needs the user's attention before installing.
+func (a *app) callouts(c *ui.Context, t *ui.Theme, g *game) {
+	r := g.Scan
+	k := a.chosenKind(g)
+	if why := a.why(g, k); why != "" && !g.Scanning && !a.busy {
+		callout(c, t.Danger, why)
+	}
+	if !r.Supported() && r.Installed == detect.KindNone {
+		callout(c, t.Warning, T("dlssg.no"))
+	}
+	switch plan := a.plan(r); {
+	case plan.uninstallsFirst():
+		latest := ""
+		if a.rel != nil {
+			latest = a.rel.Version
+		}
+		callout(c, t.Warning, T("note.downgrade", latest, a.targetVersion()))
+	case r.Installed == detect.KindFull && k == detect.KindFull && r.OptiINI:
+		callout(c, t.Accent, T("note.ini.reset"))
+	}
+	if r.NRRecord {
+		callout(c, t.Warning, T("note.nrrecord"))
+	}
+	if runtime.GOOS != "windows" {
+		callout(c, t.Accent, T("note.proton"))
+	}
+}
+
+func callout(c *ui.Context, color ui.Color, s string) {
+	ui.Row(c).Gap(10).Padding(10, 12).Radius(8).Background(color.Alpha(0.10)).Border(1, color.Alpha(0.35)).AlignItems(ui.Start).Children(func() {
+		ui.Column(c).Size(4, 16).Radius(2).Background(color)
+		ui.Text(c, s).FontSize(12).Grow(1).Shrink(1)
+	})
+}
+
+// card is a panel with a small title.
+func card(c *ui.Context, t *ui.Theme, title string, body func()) ui.Element {
+	return ui.Column(c).Padding(14, 16).Gap(8).Radius(10).Background(t.Text.Alpha(0.035)).Border(1, t.Border.Alpha(0.6)).Children(func() {
+		ui.Text(c, title).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
+		body()
+	})
+}
+
+// statCard is a card of one value and a line about it.
+func statCard(c *ui.Context, t *ui.Theme, title, value string, color ui.Color, detail string) {
+	card(c, t, title, func() {
 		ui.Row(c).Gap(8).Children(func() {
-			ui.Text(c, r.ExeDir).Grow(1).MaxLines(2).Selectable().TruncateMiddle()
+			ui.Column(c).Size(8, 8).Radius(4).Background(color)
+			ui.Text(c, value).FontSize(16).FontWeight(600).MaxLines(1).Ellipsis("…").Shrink(1)
+		})
+		if detail != "" {
+			ui.Text(c, detail).FontSize(11).TextColor(t.TextMuted).MaxLines(1).TruncateMiddle().Tooltip(detail)
+		}
+	}).Grow(1).Basis(0).MinWidth(180)
+}
+
+func (a *app) anrCard(c *ui.Context, t *ui.Theme, r *detect.Result) {
+	switch r.Installed {
+	case detect.KindFull:
+		statCard(c, t, "ANR FG", a.installedVersion(r), t.Accent, T("anr.full", r.Proxy))
+	case detect.KindAddon:
+		statCard(c, t, "ANR FG", a.installedVersion(r), t.Accent, T("anr.addon"))
+	default:
+		statCard(c, t, "ANR FG", T("anr.none"), t.TextMuted, "")
+	}
+}
+
+func (a *app) dlssCard(c *ui.Context, t *ui.Theme, r *detect.Result) {
+	if !r.Supported() {
+		statCard(c, t, T("dlss.title"), T("dlss.none"), t.Warning, T("dlss.none.detail"))
+		return
+	}
+	where, err := filepath.Rel(r.Root, filepath.Dir(r.DLSSG[0]))
+	if err != nil || where == "." {
+		where = T("dlss.root")
+	}
+	if r.Streamline {
+		where = "Streamline · " + where
+	}
+	statCard(c, t, T("dlss.title"), T("dlss.found"), t.Success, where)
+}
+
+func (a *app) optiCard(c *ui.Context, t *ui.Theme, r *detect.Result) {
+	detail := ""
+	switch {
+	case r.Replacement == detect.ANRDir:
+		detail = T("opti.fg", "ANR FG")
+	case r.Replacement != "":
+		detail = T("opti.fg", r.Replacement)
+	}
+	switch {
+	case r.Installed == detect.KindFull:
+		statCard(c, t, "OptiScaler", T("opti.ours"), t.Accent, detail)
+	case r.UserOpti:
+		statCard(c, t, "OptiScaler", T("opti.yours"), t.Success, detail)
+	default:
+		statCard(c, t, "OptiScaler", T("opti.none"), t.TextMuted, T("opti.none.detail"))
+	}
+}
+
+// installCard chooses what to install: the version up front, the package and its source under Advanced.
+func (a *app) installCard(c *ui.Context, t *ui.Theme, g *game) {
+	r := g.Scan
+	card(c, t, T("install.title"), func() {
+		ui.Row(c).Gap(10).Wrap().Children(func() {
+			ui.Text(c, T("version")).Width(72).TextColor(t.TextMuted)
+			switch {
+			case a.source == sourceLocal:
+				if a.local != nil {
+					ui.Text(c, T("zip.info", filepath.Base(a.localZip), a.local.Version, a.local.Kind)).MaxLines(1).TruncateMiddle().Shrink(1)
+				} else {
+					ui.Text(c, T("zip.none")).TextColor(t.TextMuted)
+				}
+			case len(a.versionLabels) > 0:
+				ui.Select(c, &a.versionSel, a.versionLabels).Label(T("version")).Disabled(a.busy).MinWidth(240)
+				if rel := a.target(); rel != nil {
+					ui.Button(c, T("release.notes")).OnClick(func() { mygo.Shell.OpenExternal(rel.URL) })
+				}
+			case a.relLoading:
+				ui.Spinner(c)
+				ui.Text(c, T("latest.loading")).TextColor(t.TextMuted)
+			default:
+				ui.Text(c, T("latest.error", a.relErr)).TextColor(t.Danger).MaxLines(2).Shrink(1)
+				ui.Button(c, T("retry")).OnClick(a.fetchRelease)
+			}
+		})
+		ui.Collapsible(c, T("advanced"), &a.advanced, func() {
+			ui.Column(c).Gap(10).PaddingY(6).Children(func() {
+				ui.Row(c).Gap(10).Children(func() {
+					ui.Text(c, T("package")).Width(72).TextColor(t.TextMuted)
+					ui.Segmented(c, &a.kind, T("kind.auto", r.Recommended()), "full", "addon").Label(T("package")).Disabled(a.busy)
+				})
+				ui.Text(c, T("package.help")).FontSize(11).TextColor(t.TextMuted).PaddingStart(82)
+				ui.Row(c).Gap(10).Children(func() {
+					ui.Text(c, T("source")).Width(72).TextColor(t.TextMuted)
+					ui.Segmented(c, &a.source, T("source.github0"), T("source.local")).Label(T("source")).Disabled(a.busy)
+					if a.source == sourceLocal {
+						ui.Button(c, T("choose.zip")).Disabled(a.busy).OnClick(a.chooseZip)
+					}
+				})
+				if a.localErr != "" && a.source == sourceLocal {
+					ui.Text(c, a.localErr).FontSize(12).TextColor(t.Danger).PaddingStart(82)
+				}
+			})
+		})
+	})
+}
+
+// locationCard shows where the installers go: the folder of the game's .exe.
+func (a *app) locationCard(c *ui.Context, t *ui.Theme, g *game) {
+	r := g.Scan
+	card(c, t, T("exe.folder"), func() {
+		ui.Text(c, r.ExeDir).FontSize(12).Font("monospace").Selectable().MaxLines(2).TruncateMiddle()
+		if r.Exe != "" {
+			ui.Text(c, filepath.Base(r.Exe)).FontSize(11).TextColor(t.TextMuted)
+		}
+		ui.Row(c).Gap(8).Children(func() {
 			ui.Button(c, T("change")).Disabled(a.busy || g.Scanning).OnClick(func() { a.changeExeDir(g) })
 			if g.ExeDir != "" {
 				ui.Button(c, T("auto.exe")).Disabled(a.busy || g.Scanning).Tooltip(T("auto.exe.tip")).OnClick(func() { a.resetExeDir(g) })
@@ -174,158 +453,48 @@ func (a *app) detail(c *ui.Context, t *ui.Theme) {
 			})
 		})
 	})
+}
 
-	// What is there.
-	section(c, t, T("status"), func() {
-		if r.Supported() {
-			names := map[string]bool{}
-			for _, p := range r.DLSSG {
-				names[filepath.Base(p)] = true
-			}
-			var list []string
-			for n := range names {
-				list = append(list, n)
-			}
-			line(c, t.Success, T("dlssg.yes", strings.Join(list, ", ")))
-		} else {
-			line(c, t.Warning, T("dlssg.no"))
-		}
-		switch r.Installed {
-		case detect.KindFull:
-			line(c, t.Accent, T("inst.full", r.Proxy))
-			line(c, t.TextMuted, T("inst.version", a.installedVersion(r)))
-		case detect.KindAddon:
-			line(c, t.Accent, T("inst.addon"))
-			line(c, t.TextMuted, T("inst.version", a.installedVersion(r)))
-		default:
-			line(c, t.TextMuted, T("inst.none"))
-			if r.UserOpti {
-				line(c, t.TextMuted, T("opti.user"))
-			}
-		}
-		if r.NRRecord {
-			line(c, t.Warning, T("nrrecord.on"))
-		}
-	})
+// --- activity ---
 
-	// What to put in.
-	rec := r.Recommended()
-	section(c, t, T("package"), func() {
-		ui.Row(c).Children(func() {
-			ui.Segmented(c, &a.kind, T("kind.auto", rec), "full", "addon").Label(T("package")).Disabled(a.busy)
+// activity is the log, folded to its last line until opened; it opens as a run starts.
+func (a *app) activity(c *ui.Context, t *ui.Theme) {
+	ui.Divider(c)
+	ui.Column(c).Background(t.Text.Alpha(0.025)).Children(func() {
+		head := ui.Row(c.Key("activity")).Padding(8, 16).Gap(10).Cursor(ui.CursorPointer).Label(T("log"))
+		if head.Clicked() {
+			a.logOpen = !a.logOpen
+		}
+		head.Children(func() {
+			arrow := "▸"
+			if a.logOpen {
+				arrow = "▾"
+			}
+			ui.Text(c, arrow).TextColor(t.TextMuted)
+			ui.Text(c, T("log")).FontSize(12).FontWeight(600)
+			last := a.status
+			if last == "" && len(a.logLines) > 0 {
+				last = a.logLines[len(a.logLines)-1]
+			}
+			ui.Text(c, strings.TrimSpace(last)).FontSize(12).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Grow(1).Shrink(1)
+			switch {
+			case a.busy && a.progress >= 0:
+				ui.Progress(c, a.progress).Width(160).Label(a.status)
+			case a.busy:
+				ui.Spinner(c).Label(T("busy"))
+			}
+			if a.logOpen && len(a.logLines) > 0 && !a.busy {
+				ui.Button(c, T("clear")).OnClick(func() { a.logLines, a.status = nil, "" })
+			}
 		})
-	})
-	section(c, t, T("source"), func() {
-		ui.Row(c).Gap(10).Children(func() {
-			ui.Segmented(c, &a.source, T("source.github0"), T("source.local")).Label(T("source")).Disabled(a.busy)
-			if a.source == sourceGitHub && len(a.versionLabels) > 0 {
-				ui.Select(c, &a.versionSel, a.versionLabels).Label(T("version")).Disabled(a.busy).MinWidth(220)
-				if rel := a.target(); rel != nil {
-					ui.Button(c, T("release.notes")).OnClick(func() { mygo.Shell.OpenExternal(rel.URL) })
+		if a.logOpen {
+			ui.List(c, &a.logList, len(a.logLines), func(i int) {
+				ui.Text(c, a.logLines[i]).Font("monospace").FontSize(11).Selectable().Padding(1, 16)
+			}).Height(180).PaddingY(4).Children(func() {
+				if len(a.logLines) == 0 {
+					ui.Text(c, T("log.empty")).FontSize(12).TextColor(t.TextMuted).Padding(8, 16)
 				}
-			}
-			if a.source == sourceLocal {
-				ui.Button(c, T("choose.zip")).Disabled(a.busy).OnClick(a.chooseZip)
-				switch {
-				case a.localErr != "":
-					ui.Text(c, a.localErr).TextColor(t.Danger).MaxLines(2).Grow(1)
-				case a.local != nil:
-					ui.Text(c, T("zip.info", filepath.Base(a.localZip), a.local.Kind)).TextColor(t.TextMuted).MaxLines(1).TruncateMiddle().Grow(1)
-				default:
-					ui.Text(c, T("zip.none")).TextColor(t.TextMuted)
-				}
-			}
-		})
-	})
-
-	k := a.chosenKind(g)
-	why := a.blocked(g, k)
-	plan := a.plan(r)
-	if why == "" && plan.uninstallsFirst() {
-		why = a.uninstallBlocked(r.Installed)
-	}
-	label := a.planLabel(plan)
-	ui.Row(c).Gap(10).Children(func() {
-		ui.PrimaryButton(c, label).Disabled(a.busy || why != "" || g.Scanning).OnClick(func() { a.install(g, k) })
-		if r.Installed != detect.KindNone {
-			ui.Button(c, T("uninstall")).Disabled(a.busy || a.uninstallBlocked(r.Installed) != "" || g.Scanning).OnClick(func() { a.uninstall(g) })
+			})
 		}
-		if a.busy {
-			ui.Spinner(c).Label(T("busy"))
-		}
-	})
-	if why != "" && !g.Scanning {
-		ui.Text(c, why).TextColor(t.Warning)
-	}
-	var notes []string
-	switch {
-	case plan.uninstallsFirst():
-		latest := ""
-		if a.rel != nil {
-			latest = a.rel.Version
-		}
-		notes = append(notes, T("note.downgrade", latest, a.targetVersion()))
-	case r.Installed == detect.KindFull && k == detect.KindFull && r.OptiINI:
-		notes = append(notes, T("note.ini.reset"))
-	}
-	if r.NRRecord {
-		notes = append(notes, T("note.nrrecord"))
-	}
-	notes = append(notes, T("note.close"))
-	if runtime.GOOS != "windows" {
-		notes = append(notes, T("note.proton"))
-	}
-	for _, n := range notes {
-		ui.Text(c, "• "+n).FontSize(12).TextColor(t.TextMuted)
-	}
-}
-
-func (a *app) logPanel(c *ui.Context, t *ui.Theme) {
-	ui.Column(c).Grow(1).Gap(6).Children(func() {
-		ui.Row(c).Gap(8).Children(func() {
-			ui.Text(c, T("log")).Bold().Grow(1)
-			if a.progress >= 0 {
-				ui.Progress(c, a.progress).Width(180).Label(a.status)
-			}
-			ui.Button(c, T("clear")).Disabled(a.busy || len(a.logLines) == 0).OnClick(func() { a.logLines = nil })
-		})
-		if a.status != "" {
-			ui.Text(c, a.status).FontSize(12).TextColor(t.TextMuted).MaxLines(2)
-		}
-		ui.List(c, &a.logList, len(a.logLines), func(i int) {
-			ui.Text(c, a.logLines[i]).Font("monospace").FontSize(12).Selectable().Padding(1, 10)
-		}).Grow(1).Padding(6, 0).Border(1, t.Border).Radius(8).Background(t.Surface)
-	})
-}
-
-func section(c *ui.Context, t *ui.Theme, title string, body func()) {
-	ui.Column(c).Gap(6).Children(func() {
-		ui.Text(c, title).FontSize(12).Bold().TextColor(t.TextMuted)
-		body()
-	})
-}
-
-func line(c *ui.Context, dot ui.Color, s string) {
-	ui.Row(c).Gap(8).AlignItems(ui.Start).Children(func() {
-		ui.Column(c).Size(8, 8).Radius(4).Background(dot).Margin(6, 0, 0, 0)
-		ui.Text(c, s).Grow(1).Shrink(1)
-	})
-}
-
-var _ = fmt.Sprintf
-
-// gameIcon shows the game's icon, or its initial on a tile when it has none.
-func gameIcon(c *ui.Context, t *ui.Theme, g *game, size float32) {
-	if g.Icon != nil {
-		ui.Image(c, g.Icon).Size(size, size).Fit(ui.Cover).Radius(size / 5)
-		return
-	}
-	initial := "?"
-	for _, r := range g.Name {
-		initial = strings.ToUpper(string(r))
-		break
-	}
-	ui.Column(c).Size(size, size).Radius(size / 5).Center().Background(t.Text.Alpha(0.08)).Children(func() {
-		ui.Text(c, initial).FontSize(size * 0.45).Bold().TextColor(t.TextMuted)
 	})
 }

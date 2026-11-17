@@ -28,10 +28,10 @@ func testApp(t *testing.T) *app {
 	a.setReleases(rels)
 	a.providers["aa"] = "V.B18"
 	a.games = []*game{
-		{Name: "Alpha", Dir: `C:\g\alpha`, Scan: &detect.Result{ExeDir: `C:\g\alpha`, DLSSG: []string{`C:\g\alpha\nvngx_dlssg.dll`}}},
-		{Name: "Beta", Dir: `C:\g\beta`, Scan: &detect.Result{ExeDir: `C:\g\beta`}},
-		{Name: "Gamma", Dir: `C:\g\gamma`, Scan: &detect.Result{ExeDir: `C:\g\gamma`, DLSSG: []string{"x"}, OptiINI: true, UserOpti: true}},
-		{Name: "Delta", Dir: `C:\g\delta`, Scan: &detect.Result{ExeDir: `C:\g\delta`, DLSSG: []string{"x"}, OptiINI: true, Installed: detect.KindFull, Proxy: "dxgi.dll", NRRecord: true, ANRHash: "aa"}},
+		{Name: "Alpha", Dir: `C:\g\alpha`, Scan: &detect.Result{Root: `C:\g\alpha`, ExeDir: `C:\g\alpha`, DLSSG: []string{`C:\g\alpha\nvngx_dlssg.dll`}}},
+		{Name: "Beta", Dir: `C:\g\beta`, Scan: &detect.Result{Root: `C:\g\beta`, ExeDir: `C:\g\beta`}},
+		{Name: "Gamma", Dir: `C:\g\gamma`, Scan: &detect.Result{Root: `C:\g\gamma`, ExeDir: `C:\g\gamma`, DLSSG: []string{`C:\g\gamma\x\nvngx_dlssg.dll`}, OptiINI: true, UserOpti: true}},
+		{Name: "Delta", Dir: `C:\g\delta`, Scan: &detect.Result{Root: `C:\g\delta`, ExeDir: `C:\g\delta`, DLSSG: []string{`C:\g\delta\nvngx_dlssg.dll`}, OptiINI: true, Installed: detect.KindFull, Proxy: "dxgi.dll", NRRecord: true, ANRHash: "aa"}},
 	}
 	return a
 }
@@ -40,19 +40,28 @@ func TestViewFiltersAndSelects(t *testing.T) {
 	a := testApp(t)
 	tt := ui.NewTester(a.view, 1040, 760)
 	if tt.HasText("Beta") {
-		t.Error("Beta has no DLSS-G and should be hidden")
+		t.Error("Beta has no DLSS-G and should be hidden under Supported")
 	}
-	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("Delta") {
+	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("ANR B18 · full") {
 		t.Fatalf("texts %q", tt.Texts())
 	}
-	if !tt.HasText("ANR full B18") {
-		t.Errorf("the list should show the installed version: %q", tt.Texts())
+	if g := a.selected(); g == nil || g.Name != "Alpha" {
+		t.Fatalf("the first game should be chosen at start: %+v", g)
 	}
-	if err := tt.Click("Only games with DLSS frame generation"); err != nil {
+	if err := tt.Click("All"); err != nil {
 		t.Fatal(err)
 	}
 	if !tt.HasText("Beta") {
-		t.Error("Beta should show with the filter off")
+		t.Error("Beta should show under All")
+	}
+	if err := tt.Click("Installed"); err != nil {
+		t.Fatal(err)
+	}
+	if tt.HasText("Alpha") || !tt.HasText("Delta") {
+		t.Errorf("Installed shows %q", tt.Texts())
+	}
+	if err := tt.Click("Supported"); err != nil {
+		t.Fatal(err)
 	}
 	if err := tt.Click("Gamma"); err != nil {
 		t.Fatal(err)
@@ -60,8 +69,14 @@ func TestViewFiltersAndSelects(t *testing.T) {
 	if g := a.selected(); g == nil || g.Name != "Gamma" {
 		t.Fatalf("selected %+v", g)
 	}
-	if !tt.HasText("Auto (addon)") || !tt.HasText("Install V.B19") {
+	if !tt.HasText("Install V.B19") || !tt.HasText("Yours") || !tt.HasText("x") {
 		t.Errorf("texts %q", tt.Texts())
+	}
+	if err := tt.Click("Advanced"); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText("Auto (addon)") {
+		t.Errorf("Advanced shows %q", tt.Texts())
 	}
 	a.kind = kindFull
 	tt.Frame()
@@ -129,7 +144,7 @@ func TestViewDowngrade(t *testing.T) {
 	if err := tt.Click("Delta"); err != nil {
 		t.Fatal(err)
 	}
-	for _, s := range []string{"Upgrade to V.B19", "Uninstall", "Installed version: V.B18", T("note.ini.reset"), T("note.nrrecord")} {
+	for _, s := range []string{"Upgrade to V.B19", "Uninstall", "V.B18", "Full package · OptiScaler as dxgi.dll", T("note.ini.reset"), T("note.nrrecord")} {
 		if !tt.HasText(s) {
 			t.Errorf("missing %q in %q", s, tt.Texts())
 		}
@@ -175,6 +190,9 @@ func TestManualGames(t *testing.T) {
 	if err := tt.Click("Mine"); err != nil {
 		t.Fatal(err)
 	}
+	if !tt.HasText("Added by hand") || !tt.HasText("DLSS frame generation · added") {
+		t.Errorf("texts %q", tt.Texts())
+	}
 	if err := tt.Click("Remove from list"); err != nil {
 		t.Fatal(err)
 	}
@@ -185,6 +203,9 @@ func TestManualGames(t *testing.T) {
 	}
 	if len(store.Load().Games) != 0 {
 		t.Error("still saved")
+	}
+	if g := a.selected(); g == nil || g.Name != "Alpha" {
+		t.Errorf("after removing, the first game should be chosen: %+v", g)
 	}
 	// Steam games cannot be removed: they come back with the next scan.
 	a.removeGame(a.games[0])

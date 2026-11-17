@@ -70,14 +70,16 @@ const (
 type app struct {
 	win *mygo.Window
 
-	games         []*game
-	loadingGames  bool
-	noSteam       bool
-	query         string
-	onlySupported bool
-	list          ui.ListState
-	row           int // the row chosen in the filtered list, -1 none
-	visible       []int
+	games        []*game
+	loadingGames bool
+	noSteam      bool
+	query        string
+	show         int  // which games the list shows: showAll, showSupported or showInstalled
+	advanced     bool // the advanced install options are open
+	logOpen      bool // the activity log is open
+	list         ui.ListState
+	row          int // the row chosen in the filtered list, -1 none
+	visible      []int
 
 	// saved holds the games added by hand and the .exe folders chosen, kept across launches.
 	saved *store.Data
@@ -111,7 +113,7 @@ type app struct {
 }
 
 func newApp() *app {
-	a := &app{onlySupported: true, row: -1, progress: -2, providers: map[string]string{}}
+	a := &app{show: showSupported, row: -1, progress: -2, providers: map[string]string{}}
 	a.list.Key = func(i int) any {
 		if i < len(a.visible) {
 			return a.games[a.visible[i]].Dir
@@ -215,6 +217,26 @@ func (a *app) selected() *game {
 	return a.games[a.visible[a.row]]
 }
 
+// Which games the list shows.
+const (
+	showAll       = iota
+	showSupported // with DLSS frame generation or ANR FG, and those added by hand
+	showInstalled // with ANR FG
+)
+
+func (a *app) shows(g *game) bool {
+	if g.Scan == nil {
+		return a.show != showInstalled
+	}
+	switch a.show {
+	case showSupported:
+		return g.Manual || g.Scan.Supported() || g.Scan.Installed != detect.KindNone
+	case showInstalled:
+		return g.Scan.Installed != detect.KindNone
+	}
+	return true
+}
+
 // filter recomputes the rows the list shows.
 func (a *app) filter() {
 	q := strings.ToLower(strings.TrimSpace(a.query))
@@ -223,7 +245,7 @@ func (a *app) filter() {
 		if q != "" && !strings.Contains(strings.ToLower(g.Name), q) {
 			continue
 		}
-		if a.onlySupported && !g.Manual && g.Scan != nil && !g.Scan.Supported() && g.Scan.Installed == detect.KindNone {
+		if !a.shows(g) {
 			continue
 		}
 		a.visible = append(a.visible, i)
