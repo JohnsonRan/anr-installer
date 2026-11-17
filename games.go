@@ -3,6 +3,9 @@ package main
 import (
 	"path/filepath"
 	"slices"
+	"strings"
+
+	"github.com/egoist/mygo"
 
 	"anr-installer/internal/detect"
 	"anr-installer/internal/store"
@@ -75,4 +78,34 @@ func (a *app) resetExeDir(g *game) {
 	g.ExeDir = ""
 	a.persist()
 	a.rescan(g)
+}
+
+// confirmInstall installs kind k into g, after the user accepts the risk when the game ships an anti-cheat
+// system: it may take OptiScaler and ANR FG for a cheat. The question waits off the main thread.
+func (a *app) confirmInstall(g *game, k detect.Kind) {
+	if g.Scan == nil || len(g.Scan.AntiCheat) == 0 {
+		a.install(g, k)
+		return
+	}
+	names := strings.Join(g.Scan.AntiCheat, ", ")
+	go func() {
+		res, err := mygo.Dialog.Message(mygo.MessageOptions{
+			Parent:             a.win,
+			Type:               mygo.MessageWarning,
+			Title:              T("anticheat.title"),
+			Message:            T("anticheat.title"),
+			Detail:             T("anticheat.detail", names, g.Name),
+			Buttons:            []string{T("anticheat.cancel"), T("anticheat.accept")},
+			DefaultButton:      0,
+			CancelButton:       0,
+			DestructiveButtons: []int{1},
+		})
+		if err != nil || res.Button != 1 {
+			return
+		}
+		a.win.Update(func() {
+			a.logf("%s", T("anticheat.accepted", names))
+			a.install(g, k)
+		})
+	}()
 }

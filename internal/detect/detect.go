@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -46,6 +47,10 @@ type Result struct {
 	ANRHash     string // its SHA-256
 	NRRecord    bool   // OptiScaler.ini routes frame generation to nr-record
 	Replacement string // OptiScaler.ini's FGNvngxReplacement
+
+	// AntiCheat names the anti-cheat systems the game ships (Easy Anti-Cheat, BattlEye, …), which may take an
+	// injected OptiScaler and ANR FG for a cheat.
+	AntiCheat []string
 }
 
 // Supported reports whether the game ships DLSS frame generation, which ANR FG takes the place of.
@@ -117,6 +122,9 @@ func Scan(root, exeDir string) *Result {
 			return nil
 		}
 		name := strings.ToLower(d.Name())
+		if ac := antiCheatOf(name, d.IsDir()); ac != "" && !slices.Contains(r.AntiCheat, ac) {
+			r.AntiCheat = append(r.AntiCheat, ac)
+		}
 		if d.IsDir() {
 			if p != root && (skipDirs[name] || strings.Count(filepath.Clean(p), string(filepath.Separator))-base > maxDepth) {
 				return fs.SkipDir

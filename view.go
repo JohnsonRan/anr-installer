@@ -113,6 +113,9 @@ func (a *app) rowStatus(t *ui.Theme, g *game) (string, ui.Color) {
 	if g.Manual {
 		suffix = " · " + T("manual")
 	}
+	if r != nil && len(r.AntiCheat) > 0 {
+		suffix += " · " + T("anticheat.short")
+	}
 	switch {
 	case g.Scanning || r == nil:
 		return T("scanning"), t.TextMuted
@@ -264,7 +267,7 @@ func (a *app) actions(c *ui.Context, g *game, overArt bool) {
 		}
 		k := a.chosenKind(g)
 		why := a.why(g, k)
-		b := ui.PrimaryButton(c, a.planLabel(a.plan(r))).Disabled(why != "" || g.Scanning).OnClick(func() { a.install(g, k) })
+		b := ui.PrimaryButton(c, a.planLabel(a.plan(r))).Disabled(why != "" || g.Scanning).OnClick(func() { a.confirmInstall(g, k) })
 		if why != "" {
 			b.Tooltip(why)
 		}
@@ -286,6 +289,9 @@ func (a *app) callouts(c *ui.Context, t *ui.Theme, g *game) {
 	k := a.chosenKind(g)
 	if why := a.why(g, k); why != "" && !g.Scanning && !a.busy {
 		callout(c, t, t.Danger, why)
+	}
+	if len(r.AntiCheat) > 0 {
+		callout(c, t, t.Danger, T("anticheat.found", strings.Join(r.AntiCheat, ", ")))
 	}
 	if !r.Supported() && r.Installed == detect.KindNone {
 		callout(c, t, t.Warning, T("dlssg.no"))

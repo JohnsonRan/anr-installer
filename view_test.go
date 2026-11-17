@@ -213,3 +213,21 @@ func TestManualGames(t *testing.T) {
 		t.Error("a Steam game was removed")
 	}
 }
+
+func TestAntiCheatWarning(t *testing.T) {
+	a := testApp(t)
+	a.games[0].Scan.AntiCheat = []string{"EA Javelin Anticheat"}
+	tt := ui.NewTester(a.view, 1040, 760)
+	if !tt.HasText(T("anticheat.found", "EA Javelin Anticheat")) {
+		t.Errorf("no anti-cheat warning: %q", tt.Texts())
+	}
+	if !tt.HasText("DLSS frame generation · anti-cheat") {
+		t.Errorf("the list does not mark the game: %q", tt.Texts())
+	}
+	if err := tt.Click("Gamma"); err != nil {
+		t.Fatal(err)
+	}
+	if tt.HasText(T("anticheat.found", "EA Javelin Anticheat")) {
+		t.Error("a game without anti-cheat shows the warning")
+	}
+}

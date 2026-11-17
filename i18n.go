@@ -160,4 +160,13 @@ var messages = map[string][2]string{
 	"failed":            {"Failed: %s", "失败：%s"},
 	"warn.nrrecord":     {"nr-record was in use: run nr-record's installer again to restore it.", "之前启用了 nr-record：如需恢复，请重新运行 nr-record 的安装程序。"},
 	"probe.failed":      {"Couldn't read the release versions: %s", "无法读取各版本信息：%s"},
+
+	// Anti-cheat.
+	"anticheat.short":    {"anti-cheat", "反作弊"},
+	"anticheat.found":    {"Anti-cheat found: %s. It may take OptiScaler and ANR FG for a cheat and ban the account. Installing is at your own risk.", "检测到反作弊：%s。反作弊可能把 OptiScaler 和 ANR FG 当作作弊程序并封禁账号，安装的风险由你自行承担。"},
+	"anticheat.title":    {"This game uses anti-cheat", "这个游戏使用了反作弊"},
+	"anticheat.detail":   {"%s protects %s. Anti-cheat may take OptiScaler and ANR FG, which hook into the game's rendering, for a cheat, and ban the account, in online modes above all. Install only if you accept that risk; you bear it yourself.", "%s 保护着 %s。OptiScaler 和 ANR FG 会接入游戏的渲染，反作弊可能把它们当作作弊程序并封禁账号，联机模式下尤其如此。只有在你接受这个风险时才安装，风险由你自行承担。"},
+	"anticheat.cancel":   {"Cancel", "取消"},
+	"anticheat.accept":   {"Install at my own risk", "我自行承担风险，继续安装"},
+	"anticheat.accepted": {"Installing despite %s: the user accepted the risk.", "检测到 %s，用户确认自行承担风险后继续安装。"},
 }

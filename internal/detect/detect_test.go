@@ -3,6 +3,7 @@ package detect
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -85,5 +86,29 @@ func TestOldLayout(t *testing.T) {
 	write(t, filepath.Join(root, "OptiScaler", "custom", OldANRDir, "dlssg", "nvngx_dlssg.dll"), "b02")
 	if r := Scan(root, ""); r.Installed != KindAddon || r.ANRHash == "" {
 		t.Fatalf("add-on in custom/nrfg: %+v", r)
+	}
+}
+
+func TestAntiCheat(t *testing.T) {
+	root := t.TempDir()
+	write(t, filepath.Join(root, "bf6.exe"), "x")
+	write(t, filepath.Join(root, "EAAntiCheat", "EAAntiCheat.Installer.exe"), "x")
+	write(t, filepath.Join(root, "EAAntiCheat.GameServiceLauncher.exe"), "x")
+	write(t, filepath.Join(root, "SP", "EasyAntiCheat", "Settings.json"), "x")
+	r := Scan(root, "")
+	if len(r.AntiCheat) != 2 || r.AntiCheat[0] == r.AntiCheat[1] {
+		t.Fatalf("anti-cheat %q", r.AntiCheat)
+	}
+	for _, want := range []string{"EA Javelin Anticheat", "Easy Anti-Cheat"} {
+		if !slices.Contains(r.AntiCheat, want) {
+			t.Errorf("no %s in %q", want, r.AntiCheat)
+		}
+	}
+	if r := Scan(t.TempDir(), ""); len(r.AntiCheat) != 0 {
+		t.Errorf("an empty folder has %q", r.AntiCheat)
+	}
+	// A folder that only shares a prefix is not one.
+	if antiCheatOf("pbr", true) != "" || antiCheatOf("eaanticheat.cfg", false) != "EA Javelin Anticheat" {
+		t.Error("antiCheatOf")
 	}
 }
