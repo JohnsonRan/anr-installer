@@ -27,6 +27,14 @@ if [ -n "$unformatted" ]; then
 	echo "$unformatted" >&2
 	exit 1
 fi
+# The type scale (UI.md, "Layout, type and loading"): text sizes and weights are set in type.go only.
+literals=$(grep -rn -E '\.(FontSize|FontWeight)\(|\.Bold\(\)' --include='*.go' --exclude=type.go --exclude='*_test.go' .) && found=0 || found=$?
+[ "$found" -le 1 ] || { echo "type scale: grep failed" >&2; exit 2; }
+if [ -n "$literals" ]; then
+	echo "type scale: set text size and weight through a role in type.go:" >&2
+	echo "$literals" >&2
+	exit 1
+fi
 go vet ./... || exit 1
 go tool mygo vet . || exit 1
 [ "$tier" = fast ] && exit 0

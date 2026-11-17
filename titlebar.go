@@ -34,14 +34,14 @@ func (a *app) titleBar(c *ui.Context, t *ui.Theme) {
 	ui.Row(c).Height(titleBarHeight).Padding(0, bar.Right, 0, bar.Left+16).Gap(12).DragWindow().Children(func() {
 		ui.Image(c, logo).Size(28, 28)
 		ui.Row(c).Grow(1).Shrink(1).Gap(10).AlignItems(ui.Baseline).Children(func() {
-			ui.Text(c, T("title")).FontSize(15).Bold().NoWrap()
-			ui.Text(c, T("subtitle")).FontSize(12).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Shrink(1)
+			roleBodyStrong.on(t, ui.Text(c, T("title"))).NoWrap()
+			roleSmall.on(t, ui.Text(c, T("subtitle"))).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Shrink(1)
 		})
 		switch {
 		case a.relLoading:
 			ui.Spinner(c).Label(T("latest.loading"))
 		case a.relErr != "":
-			ui.Text(c, T("latest.error", a.relErr)).FontSize(12).TextColor(t.Danger).MaxLines(1).Ellipsis("…").MaxWidth(320).Tooltip(a.relErr)
+			roleSmall.on(t, ui.Text(c, T("latest.error", a.relErr))).TextColor(t.Danger).MaxLines(1).Ellipsis("…").MaxWidth(320).Tooltip(a.relErr)
 			ui.Button(c, T("refresh")).OnClick(a.fetchRelease)
 		case a.rel != nil:
 			ui.Badge(c, T("latest", a.rel.Version)).Background(t.Accent).TextColor(t.AccentText)

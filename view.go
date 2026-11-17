@@ -57,7 +57,7 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 			case a.noSteam && len(a.games) == 0:
 				msg = T("no.steam")
 			}
-			ui.Text(c, msg).FontSize(12).TextColor(t.TextMuted).Padding(12).TextAlign(ui.Center)
+			roleSmall.on(t, ui.Text(c, msg)).TextColor(t.TextMuted).Padding(12).TextAlign(ui.Center)
 		}
 	})
 	supported, installed := 0, 0
@@ -69,7 +69,7 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 			installed++
 		}
 	}
-	ui.Text(c, T("games.count", len(a.games), supported, installed)).FontSize(11).TextColor(t.TextMuted).PaddingX(4)
+	roleSmall.on(t, ui.Text(c, T("games.count", len(a.games), supported, installed))).TextColor(t.TextMuted).PaddingX(4)
 	ui.Row(c).Gap(8).Children(func() {
 		ui.Button(c, T("add.game")).Grow(1).Tooltip(T("add.game.tip")).OnClick(a.addFolder)
 		ui.Button(c, T("refresh")).Disabled(a.loadingGames || a.busy).Tooltip(T("refresh.tip")).OnClick(a.scanSteam)
@@ -96,12 +96,12 @@ func (a *app) gameRow(c *ui.Context, t *ui.Theme, g *game, selected bool) {
 	row.Children(func() {
 		gameIcon(c, t, g, 36)
 		ui.Column(c).Grow(1).Shrink(1).Gap(3).Children(func() {
-			ui.Text(c, g.Name).FontSize(13).FontWeight(500).TextColor(text).MaxLines(1).Ellipsis("…")
+			roleBodyStrong.on(t, ui.Text(c, g.Name)).TextColor(text).MaxLines(1).Ellipsis("…")
 			status, color := a.rowStatus(t, g)
 			if selected {
 				color = t.AccentText.Alpha(0.8)
 			}
-			ui.Text(c, status).FontSize(11).TextColor(color).MaxLines(1).Ellipsis("…")
+			roleSmall.on(t, ui.Text(c, status)).TextColor(color).MaxLines(1).Ellipsis("…")
 		})
 	})
 }
@@ -140,7 +140,7 @@ func gameIcon(c *ui.Context, t *ui.Theme, g *game, size float32) {
 		break
 	}
 	ui.Column(c).Size(size, size).Radius(size / 5).Center().Background(t.Text.Alpha(0.08)).Children(func() {
-		ui.Text(c, initial).FontSize(size * 0.45).Bold().TextColor(t.TextMuted)
+		glyph(ui.Text(c, initial), size).TextColor(t.TextMuted)
 	})
 }
 
@@ -150,10 +150,10 @@ func (a *app) empty(c *ui.Context, t *ui.Theme) {
 	ui.Column(c).Grow(1).Center().Gap(10).Padding(24).Children(func() {
 		ui.Image(c, logo).Size(72, 72)
 		if a.loadingGames {
-			ui.Text(c, T("scanning.steam")).FontSize(16).Bold()
+			roleHeading.on(t, ui.Text(c, T("scanning.steam")))
 			return
 		}
-		ui.Text(c, T("empty.title")).FontSize(16).Bold()
+		roleHeading.on(t, ui.Text(c, T("empty.title")))
 		ui.Text(c, T("empty.body")).TextColor(t.TextMuted).TextAlign(ui.Center).MaxWidth(420)
 		ui.PrimaryButton(c, T("add.game")).OnClick(a.addFolder)
 	})
@@ -200,7 +200,7 @@ func (a *app) hero(c *ui.Context, t *ui.Theme, g *game) {
 			if g.Logo != nil && !g.Manual {
 				ui.Column(c).Grow(1).Shrink(1).Gap(6).Children(func() {
 					ui.Image(c, g.Logo).Size(320, 96).Fit(ui.Contain).ObjectPosition(0, 1).Label(g.Name)
-					ui.Text(c, a.meta(g)).FontSize(12).TextColor(white.Alpha(0.75))
+					roleSmall.on(t, ui.Text(c, a.meta(g))).TextColor(white.Alpha(0.75))
 				})
 			} else {
 				a.title(c, t, g, white, white.Alpha(0.75))
@@ -214,13 +214,13 @@ func (a *app) hero(c *ui.Context, t *ui.Theme, g *game) {
 func (a *app) title(c *ui.Context, t *ui.Theme, g *game, color, muted ui.Color) {
 	ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
 		if g.Manual {
-			if ui.EditableText(c.Key("name"), &g.Name).FontSize(22).Bold().TextColor(color).Tooltip(T("rename.tip")).Changed() {
+			if roleTitle.on(t, ui.EditableText(c.Key("name"), &g.Name)).TextColor(color).Tooltip(T("rename.tip")).Changed() {
 				a.renamed(g)
 			}
 		} else {
-			ui.Text(c, g.Name).FontSize(22).Bold().TextColor(color).MaxLines(1).Ellipsis("…")
+			roleTitle.on(t, ui.Text(c, g.Name)).TextColor(color).MaxLines(1).Ellipsis("…")
 		}
-		ui.Text(c, a.meta(g)).FontSize(12).TextColor(muted)
+		roleSmall.on(t, ui.Text(c, a.meta(g))).TextColor(muted)
 	})
 }
 
@@ -285,10 +285,10 @@ func (a *app) callouts(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
 	k := a.chosenKind(g)
 	if why := a.why(g, k); why != "" && !g.Scanning && !a.busy {
-		callout(c, t.Danger, why)
+		callout(c, t, t.Danger, why)
 	}
 	if !r.Supported() && r.Installed == detect.KindNone {
-		callout(c, t.Warning, T("dlssg.no"))
+		callout(c, t, t.Warning, T("dlssg.no"))
 	}
 	switch plan := a.plan(r); {
 	case plan.uninstallsFirst():
@@ -296,29 +296,29 @@ func (a *app) callouts(c *ui.Context, t *ui.Theme, g *game) {
 		if a.rel != nil {
 			latest = a.rel.Version
 		}
-		callout(c, t.Warning, T("note.downgrade", latest, a.targetVersion()))
+		callout(c, t, t.Warning, T("note.downgrade", latest, a.targetVersion()))
 	case r.Installed == detect.KindFull && k == detect.KindFull && r.OptiINI:
-		callout(c, t.Accent, T("note.ini.reset"))
+		callout(c, t, t.Accent, T("note.ini.reset"))
 	}
 	if r.NRRecord {
-		callout(c, t.Warning, T("note.nrrecord"))
+		callout(c, t, t.Warning, T("note.nrrecord"))
 	}
 	if runtime.GOOS != "windows" {
-		callout(c, t.Accent, T("note.proton"))
+		callout(c, t, t.Accent, T("note.proton"))
 	}
 }
 
-func callout(c *ui.Context, color ui.Color, s string) {
+func callout(c *ui.Context, t *ui.Theme, color ui.Color, s string) {
 	ui.Row(c).Gap(10).Padding(10, 12).Radius(8).Background(color.Alpha(0.10)).Border(1, color.Alpha(0.35)).AlignItems(ui.Start).Children(func() {
 		ui.Column(c).Size(4, 16).Radius(2).Background(color)
-		ui.Text(c, s).FontSize(12).Grow(1).Shrink(1)
+		roleSmall.on(t, ui.Text(c, s)).Grow(1).Shrink(1)
 	})
 }
 
 // card is a panel with a small title.
 func card(c *ui.Context, t *ui.Theme, title string, body func()) ui.Element {
 	return ui.Column(c).Padding(14, 16).Gap(8).Radius(10).Background(t.Text.Alpha(0.035)).Border(1, t.Border.Alpha(0.6)).Children(func() {
-		ui.Text(c, title).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
+		roleCaption.on(t, ui.Text(c, title)).TextColor(t.TextMuted)
 		body()
 	})
 }
@@ -328,10 +328,10 @@ func statCard(c *ui.Context, t *ui.Theme, title, value string, color ui.Color, d
 	card(c, t, title, func() {
 		ui.Row(c).Gap(8).Children(func() {
 			ui.Column(c).Size(8, 8).Radius(4).Background(color)
-			ui.Text(c, value).FontSize(16).FontWeight(600).MaxLines(1).Ellipsis("…").Shrink(1)
+			roleHeading.on(t, ui.Text(c, value)).MaxLines(1).Ellipsis("…").Shrink(1)
 		})
 		if detail != "" {
-			ui.Text(c, detail).FontSize(11).TextColor(t.TextMuted).MaxLines(1).TruncateMiddle().Tooltip(detail)
+			roleSmall.on(t, ui.Text(c, detail)).TextColor(t.TextMuted).MaxLines(1).TruncateMiddle().Tooltip(detail)
 		}
 	}).Grow(1).Basis(0).MinWidth(180)
 }
@@ -412,7 +412,7 @@ func (a *app) installCard(c *ui.Context, t *ui.Theme, g *game) {
 					ui.Text(c, T("package")).Width(72).TextColor(t.TextMuted)
 					ui.Segmented(c, &a.kind, T("kind.auto", r.Recommended()), "full", "addon").Label(T("package")).Disabled(a.busy)
 				})
-				ui.Text(c, T("package.help")).FontSize(11).TextColor(t.TextMuted).PaddingStart(82)
+				roleSmall.on(t, ui.Text(c, T("package.help"))).TextColor(t.TextMuted).PaddingStart(82)
 				ui.Row(c).Gap(10).Children(func() {
 					ui.Text(c, T("source")).Width(72).TextColor(t.TextMuted)
 					ui.Segmented(c, &a.source, T("source.github0"), T("source.local")).Label(T("source")).Disabled(a.busy)
@@ -421,7 +421,7 @@ func (a *app) installCard(c *ui.Context, t *ui.Theme, g *game) {
 					}
 				})
 				if a.localErr != "" && a.source == sourceLocal {
-					ui.Text(c, a.localErr).FontSize(12).TextColor(t.Danger).PaddingStart(82)
+					roleSmall.on(t, ui.Text(c, a.localErr)).TextColor(t.Danger).PaddingStart(82)
 				}
 			})
 		})
@@ -432,9 +432,9 @@ func (a *app) installCard(c *ui.Context, t *ui.Theme, g *game) {
 func (a *app) locationCard(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
 	card(c, t, T("exe.folder"), func() {
-		ui.Text(c, r.ExeDir).FontSize(12).Font("monospace").Selectable().MaxLines(2).TruncateMiddle()
+		roleSmall.on(t, ui.Text(c, r.ExeDir)).Font("monospace").Selectable().MaxLines(2).TruncateMiddle()
 		if r.Exe != "" {
-			ui.Text(c, filepath.Base(r.Exe)).FontSize(11).TextColor(t.TextMuted)
+			roleSmall.on(t, ui.Text(c, filepath.Base(r.Exe))).TextColor(t.TextMuted)
 		}
 		ui.Row(c).Gap(8).Children(func() {
 			ui.Button(c, T("change")).Disabled(a.busy || g.Scanning).OnClick(func() { a.changeExeDir(g) })
@@ -468,12 +468,12 @@ func (a *app) activity(c *ui.Context, t *ui.Theme) {
 				arrow = "▾"
 			}
 			ui.Text(c, arrow).TextColor(t.TextMuted)
-			ui.Text(c, T("log")).FontSize(12).FontWeight(600)
+			roleBodyStrong.on(t, ui.Text(c, T("log")))
 			last := a.status
 			if last == "" && len(a.logLines) > 0 {
 				last = a.logLines[len(a.logLines)-1]
 			}
-			ui.Text(c, strings.TrimSpace(last)).FontSize(12).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Grow(1).Shrink(1)
+			roleSmall.on(t, ui.Text(c, strings.TrimSpace(last))).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Grow(1).Shrink(1)
 			switch {
 			case a.busy && a.progress >= 0:
 				ui.Progress(c, a.progress).Width(160).Label(a.status)
@@ -486,10 +486,10 @@ func (a *app) activity(c *ui.Context, t *ui.Theme) {
 		})
 		if a.logOpen {
 			ui.List(c, &a.logList, len(a.logLines), func(i int) {
-				ui.Text(c, a.logLines[i]).Font("monospace").FontSize(11).Selectable().Padding(1, 16)
+				roleSmall.on(t, ui.Text(c, a.logLines[i])).Font("monospace").Selectable().Padding(1, 16)
 			}).Height(180).PaddingY(4).Children(func() {
 				if len(a.logLines) == 0 {
-					ui.Text(c, T("log.empty")).FontSize(12).TextColor(t.TextMuted).Padding(8, 16)
+					roleSmall.on(t, ui.Text(c, T("log.empty"))).TextColor(t.TextMuted).Padding(8, 16)
 				}
 			})
 		}
