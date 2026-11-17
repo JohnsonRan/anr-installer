@@ -11,29 +11,9 @@ import (
 	"anr-installer/internal/detect"
 )
 
-// brand is the accent of the app, between the logo's cyan and violet.
-var brand = ui.Hex("#5B6CFF")
-
-var themeLight, themeDark *ui.Theme
-
-// theme returns the system's theme in the app's accent, made once for each appearance.
-func theme(c *ui.Context) *ui.Theme {
-	base := c.Theme()
-	cached := &themeLight
-	if base.Dark {
-		cached = &themeDark
-	}
-	if *cached == nil {
-		t := base.WithAccent(brand)
-		t.Radius = 8
-		*cached = t
-	}
-	return *cached
-}
-
 func (a *app) view(c *ui.Context) {
-	t := theme(c)
-	c.SetTheme(t)
+	// The system's own look: its light or dark appearance and its accent color.
+	t := c.Theme()
 	a.filter()
 	if a.row < 0 && len(a.visible) > 0 {
 		a.row = 0 // a game is always shown, the first one at start
@@ -159,13 +139,9 @@ func gameIcon(c *ui.Context, t *ui.Theme, g *game, size float32) {
 		initial = strings.ToUpper(string(r))
 		break
 	}
-	ui.Column(c).Size(size, size).Radius(size / 5).Center().LinearGradient(brandGradient(0.75)).Children(func() {
-		ui.Text(c, initial).FontSize(size * 0.45).Bold().TextColor(ui.RGB(255, 255, 255))
+	ui.Column(c).Size(size, size).Radius(size / 5).Center().Background(t.Text.Alpha(0.08)).Children(func() {
+		ui.Text(c, initial).FontSize(size * 0.45).Bold().TextColor(t.TextMuted)
 	})
-}
-
-func brandGradient(alpha float32) ui.LinearGradient {
-	return ui.LinearGradient{From: ui.Hex("#22D3EE").Alpha(alpha), To: ui.Hex("#8B5CF6").Alpha(alpha), Angle: 135}
 }
 
 // --- nothing to show ---
