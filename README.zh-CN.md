@@ -57,4 +57,4 @@ OptiScaler 和 ANR FG 会接入游戏的渲染。反作弊可能把它们当作�
 
 ## 许可证
 
-尚未选定。
+[MIT](LICENSE)。安装器下载并安装的 ANR FG 和 OptiScaler 各自适用其本身的许可证。

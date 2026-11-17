@@ -61,4 +61,4 @@ version without downloading anything, and the files it keeps.
 
 ## License
 
-Not chosen yet.
+[MIT](LICENSE). ANR FG and OptiScaler, which the installer downloads and installs, keep their own licenses.
