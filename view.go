@@ -42,15 +42,18 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 		if r.Selected() {
 			muted, text = t.AccentText, t.AccentText
 		}
-		ui.Column(c).Padding(8, 12).Gap(4).Children(func() {
-			ui.Text(c, g.Name).TextColor(text).MaxLines(1).Ellipsis("…")
-			ui.Row(c).Gap(6).Children(func() {
-				switch {
-				case g.Scanning || g.Scan == nil:
-					ui.Text(c, T("scanning")).FontSize(11).TextColor(muted)
-				default:
-					a.badges(c, t, g, r.Selected())
-				}
+		ui.Row(c).Padding(8, 10).Gap(10).Children(func() {
+			gameIcon(c, t, g, 34)
+			ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
+				ui.Text(c, g.Name).TextColor(text).MaxLines(1).Ellipsis("…")
+				ui.Row(c).Gap(6).Children(func() {
+					switch {
+					case g.Scanning || g.Scan == nil:
+						ui.Text(c, T("scanning")).FontSize(11).TextColor(muted)
+					default:
+						a.badges(c, t, g, r.Selected())
+					}
+				})
 			})
 		})
 	}).Children(func() {
@@ -114,7 +117,21 @@ func (a *app) detail(c *ui.Context, t *ui.Theme) {
 		})
 		return
 	}
-	ui.Text(c, g.Name).FontSize(18).Bold().MaxLines(1).Ellipsis("…")
+	if g.Header != nil {
+		// The store header as a banner, the name over its darkened bottom.
+		ui.Column(c).FillWidth().Height(150).Radius(10).Clip().Justify(ui.End).Children(func() {
+			ui.Image(c, g.Header).Absolute().Top(0).Left(0).Right(0).Bottom(0).Fit(ui.Cover)
+			ui.Row(c).Padding(28, 16, 12, 16).Gap(10).FillWidth().ZIndex(1).Gradient(ui.RGBA(0, 0, 0, 0), ui.RGBA(0, 0, 0, 0.75), 180).Children(func() {
+				gameIcon(c, t, g, 32)
+				ui.Text(c, g.Name).FontSize(20).Bold().TextColor(ui.RGB(255, 255, 255)).MaxLines(1).Ellipsis("…").Shrink(1)
+			})
+		})
+	} else {
+		ui.Row(c).Gap(12).Children(func() {
+			gameIcon(c, t, g, 40)
+			ui.Text(c, g.Name).FontSize(20).Bold().MaxLines(1).Ellipsis("…").Shrink(1)
+		})
+	}
 	if g.Scan == nil {
 		ui.Row(c).Gap(8).Children(func() {
 			ui.Spinner(c)
@@ -271,3 +288,19 @@ func line(c *ui.Context, dot ui.Color, s string) {
 }
 
 var _ = fmt.Sprintf
+
+// gameIcon shows the game's icon, or its initial on a tile when it has none.
+func gameIcon(c *ui.Context, t *ui.Theme, g *game, size float32) {
+	if g.Icon != nil {
+		ui.Image(c, g.Icon).Size(size, size).Fit(ui.Cover).Radius(size / 5)
+		return
+	}
+	initial := "?"
+	for _, r := range g.Name {
+		initial = strings.ToUpper(string(r))
+		break
+	}
+	ui.Column(c).Size(size, size).Radius(size / 5).Center().Background(t.Text.Alpha(0.08)).Children(func() {
+		ui.Text(c, initial).FontSize(size * 0.45).Bold().TextColor(t.TextMuted)
+	})
+}

@@ -27,6 +27,32 @@ type game struct {
 	ExeDir   string // the .exe folder the user chose, or "" for the one found
 	Scan     *detect.Result
 	Scanning bool
+	Icon     *ui.Bitmap // Steam's icon of the game, or its .exe's; nil: none
+	Header   *ui.Bitmap // Steam's header picture; nil: none
+}
+
+// pictures reads the game's pictures: Steam's cached icon and header, else the icon of its .exe. It runs off the
+// main thread; the bitmaps are made on it.
+func (a *app) pictures(g *game, r *detect.Result) {
+	im := steam.GameImages(g.AppID)
+	var icon, header []byte
+	if im.Icon != "" {
+		icon, _ = os.ReadFile(im.Icon)
+	}
+	if im.Header != "" {
+		header, _ = os.ReadFile(im.Header)
+	}
+	if icon == nil && r != nil && r.Exe != "" {
+		icon, _ = mygo.Shell.FileIcon(r.Exe, 64)
+	}
+	a.win.Update(func() {
+		if icon != nil {
+			g.Icon, _ = ui.DecodeBitmap(icon)
+		}
+		if header != nil {
+			g.Header, _ = ui.DecodeBitmap(header)
+		}
+	})
 }
 
 const (
@@ -140,6 +166,7 @@ func (a *app) scanAll() {
 			for g := range jobs {
 				r := detect.Scan(g.Dir, g.ExeDir)
 				a.win.Update(func() { g.Scan, g.Scanning = r, false })
+				a.pictures(g, r)
 			}
 		}()
 	}
@@ -158,6 +185,7 @@ func (a *app) rescan(g *game) {
 	go func() {
 		r := detect.Scan(dir, exeDir)
 		a.win.Update(func() { g.Scan, g.Scanning = r, false })
+		a.pictures(g, r)
 	}()
 }
 

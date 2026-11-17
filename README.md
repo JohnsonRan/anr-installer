@@ -10,6 +10,7 @@ A small desktop installer for [ANR FG](https://github.com/apex-compute/ANR) (Ape
 - Runs the package's own `install.ps1` / `uninstall.ps1` (`install.sh` / `uninstall.sh` under Proton), so backups and restores work exactly as with `install.cmd`.
 - The app icon is `resources/logo.svg`, rendered to the `resources/icon.png` the build packages by `go run ./tools/genicon`.
 - Draws its own title bar and window buttons in place of the system's.
+- Shows each game's Steam icon and header art (Steam's `appcache/librarycache`), else the icon of its `.exe`.
 - Before a full-package upgrade, backs up `OptiScaler.ini`, which the package replaces, to `OptiScaler.ini.bak-<time>`; warns when nr-record must be installed again.
 
 Downloads and unpacked packages are cached in `%LOCALAPPDATA%\anr-installer`. Set `GITHUB_TOKEN` to raise GitHub's API rate limit.
