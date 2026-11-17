@@ -1,4 +1,4 @@
-// genicon renders resources/logo.svg into resources/icon.png, the 1024×1024 app icon mygo build packages:
+// genicon renders assets/logo.svg into assets/icon.png, the 1024×1024 app icon mygo build packages:
 //
 //	go run ./tools/genicon
 package main
@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	data, err := os.ReadFile("resources/logo.svg")
+	data, err := os.ReadFile("assets/logo.svg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func main() {
 		c.Root().Background(ui.Transparent)
 		ui.Image(c, svg).Size(1024, 1024)
 	}, 1024, 1024, 1)
-	f, err := os.Create("resources/icon.png")
+	f, err := os.Create("assets/icon.png")
 	if err != nil {
 		log.Fatal(err)
 	}

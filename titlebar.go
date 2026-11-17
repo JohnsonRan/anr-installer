@@ -7,8 +7,13 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-//go:embed resources/logo.svg
+//go:embed assets/logo.svg
 var logoSVG []byte
+
+// iconPNG is the app icon, built into the executable for the update window: nothing ships beside the executable.
+//
+//go:embed assets/icon.png
+var iconPNG []byte
 
 var (
 	logo        = mustSVG(logoSVG)

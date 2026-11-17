@@ -16,7 +16,7 @@ func main() {
 	a := newApp()
 	// Updates are offered in a window MyGo draws itself, which needs no WebView2: checked 10 seconds after launch,
 	// then daily, and from the version button of the title bar. The window speaks the system's language.
-	mygo.Use(native.Plugin)
+	mygo.Use(native.New(updater.Options{Icon: iconPNG}))
 	mygo.App.WhenReady(func() {
 		setLanguage(mygo.App.PreferredLanguages())
 		a.win = mygo.NewWindow(mygo.WindowOptions{
