@@ -41,13 +41,14 @@ func T(key string, args ...any) string {
 // messages holds each text in English and Simplified Chinese.
 var messages = map[string][2]string{
 	// The window.
-	"title":        {"ANR FG Installer", "ANR FG 安装器"},
-	"subtitle":     {"Apex Neural Rendering frame generation for your games", "为你的游戏安装 Apex Neural Rendering 帧生成"},
-	"latest":       {"Latest %s", "最新 %s"},
-	"win.minimize": {"Minimize", "最小化"},
-	"win.maximize": {"Maximize", "最大化"},
-	"win.restore":  {"Restore", "还原"},
-	"win.close":    {"Close", "关闭"},
+	"title":         {"ANR FG Installer", "ANR FG 安装器"},
+	"subtitle":      {"Apex Neural Rendering frame generation for your games", "为你的游戏安装 Apex Neural Rendering 帧生成"},
+	"check.updates": {"Check for updates", "检查更新"},
+	"latest":        {"Latest ANR FG %s", "最新 ANR FG %s"},
+	"win.minimize":  {"Minimize", "最小化"},
+	"win.maximize":  {"Maximize", "最大化"},
+	"win.restore":   {"Restore", "还原"},
+	"win.close":     {"Close", "关闭"},
 
 	// The list of games.
 	"search":          {"Search games", "搜索游戏"},

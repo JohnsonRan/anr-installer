@@ -1,6 +1,12 @@
 {
   "name": "ANR FG Installer",
+  "slug": "anr-fg-installer",
   "identifier": "io.github.johnsonran.anrinstaller",
+  "publisher": "JohnsonRan",
   "version": "0.1.0",
-  "out": "build"
+  "out": "build",
+  "updates": {
+    "publicKey": "Q0R/YXaA3M/5FjJeBZ515qxt8be96wjlybASDEP4KjI=",
+    "github": "JohnsonRan/anr-installer"
+  }
 }

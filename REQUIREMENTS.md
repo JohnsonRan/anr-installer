@@ -49,7 +49,7 @@ meanwhile.
 | Window size (minimum; default) | 760 × 520 DIP; 1040 × 760 DIP | a setting, not measured | `main.go`, WindowOptions |
 | Scan of every game in the Steam libraries | 1 s | 0.62 s for 17 games in 3 libraries (2026-11-18, dev PC, CPU load 0%) | review |
 | Slowest test package | 0.3 s | 0.24 s, the main package (2026-11-18, dev PC, CPU load 0%) | review of `go test -v` |
-| Release executable size | 16 MB | 13.9 MB (2026-11-18, windows/amd64) | review |
+| Release executable size | 20 MB | 16.5 MB with the update window, 13.9 MB before it (2026-11-18, windows/amd64) | review |
 | Source file size, p90 of this repository (pass bar) | 330 lines | 329 lines over 30 Go files (2026-11-18) | review |
 | Wait timeout before a stuck step is recorded and left | 30 min | a setting, not measured | agent |
 | Context handoff limit (share of the model's window) | 60% | a setting, not measured | orchestrator |

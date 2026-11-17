@@ -22,15 +22,18 @@ Linux 和 Steam Deck (Proton) 的支持已经写好，但尚未测试。
 
 ## 获取
 
-目前还没有发布可直接下载的程序，需要用 Go 1.27 或更新版本从源码构建：
+从[最新版本](https://github.com/JohnsonRan/anr-installer/releases/latest)下载
+`anr-fg-installer-setup-<版本>-amd64.exe` 并运行。它只为当前 Windows 账户安装，位置是
+`%LOCALAPPDATA%\Programs\ANR FG Installer`，不需要管理员权限。也可以在 PowerShell 中安装：
 
 ```
-git clone https://github.com/JohnsonRan/anr-installer.git
-cd anr-installer
-go tool mygo build -skip-installer
+irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install.ps1 | iex
 ```
 
-程序位于 `build/windows-amd64/ANR FG Installer.exe`。其他命令见《[开发说明](docs/development.md)》（英文）。
+程序和安装程序都没有代码签名，首次运行时 Windows SmartScreen 可能会发出警告：选择“更多信息”，再选择“仍要运行”。
+
+程序会自动更新：启动时和之后每天检查一次新版本，选择标题栏上的版本号按钮可以立即检查。它只安装用本项目密钥签名的更新。
+如果想从源码构建，请参阅《[开发说明](docs/development.md)》（英文）。
 
 ## 使用
 

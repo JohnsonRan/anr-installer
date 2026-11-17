@@ -3,6 +3,8 @@ package main
 import (
 	_ "embed"
 
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -45,6 +47,9 @@ func (a *app) titleBar(c *ui.Context, t *ui.Theme) {
 			ui.Button(c, T("refresh")).OnClick(a.fetchRelease)
 		case a.rel != nil:
 			ui.Badge(c, T("latest", a.rel.Version)).Background(t.Accent).TextColor(t.AccentText)
+		}
+		if v := mygo.App.Version(); v != "" {
+			ui.Button(c.Key("app-version"), "v"+v).Tooltip(T("check.updates")).Label(T("check.updates")).OnClick(updater.CheckForUpdates)
 		}
 		if a.win == nil { // tests: no window to drive
 			return

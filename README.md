@@ -23,16 +23,21 @@ Linux and the Steam Deck (Proton) are written for but not tested yet.
 
 ## Get it
 
-No binary release is published yet. Build it from source with Go 1.27 or later:
+Download `anr-fg-installer-setup-<version>-amd64.exe` from the
+[latest release](https://github.com/JohnsonRan/anr-installer/releases/latest) and run it. It installs the app for
+your Windows account only, in `%LOCALAPPDATA%\Programs\ANR FG Installer`, without administrator rights. Or install
+it from PowerShell:
 
 ```
-git clone https://github.com/JohnsonRan/anr-installer.git
-cd anr-installer
-go tool mygo build -skip-installer
+irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install.ps1 | iex
 ```
 
-The app is `build/windows-amd64/ANR FG Installer.exe`. [Developing](docs/development.md) has the other
-commands.
+The app and its installer are not code-signed, so Windows SmartScreen may warn before the first run: choose
+**More info**, then **Run anyway**.
+
+The app updates itself. It checks for a new version at launch and once a day, and the version button in its title
+bar checks at once. It installs only updates signed with the project's key. To build it from source instead, see
+[Developing](docs/development.md).
 
 ## Use it
 

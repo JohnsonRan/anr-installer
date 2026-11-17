@@ -30,3 +30,21 @@ The rules for changing this repository are in `AGENTS.md`, `UI.md` (the interfac
 reviews follow `REVIEW.md`; commands, numbers and gates are in `REQUIREMENTS.md`. Text sizes come from the type
 scale in `type.go`, and paddings and gaps from the spacing scale in `spacing.go`; the pre-commit tier fails on
 a size or a spacing set anywhere else.
+
+## Releasing
+
+1. Raise `version` in `mygo.json` and add its section, `## <version>`, to `CHANGELOG.md`: it becomes the release
+   notes and the text of the update window.
+2. Run the release tier, `scripts/check.sh --release`.
+3. Build, sign and upload to a draft GitHub release of the version, with the secret update key and the GitHub
+   CLI signed in:
+
+   ```
+   MYGO_UPDATER_PRIVATE_KEY="$(cat path/to/mygo-update.key)" go tool mygo build -upload
+   ```
+
+4. Publish the draft, which makes it the latest release that installed apps update from:
+   `gh release edit v<version> --draft=false`.
+
+The secret key signs every update; installed apps accept only updates signed with it, so keep it out of the
+repository. Losing it strands the installed apps; anyone who has it can ship code to their users.
