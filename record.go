@@ -152,7 +152,7 @@ func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Reco
 		if a.rec.compared[rec.Name] {
 			ui.Button(c, T("rec.compare.again")).Disabled(blocked).OnClick(func() { a.compare(g, rec) })
 			ui.Button(c, T("rec.compare.open")).Disabled(a.busy).OnClick(func() {
-				a.openViewer(g, "--compare", "--project", (&record.Comparison{Recording: rec}).Project())
+				a.openCompare(g, rec)
 			})
 			return
 		}
@@ -276,11 +276,10 @@ func (a *app) installFFmpeg(g *game) {
 	})
 }
 
-// compare replays rec through the ANR FG installed in g and through g's DLSS-G, then opens the viewer on the
-// two videos.
+// compare replays rec through the ANR FG installed in g and through g's DLSS-G, then shows the two videos
+// on the comparison page.
 func (a *app) compare(g *game, rec *record.Recording) {
-	t := a.rec.tools
-	cmp := &record.Comparison{Recording: rec, A: record.ANR(g.Scan.ANRDll), B: record.DLSSG(dlssgDLL(g.Scan)), FFmpeg: t.FFmpeg}
+	cmp := a.comparison(g, rec)
 	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
 		dir, err := tools()
 		if err != nil {
@@ -299,7 +298,8 @@ func (a *app) compare(g *game, rec *record.Recording) {
 			return err
 		}
 		say("%s", T("rec.done.compare", cmp.Out()))
-		return record.View(dir, t, "--compare", "--project", cmp.Project())
+		a.win.Update(func() { a.openCompare(g, rec) })
+		return nil
 	})
 }
 

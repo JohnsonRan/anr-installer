@@ -65,8 +65,13 @@ On Windows, a game's page drives nr-record, whose package ships in the same rele
   inputs.
 - **Comparing**: `nr-replay` replays the recording through the installed ANR FG (`--generator provider`) and
   through the game's own `nvngx_dlssg.dll` (`--generator nvidia`), each streamed into `nr-video`, which writes
-  an `.mp4`; `nr-video project` writes the viewer's project of the two. The package's viewer, `renderer.exe`,
-  opens it with `--compare --project`, and browses the recordings with `--captures`.
+  an `.mp4`; `nr-video project` writes the viewer's project of the two. The window plays the two videos with
+  Windows' Media Foundation, on one clock but not locked frame by frame; they are HEVC, which needs the
+  system's HEVC decoder. The package's viewer, `renderer.exe`, opens the same comparison with
+  `--compare --project`, and browses the recordings with `--captures`.
+- **Stills**: for the frame a video is paused at, `replay.json` names the recorded real frame behind it.
+  `nr-replay --raw --frames` replays that frame and the one before it through both DLLs, and `nr-video png`
+  writes each output frame as a PNG; the raw frames are removed afterwards.
 - **FFmpeg and FFprobe**: looked for on the `PATH`, then in Scoop's shim folders (`%SCOOP%\shims`,
   `%USERPROFILE%\scoop\shims`, and the same for a global install). `scoop install ffmpeg` installs both. The
   viewer gets their paths in `NR_FFMPEG` and `NR_FFPROBE`.
@@ -79,7 +84,7 @@ On Windows, a game's page drives nr-record, whose package ships in the same rele
 | `%LOCALAPPDATA%\anr-installer\versions.json` | each release package's version and provider hash |
 | `%LOCALAPPDATA%\anr-installer\downloads\` | downloaded packages |
 | `%LOCALAPPDATA%\anr-installer\packages\` | unpacked packages |
-| `%LOCALAPPDATA%\anr-installer\compare\<recording>\` | a comparison's two videos and the viewer's project |
+| `%LOCALAPPDATA%\anr-installer\compare\<recording>\` | a comparison's two videos, the viewer's project, and its stills under `stills` |
 
 The portable version, which a file named `portable` next to its executable marks, keeps `games.json` in its own
 folder and the rest under `cache\` there.

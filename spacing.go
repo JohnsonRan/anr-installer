@@ -53,4 +53,6 @@ const (
 	titleLogo         = 24
 	navPillW          = 3 // the bar beside the chosen game in the list
 	navPillH          = 16
+	dividerLine       = 2  // the divider between the two pictures of a comparison
+	dividerHandle     = 16 // the grip on it
 )

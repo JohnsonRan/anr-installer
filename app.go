@@ -132,7 +132,8 @@ type app struct {
 	logLines []string
 	logList  ui.ListState
 
-	rec recState // nr-record: its package, the tools it needs and the recordings
+	rec recState      // nr-record: its package, the tools it needs and the recordings
+	cmp *compareState // the comparison page, shown in place of a game's page; nil: none
 }
 
 func newApp() *app {

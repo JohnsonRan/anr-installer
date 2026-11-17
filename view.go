@@ -26,7 +26,12 @@ func (a *app) view(c *ui.Context) {
 			ui.Divider(c).Vertical()
 			ui.Column(c).Grow(1).Shrink(1).Children(func() {
 				g := a.selected()
-				if g == nil {
+				if a.cmp != nil && a.cmp.game != g {
+					a.closeCompare() // another game was chosen
+				}
+				if a.cmp != nil {
+					ui.Scroll(c.Key(a.cmp)).Grow(1).Children(func() { a.comparePage(c, t) })
+				} else if g == nil {
 					a.empty(c, t)
 				} else {
 					ui.Scroll(c.Key(g)).Grow(1).Children(func() { a.detail(c, t, g) })

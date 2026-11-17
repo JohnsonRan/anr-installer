@@ -124,3 +124,43 @@ func TestRealInstall(t *testing.T) {
 		t.Fatal("nr-record is not removed, or OptiScaler.ini is not restored")
 	}
 }
+
+func TestMadeStillsPairsTheFramesBothSidesHave(t *testing.T) {
+	t.Setenv("LOCALAPPDATA", t.TempDir())
+	c := &Comparison{Recording: &Recording{Name: "20261117-210405-delta"}, A: ANR("a.dll"), B: DLSSG("b.dll")}
+	if c.MadeStills(5) != nil {
+		t.Fatal("stills before any were made")
+	}
+	replay := `{"fps":120,"multiplier":2,"frames":[
+		{"kind":"real","real":4,"file":"real_f4-f4_t0.000.nrraw"},
+		{"kind":"generated","real":5,"file":"generated_f4-f5_t0.500.nrraw"},
+		{"kind":"real","real":5,"file":"real_f5-f5_t0.000.nrraw"}]}`
+	for side, pngs := range map[string][]string{
+		"anr":   {"real_f4-f4_t0.000", "generated_f4-f5_t0.500", "real_f5-f5_t0.000"},
+		"dlssg": {"generated_f4-f5_t0.500", "real_f5-f5_t0.000"},
+	} {
+		dir := filepath.Join(c.Out(), "stills", "5", side)
+		os.MkdirAll(dir, 0o755)
+		os.WriteFile(filepath.Join(dir, "replay.json"), []byte(replay), 0o644)
+		for _, p := range pngs {
+			os.WriteFile(filepath.Join(dir, p+".png"), []byte("png"), 0o644)
+		}
+	}
+	stills := c.MadeStills(5)
+	if len(stills) != 2 || stills[0].Name != "generated_f4-f5_t0.500" || !stills[0].Frame.Is(Frame{Kind: "generated"}) || stills[0].Frame.Is(stills[1].Frame) || stills[1].Name != "real_f5-f5_t0.000" ||
+		filepath.Base(filepath.Dir(stills[0].B)) != "dlssg" {
+		t.Fatalf("stills %+v", stills)
+	}
+}
+
+// A comparison made again must not keep the stills of the videos it replaces.
+func TestRemoveStills(t *testing.T) {
+	t.Setenv("LOCALAPPDATA", t.TempDir())
+	c := &Comparison{Recording: &Recording{Name: "rec"}, A: ANR("a.dll"), B: DLSSG("b.dll")}
+	dir := filepath.Join(c.Out(), "stills", "5", "anr")
+	os.MkdirAll(dir, 0o755)
+	c.RemoveStills(5)
+	if _, err := os.Stat(filepath.Join(c.Out(), "stills", "5")); err == nil {
+		t.Error("the stills are still there")
+	}
+}

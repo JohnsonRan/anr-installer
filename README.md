@@ -70,8 +70,12 @@ game's page shows **Record and compare** once ANR FG's full package is installed
 1. Click **Install nr-record**. Start the game and turn on DLSS frame generation. **F6** starts and stops a
    recording; **F9** records 8 frames.
 2. Back in the installer, click **Refresh**. Each recording of the game has **Compare with DLSS-G**: it replays
-   the recording through the installed ANR FG and through the game's own `nvngx_dlssg.dll`, then opens
-   nr-record's viewer on the two videos. Replaying through DLSS-G needs an NVIDIA RTX 40 or 50 series GPU.
+   the recording through the installed ANR FG and through the game's own `nvngx_dlssg.dll`, then shows the two
+   videos in the window. Replaying through DLSS-G needs an NVIDIA RTX 40 or 50 series GPU.
+3. On the comparison page, play both videos together, drag the divider between them, or put them side by side.
+   The videos are compressed and are not locked frame by frame: to compare a frame exactly, pause on it and
+   choose **Stills**, which exports the frames around it as lossless PNG images. **Open in nr-record's viewer**
+   opens the same comparison there, for pixel zoom, marks and exports.
 
 The videos need FFmpeg and FFprobe. When they are missing, **Install with Scoop** installs them; without
 [Scoop](https://scoop.sh), the installer asks you to install Scoop first. Installing ANR FG again switches frame
