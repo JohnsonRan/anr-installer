@@ -1,0 +1,76 @@
+# A tag v<version> releases that version: it checks the tag against mygo.json and CHANGELOG.md, runs the release
+# gate against the newest ANR FG packages, builds and signs the app and its updates (scripts/release.sh), and
+# publishes the release, whose notes are the version's section of CHANGELOG.md. Apps update to it once it is
+# published.
+#
+# The repository secret MYGO_UPDATER_PRIVATE_KEY holds the key that signs updates. The actions are pinned to
+# commits, as this job holds that key.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # the release, and the uploads to it
+
+concurrency:
+  group: release-${{ github.ref_name }}
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the tag against the version
+        run: |
+          version=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' mygo.json)
+          test "$GITHUB_REF_NAME" = "v$version" || { echo "the tag $GITHUB_REF_NAME is not v$version of mygo.json" >&2; exit 1; }
+          grep -q "^## $version\$" CHANGELOG.md || { echo "CHANGELOG.md has no \"## $version\" section" >&2; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Cache NSIS
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~\AppData\Local\mygo\nsis-*
+          key: nsis-${{ hashFiles('go.sum') }}
+      - name: Download the newest ANR FG packages
+        run: |
+          tags=$(gh release list --repo apex-compute/ANR --exclude-drafts --exclude-pre-releases --limit 20 \
+            --json tagName --jq '.[].tagName' | grep '^FG-V\.' | head -2)
+          newest=$(echo "$tags" | sed -n 1p)
+          older=$(echo "$tags" | sed -n 2p)
+          [ -n "$newest" ] && [ -n "$older" ] || { echo "no two ANR FG releases found" >&2; exit 1; }
+          pkgs="$RUNNER_TEMP/anr"
+          gh release download "$newest" --repo apex-compute/ANR -D "$pkgs/new" -p 'anr-fg-*-full.zip' -p 'anr-fg-*-addon.zip'
+          gh release download "$older" --repo apex-compute/ANR -D "$pkgs/old" -p 'anr-fg-*-full.zip'
+          echo "ANR_PKG_DIR=$pkgs/new" >> "$GITHUB_ENV"
+          echo "ANR_OLD_PKG=$(ls "$pkgs"/old/anr-fg-*-full.zip)" >> "$GITHUB_ENV"
+      - name: Release gate
+        run: sh scripts/check.sh --release
+      - name: Create the draft release
+        run: |
+          # The version's section of CHANGELOG.md, its wrapped list items joined into one line each.
+          awk -v h="## $VERSION" '$0 == h { on = 1; next } on && /^## / { exit } on' CHANGELOG.md |
+            awk 'NR > 1 && /^  [^ ]/ { sub(/^ +/, ""); printf " %s", $0; next } { if (NR > 1) print ""; printf "%s", $0 } END { print "" }' \
+            > "$RUNNER_TEMP/notes.md"
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+              --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
+      - name: Build, sign and upload
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: sh scripts/release.sh
+      - name: Publish
+        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false

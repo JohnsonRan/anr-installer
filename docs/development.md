@@ -22,7 +22,8 @@ go run ./tools/genicon                # render assets/logo.svg into the app icon
 ```
 
 The release tier installs, upgrades, uninstalls and downgrades real packages in scratch folders: set
-`ANR_PKG_DIR` to a folder holding the newest `anr-fg-*-full.zip` and `ANR_OLD_PKG` to an older one.
+`ANR_PKG_DIR` to a folder holding the newest release's `anr-fg-*-full.zip` and `anr-fg-*-addon.zip`, and
+`ANR_OLD_PKG` to an older `anr-fg-*-full.zip`.
 
 ## Rules
 
@@ -33,19 +34,29 @@ a size or a spacing set anywhere else.
 
 ## Releasing
 
+A tag releases. `.github/workflows/release.yml` checks the tag against `mygo.json` and `CHANGELOG.md`, runs the
+release tier against the two newest ANR FG releases, builds and signs the app and its updates with
+`scripts/release.sh`, and publishes the release, whose notes are the version's section of `CHANGELOG.md`.
+
 1. Raise `version` in `mygo.json` and add its section, `## <version>`, to `CHANGELOG.md`: it becomes the release
-   notes and the text of the update window.
-2. Run the release tier, `scripts/check.sh --release`.
-3. Build, sign and upload to a draft GitHub release of the version, with the secret update key and the GitHub
-   CLI signed in. The script uploads the installer, `install.ps1`, the signed update files and the portable zip
-   (the executable, `LICENSE` and the `portable` marker):
+   notes and the text of the update window. Commit and push.
+2. Tag the commit and push the tag:
 
    ```
-   MYGO_UPDATER_PRIVATE_KEY="$(cat path/to/mygo-update.key)" scripts/release.sh
+   git tag -s v<version> -m v<version>
+   git push origin v<version>
    ```
 
-4. Publish the draft, which makes it the latest release that installed apps update from:
-   `gh release edit v<version> --draft=false`.
+The workflow signs updates with the repository secret `MYGO_UPDATER_PRIVATE_KEY`, the contents of
+`mygo-update.key`, set once with `gh secret set MYGO_UPDATER_PRIVATE_KEY < path/to/mygo-update.key`. If a run
+fails, fix the cause and run the failed job again: it keeps the draft and replaces its files.
+
+To release from your machine instead, run the release tier, `scripts/check.sh --release`, with `ANR_PKG_DIR` (a
+folder with the newest release's full and addon zips) and `ANR_OLD_PKG` (an older full zip); then
+`MYGO_UPDATER_PRIVATE_KEY="$(cat path/to/mygo-update.key)" scripts/release.sh`, which uploads the installer,
+`install.ps1`, the signed update files and the portable zip to a draft; then publish the draft with
+`gh release edit v<version> --draft=false`.
 
 The secret key signs every update; installed apps accept only updates signed with it, so keep it out of the
-repository. Losing it strands the installed apps; anyone who has it can ship code to their users.
+repository. Losing it strands the installed apps; anyone who has it can ship code to their users, so whoever can
+change the workflow or the secret can too.
