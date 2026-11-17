@@ -135,12 +135,17 @@ type Progress func(done, total int64)
 // Download fetches kind's package of rel into the cache, checks it against the release's SHA256SUMS.txt and
 // returns its path. A package already downloaded and matching is reused.
 func Download(ctx context.Context, rel *Release, k detect.Kind, progress Progress) (string, error) {
-	name := rel.AssetName(k)
+	return DownloadAsset(ctx, rel, rel.AssetName(k), "SHA256SUMS.txt", progress)
+}
+
+// DownloadAsset fetches the file name of rel into the cache, checks it against the SHA-256 that the release's
+// file sums lists for it, and returns its path. A file already downloaded and matching is reused.
+func DownloadAsset(ctx context.Context, rel *Release, name, sums string, progress Progress) (string, error) {
 	asset, ok := rel.Assets[name]
 	if !ok {
 		return "", fmt.Errorf("%s has no %s", rel.Tag, name)
 	}
-	want, err := expectedHash(ctx, rel, name)
+	want, err := expectedHash(ctx, rel, sums, name)
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +166,7 @@ func Download(ctx context.Context, rel *Release, k detect.Kind, progress Progres
 	}
 	if got != want {
 		os.Remove(dest + ".part")
-		return "", fmt.Errorf("%s: SHA-256 %s does not match SHA256SUMS.txt (%s)", name, got, want)
+		return "", fmt.Errorf("%s: SHA-256 %s does not match %s (%s)", name, got, sums, want)
 	}
 	if err := os.Rename(dest+".part", dest); err != nil {
 		return "", err
@@ -169,10 +174,10 @@ func Download(ctx context.Context, rel *Release, k detect.Kind, progress Progres
 	return dest, nil
 }
 
-func expectedHash(ctx context.Context, rel *Release, name string) (string, error) {
-	sums, ok := rel.Assets["SHA256SUMS.txt"]
+func expectedHash(ctx context.Context, rel *Release, sumsName, name string) (string, error) {
+	sums, ok := rel.Assets[sumsName]
 	if !ok {
-		return "", fmt.Errorf("%s has no SHA256SUMS.txt", rel.Tag)
+		return "", fmt.Errorf("%s has no %s", rel.Tag, sumsName)
 	}
 	req, err := http.NewRequestWithContext(ctx, "GET", sums.URL, nil)
 	if err != nil {
@@ -185,7 +190,7 @@ func expectedHash(ctx context.Context, rel *Release, name string) (string, error
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("SHA256SUMS.txt: %s", resp.Status)
+		return "", fmt.Errorf("%s: %s", sumsName, resp.Status)
 	}
 	sc := bufio.NewScanner(resp.Body)
 	for sc.Scan() {
@@ -194,7 +199,7 @@ func expectedHash(ctx context.Context, rel *Release, name string) (string, error
 			return strings.ToLower(f[0]), nil
 		}
 	}
-	return "", fmt.Errorf("SHA256SUMS.txt lists no %s", name)
+	return "", fmt.Errorf("%s lists no %s", sumsName, name)
 }
 
 func fetch(ctx context.Context, url, dest string, size int64, progress Progress) error {
