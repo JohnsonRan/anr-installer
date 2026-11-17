@@ -21,7 +21,8 @@ func TestUnrealGame(t *testing.T) {
 	write(t, filepath.Join(root, "Game.exe"), "x")
 	bin := filepath.Join(root, "Game", "Binaries", "Win64")
 	write(t, filepath.Join(bin, "Game-Win64-Shipping.exe"), "xxxxxxxx")
-	write(t, filepath.Join(root, "Engine", "Plugins", "Streamline", "sl.dlss_g.dll"), "x")
+	// Streamline 8 folders down, as Phantom Blade Zero ships it.
+	write(t, filepath.Join(root, "Engine", "Plugins", "Runtime", "Nvidia", "StreamlineCore", "Binaries", "ThirdParty", "Win64", "sl.dlss_g.dll"), "x")
 	write(t, filepath.Join(root, "Engine", "Binaries", "CrashReportClient.exe"), "xxxxxxxxxxxxxxxx")
 	r := Scan(root, "")
 	if r.ExeDir != bin || !r.Supported() || !r.Streamline {

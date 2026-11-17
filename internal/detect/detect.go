@@ -81,12 +81,14 @@ func (r *Result) CanInstall(k Kind) (bool, string) {
 	return true, ""
 }
 
-const maxDepth = 6
+// maxDepth bounds the walk: Unreal games keep Streamline 8 folders down, in
+// Engine/Plugins/Runtime/Nvidia/StreamlineCore/Binaries/ThirdParty/Win64.
+const maxDepth = 12
 
 var skipDirs = map[string]bool{
 	"_commonredist": true, "redist": true, "redistributables": true, "directx": true, "vcredist": true,
 	"easyanticheat": true, "battleye": true, "__installer": true, "support": true, "movies": true,
-	"content": true, "paks": true, "data": true, "shadercache": true, "logs": true, ".git": true,
+	"shadercache": true, "logs": true, ".git": true,
 }
 
 var skipExe = []string{
