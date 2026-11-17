@@ -25,16 +25,17 @@ vendored package, a generated tree).
 
 ## Commands
 
-One row per tier. The repository has no CI: a person and an agent run the same command locally,
-from the repository root, in Git Bash on Windows or a shell elsewhere. Fill in this order: the
+One row per tier. A person and an agent run the same command locally, from the repository root, in
+Git Bash on Windows or a shell elsewhere; GitHub Actions runs the merge gate and the release tier
+too, on a Windows runner. The limits and baselines are the dev PC's: the runners are not measured. Fill in this order: the
 command; then three runs on the same host, recorded as the baseline; then the limit, as the
 baseline plus a margin (start at 20%).
 
 | Tier | Command | Runs (where, when) | Wall-time limit | Baseline (date, host, load) |
 | --- | --- | --- | --- | --- |
 | Pre-commit | `scripts/check.sh --fast` | locally, before every commit | 4.5 s | 3.8 s, from 3.8 to 3.9 s over three runs (2026-11-18, dev PC, Windows 11, CPU load 62 to 78%); 2.6 s before the scale checks at CPU load 1% |
-| Merge gate | `scripts/check.sh` | locally, before every merge into main | 6 s | 4.3 s (2026-11-18, dev PC, Windows 11, CPU load 1%) |
-| Release | `scripts/check.sh --release` | locally, before every release, with ANR_PKG_DIR and ANR_OLD_PKG set | 55 s | 36 s, from 34 to 45 s over three runs, the NSIS installer included (2026-11-18, dev PC, Windows 11, CPU load 1%) |
+| Merge gate | `scripts/check.sh` | locally, before every merge into main; CI on every push to main and pull request | 6 s | 4.3 s (2026-11-18, dev PC, Windows 11, CPU load 1%) |
+| Release | `scripts/check.sh --release` | the release workflow on every v* tag, or locally before a release from the dev PC, with ANR_PKG_DIR and ANR_OLD_PKG set | 55 s | 36 s, from 34 to 45 s over three runs, the NSIS installer included (2026-11-18, dev PC, Windows 11, CPU load 1%) |
 
 ## Numbers
 
