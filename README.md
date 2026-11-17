@@ -4,6 +4,7 @@ A small desktop installer for [ANR FG](https://github.com/apex-compute/ANR) (Ape
 
 - Finds the games in every Steam library (`libraryfolders.vdf`, `appmanifest_*.acf`) and marks those that ship DLSS frame generation (`nvngx_dlssg.dll`, `sl.dlss_g.dll`). Other game folders can be added by hand.
 - Finds the folder of the game's `.exe` (Unreal's `*-Win64-Shipping.exe`, an earlier OptiScaler, the DLSS libraries, else the largest `.exe`); it can be changed.
+- Keeps games outside Steam, added by their folder, across launches in `%APPDATA%\anr-installer\games.json`, with the .exe folders chosen by hand. Such a game is named after its `.exe`'s product name until renamed, and can be taken off the list (its files stay).
 - Reads what is installed: ANR FG's full package (`OptiScaler/nr_fg_install.json`), its add-on (`custom/Apex Neural Rendering FG/nr_fg_install.json`, or `custom/nrfg` before V.B04), an OptiScaler of your own, and nr-record.
 - Picks the **full** or **add-on** package by itself, or lets you choose; it refuses the combinations the packages' installers refuse.
 - Tells the installed version without downloading a package: it reads `nr_fg_package.json` (whose `provider_sha256` is the hash of that version's `nvngx_dlssg.dll`) out of each release's packages with HTTP range requests, about 64 KB each, once, and compares the installed DLL with it.

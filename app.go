@@ -13,6 +13,7 @@ import (
 	"anr-installer/internal/detect"
 	"anr-installer/internal/pkg"
 	"anr-installer/internal/steam"
+	"anr-installer/internal/store"
 )
 
 // game is a game in the list: found in a Steam library, or a folder the user added.
@@ -20,7 +21,8 @@ type game struct {
 	Name     string
 	AppID    string
 	Dir      string
-	Manual   bool
+	Manual   bool   // added by hand: a game outside Steam
+	Named    bool   // renamed by the user; else a manual game takes its .exe's product name
 	ExeDir   string // the .exe folder the user chose, or "" for the one found
 	Scan     *detect.Result
 	Scanning bool
@@ -77,6 +79,9 @@ type app struct {
 	row           int // the row chosen in the filtered list, -1 none
 	visible       []int
 
+	// saved holds the games added by hand and the .exe folders chosen, kept across launches.
+	saved *store.Data
+
 	rel           *pkg.Release   // the newest release
 	releases      []*pkg.Release // every release, newest first
 	relErr        string
@@ -115,6 +120,10 @@ func newApp() *app {
 	}
 	a.list.Selected = &a.row
 	a.logList.FollowEnd = true
+	a.saved = store.Load()
+	for _, s := range a.saved.Games {
+		a.games = append(a.games, &game{Name: s.Name, Dir: s.Dir, ExeDir: s.ExeDir, Manual: true, Named: s.Named})
+	}
 	a.versions = pkg.LoadVersionCache()
 	for _, info := range a.versions.Infos {
 		a.providers[info.ProviderSHA256] = info.Version
@@ -146,7 +155,7 @@ func (a *app) scanSteam() {
 					games = append(games, g)
 					continue
 				}
-				games = append(games, &game{Name: s.Name, AppID: s.AppID, Dir: s.Dir})
+				games = append(games, &game{Name: s.Name, AppID: s.AppID, Dir: s.Dir, ExeDir: a.saved.ExeDirs[store.Key(s.Dir)]})
 			}
 			for _, g := range a.games {
 				if g.Manual {
@@ -173,8 +182,8 @@ func (a *app) scanAll() {
 		go func() {
 			defer wg.Done()
 			for g := range jobs {
-				r := detect.Scan(g.Dir, g.ExeDir)
-				a.win.Update(func() { g.Scan, g.Scanning = r, false })
+				r, name := scanGame(g.Dir, g.ExeDir, g.Manual)
+				a.win.Update(func() { a.scanned(g, r, name) })
 				a.pictures(g, r)
 			}
 		}()
@@ -190,10 +199,10 @@ func (a *app) scanAll() {
 
 func (a *app) rescan(g *game) {
 	g.Scanning = true
-	dir, exeDir := g.Dir, g.ExeDir
+	dir, exeDir, manual := g.Dir, g.ExeDir, g.Manual
 	go func() {
-		r := detect.Scan(dir, exeDir)
-		a.win.Update(func() { g.Scan, g.Scanning = r, false })
+		r, name := scanGame(dir, exeDir, manual)
+		a.win.Update(func() { a.scanned(g, r, name) })
 		a.pictures(g, r)
 	}()
 }
@@ -235,8 +244,9 @@ func (a *app) addFolder() {
 					return
 				}
 			}
-			g := &game{Name: filepath.Base(dir), Dir: dir, Manual: true, ExeDir: dir}
+			g := &game{Name: filepath.Base(dir), Dir: dir, Manual: true}
 			a.games = append(a.games, g)
+			a.persist()
 			a.rescan(g)
 			a.selectGame(len(a.games) - 1)
 		})
@@ -265,6 +275,7 @@ func (a *app) changeExeDir(g *game) {
 		}
 		a.win.Update(func() {
 			g.ExeDir = paths[0]
+			a.persist()
 			a.rescan(g)
 		})
 	}()

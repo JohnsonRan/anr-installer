@@ -41,7 +41,15 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 		if r.Selected() {
 			muted, text = t.AccentText, t.AccentText
 		}
-		ui.Row(c).Padding(8, 10).Gap(10).Children(func() {
+		row := ui.Row(c).Padding(8, 10).Gap(10)
+		if g.Manual {
+			row.ContextMenu(func(m *ui.Menu) {
+				if m.Item(T("remove")).Disabled(a.busy).Chosen() {
+					a.removeGame(g)
+				}
+			})
+		}
+		row.Children(func() {
 			gameIcon(c, t, g, 34)
 			ui.Column(c).Grow(1).Shrink(1).Gap(4).Children(func() {
 				ui.Text(c, g.Name).TextColor(text).MaxLines(1).Ellipsis("…")
@@ -130,7 +138,14 @@ func (a *app) detail(c *ui.Context, t *ui.Theme) {
 	} else {
 		ui.Row(c).Gap(12).Children(func() {
 			gameIcon(c, t, g, 40)
-			ui.Text(c, g.Name).FontSize(20).Bold().MaxLines(1).Ellipsis("…").Shrink(1)
+			if g.Manual {
+				if ui.EditableText(c.Key("name"), &g.Name).FontSize(20).Bold().Tooltip(T("rename.tip")).Grow(1).Changed() {
+					a.renamed(g)
+				}
+				ui.Button(c, T("remove")).Disabled(a.busy).Tooltip(T("remove.tip")).OnClick(func() { a.removeGame(g) })
+			} else {
+				ui.Text(c, g.Name).FontSize(20).Bold().MaxLines(1).Ellipsis("…").Shrink(1)
+			}
 		})
 	}
 	if g.Scan == nil {
@@ -147,6 +162,9 @@ func (a *app) detail(c *ui.Context, t *ui.Theme) {
 		ui.Row(c).Gap(8).Children(func() {
 			ui.Text(c, r.ExeDir).Grow(1).MaxLines(2).Selectable().TruncateMiddle()
 			ui.Button(c, T("change")).Disabled(a.busy || g.Scanning).OnClick(func() { a.changeExeDir(g) })
+			if g.ExeDir != "" {
+				ui.Button(c, T("auto.exe")).Disabled(a.busy || g.Scanning).Tooltip(T("auto.exe.tip")).OnClick(func() { a.resetExeDir(g) })
+			}
 			ui.Button(c, T("open.folder")).OnClick(func() {
 				if r.Exe != "" {
 					mygo.Shell.ShowItemInFolder(r.Exe)

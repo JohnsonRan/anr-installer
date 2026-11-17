@@ -135,3 +135,18 @@ func init() {
 		messages[k] = v
 	}
 }
+
+func init() {
+	for k, v := range map[string][2]string{
+		"rename.tip":        {"Double-click to rename", "双击改名"},
+		"remove":            {"Remove from list", "从列表移除"},
+		"remove.tip":        {"Takes the game off the list; its files, ANR FG included, stay as they are", "只从列表中移除，游戏文件（包括已装的 ANR FG）不受影响"},
+		"removed":           {"Removed %s (%s) from the list", "已从列表移除 %s（%s）"},
+		"save.failed":       {"Couldn't save the list of games: %s", "无法保存游戏列表：%s"},
+		"auto.exe":          {"Find automatically", "自动识别"},
+		"auto.exe.tip":      {"Go back to the folder the installer found", "恢复为安装器自动找到的文件夹"},
+		"pick.folder.title": {"The game's folder", "游戏所在文件夹"},
+	} {
+		messages[k] = v
+	}
+}

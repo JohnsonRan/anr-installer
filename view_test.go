@@ -8,12 +8,16 @@ import (
 
 	"anr-installer/internal/detect"
 	"anr-installer/internal/pkg"
+	"anr-installer/internal/store"
 )
 
 func testApp(t *testing.T) *app {
 	t.Helper()
-	t.Setenv("LOCALAPPDATA", t.TempDir()) // an empty version cache
+	// An empty version cache and list of games, kept apart from the user's.
+	t.Setenv("LOCALAPPDATA", t.TempDir())
+	t.Setenv("APPDATA", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	lang = "en"
 	a := newApp()
 	day := time.Date(2026, 11, 17, 12, 0, 0, 0, time.Local)
@@ -134,5 +138,57 @@ func TestViewDowngrade(t *testing.T) {
 	tt.Frame()
 	if !tt.HasText("Downgrade to V.B04") || !tt.HasText(T("note.downgrade", "V.B19", "V.B04")) {
 		t.Errorf("downgrade not offered: %q", tt.Texts())
+	}
+}
+
+func TestManualGames(t *testing.T) {
+	a := testApp(t)
+	epic := &game{Name: "Epic Game", Dir: `D:\Epic\Game`, Manual: true,
+		Scan: &detect.Result{Root: `D:\Epic\Game`, ExeDir: `D:\Epic\Game\bin`, Exe: `D:\Epic\Game\bin\game.exe`, DLSSG: []string{"x"}}}
+	a.games = append(a.games, epic)
+	a.games[0].ExeDir = `C:\g\alpha\bin` // a Steam game's .exe folder, chosen by hand
+	a.persist()
+
+	saved := store.Load()
+	if len(saved.Games) != 1 || saved.Games[0].Dir != epic.Dir || saved.ExeDirs[store.Key(`C:\g\alpha`)] != `C:\g\alpha\bin` {
+		t.Fatalf("saved %+v", saved)
+	}
+	// A new launch brings the game back.
+	again := newApp()
+	if len(again.games) != 1 || again.games[0].Name != "Epic Game" || !again.games[0].Manual {
+		t.Fatalf("games at launch %+v", again.games)
+	}
+
+	// A game added by hand takes its .exe's name until the user renames it.
+	a.scanned(epic, epic.Scan, "Epic Game: Remastered")
+	if epic.Name != "Epic Game: Remastered" {
+		t.Errorf("name %q", epic.Name)
+	}
+	epic.Name = "Mine"
+	a.renamed(epic)
+	a.scanned(epic, epic.Scan, "Epic Game: Remastered")
+	if epic.Name != "Mine" || !store.Load().Games[0].Named {
+		t.Errorf("a renamed game took its .exe's name: %q", epic.Name)
+	}
+
+	tt := ui.NewTester(a.view, 1040, 760)
+	if err := tt.Click("Mine"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("Remove from list"); err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range a.games {
+		if g == epic {
+			t.Error("not removed from the list")
+		}
+	}
+	if len(store.Load().Games) != 0 {
+		t.Error("still saved")
+	}
+	// Steam games cannot be removed: they come back with the next scan.
+	a.removeGame(a.games[0])
+	if a.games[0].Name != "Alpha" {
+		t.Error("a Steam game was removed")
 	}
 }
