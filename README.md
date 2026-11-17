@@ -1,6 +1,6 @@
 # ANR FG Installer
 
-English | [简体中文](README.zh-CN.md)
+English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
 ANR FG Installer installs, upgrades, downgrades and removes [ANR FG](https://github.com/apex-compute/ANR)
 (Apex Neural Rendering frame generation) in your games. It finds your Steam games, tells which ship DLSS frame
