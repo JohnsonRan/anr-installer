@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Records and compares frame generation with nr-record: installs it into a game, lists the recordings, and
   replays one through ANR FG and the game's DLSS-G. The two videos play together in the window, with a divider
