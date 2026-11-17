@@ -19,11 +19,20 @@ Downloads, unpacked packages and the versions read from the releases (`versions.
 
 ## Build
 
-Go 1.27 or later:
+Go 1.27 or later, and Python 3.9 or later for the requirements check:
 
 ```
 go tool mygo dev                      # run with live reload
-go test ./...                         # tests (ANR_PKG_DIR=<folder with the zips> also runs the real packages)
+scripts/check.sh --fast               # before a commit: formatting and vet
+scripts/check.sh                      # before a merge: also the tests and the requirements check
+scripts/check.sh --release            # before a release: also the real packages and the build
 go tool mygo build                    # build/windows-amd64/ANR FG Installer.exe and its NSIS installer
 go tool mygo build -skip-installer    # the executable only
 ```
+
+The release tier installs, upgrades, uninstalls and downgrades real packages in scratch folders: set
+ANR_PKG_DIR to a folder holding the newest anr-fg-*-full.zip and ANR_OLD_PKG to an older one.
+
+The rules for changing this repository are in `AGENTS.md`, `UI.md` (the interface) and
+`internal/AGENTS.md`; reviews follow `REVIEW.md`; commands, numbers and gates are in
+`REQUIREMENTS.md`.
