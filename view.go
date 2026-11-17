@@ -17,7 +17,7 @@ func (a *app) view(c *ui.Context) {
 	a.filter()
 	t := c.Theme()
 	ui.Column(c).Fill().Children(func() {
-		a.header(c, t)
+		a.titleBar(c, t)
 		ui.Divider(c)
 		ui.Row(c).Grow(1).AlignItems(ui.Stretch).Children(func() {
 			ui.Column(c).Width(340).Padding(16).Gap(10).Children(func() { a.sidebar(c, t) })
@@ -29,25 +29,6 @@ func (a *app) view(c *ui.Context) {
 				ui.Column(c).Height(210).Padding(0, 20, 16, 20).Children(func() { a.logPanel(c, t) })
 			})
 		})
-	})
-}
-
-func (a *app) header(c *ui.Context, t *ui.Theme) {
-	ui.Row(c).Padding(14, 20).Gap(12).Children(func() {
-		ui.Column(c).Grow(1).Gap(2).Children(func() {
-			ui.Text(c, T("title")).FontSize(20).Bold()
-			ui.Text(c, T("subtitle")).TextColor(t.TextMuted)
-		})
-		switch {
-		case a.relLoading:
-			ui.Spinner(c).Label(T("latest.loading"))
-			ui.Text(c, T("latest.loading")).TextColor(t.TextMuted)
-		case a.relErr != "":
-			ui.Text(c, T("latest.error", a.relErr)).TextColor(t.Danger).MaxLines(2).MaxWidth(360)
-			ui.Button(c, T("refresh")).OnClick(a.fetchRelease)
-		case a.rel != nil:
-			ui.Badge(c, T("latest", a.rel.Version)).Background(t.Accent).TextColor(t.AccentText)
-		}
 	})
 }
 

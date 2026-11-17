@@ -112,3 +112,10 @@ var messages = map[string][2]string{
 	"pick.zip.title":      {"ANR FG package", "ANR FG 安装包"},
 	"busy":                {"Working…", "正在处理…"},
 }
+
+func init() {
+	messages["win.minimize"] = [2]string{"Minimize", "最小化"}
+	messages["win.maximize"] = [2]string{"Maximize", "最大化"}
+	messages["win.restore"] = [2]string{"Restore", "还原"}
+	messages["win.close"] = [2]string{"Close", "关闭"}
+}

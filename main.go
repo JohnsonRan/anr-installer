@@ -15,13 +15,15 @@ func main() {
 	mygo.App.WhenReady(func() {
 		setLanguage(mygo.App.PreferredLanguages())
 		a.win = mygo.NewWindow(mygo.WindowOptions{
-			Title:     T("title"),
-			Width:     1040,
-			Height:    760,
-			MinWidth:  760,
-			MinHeight: 520,
-			StateKey:  "main",
-			Content:   ui.View(a.view),
+			Title:             T("title"),
+			Width:             1040,
+			Height:            760,
+			MinWidth:          760,
+			MinHeight:         520,
+			StateKey:          "main",
+			TitleBarStyle:     mygo.TitleBarHidden,
+			HideWindowButtons: true,
+			Content:           ui.View(a.view),
 		})
 		a.start()
 	})
