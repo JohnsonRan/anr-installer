@@ -30,6 +30,9 @@ Linux 和 Steam Deck (Proton) 的支持已经写好，但尚未测试。
 irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install.ps1 | iex
 ```
 
+便携版 `anr-fg-installer-<版本>-windows-amd64-portable.zip` 无需安装：把其中的 `ANR FG Installer` 文件夹解压到可写入的位置，
+运行 `ANR FG Installer.exe` 即可。它会把设置和下载的文件保存在这个文件夹里。
+
 程序和安装程序都没有代码签名，首次运行时 Windows SmartScreen 可能会发出警告：选择“更多信息”，再选择“仍要运行”。
 
 程序会自动更新：启动时和之后每天检查一次新版本，选择标题栏上的版本号按钮可以立即检查。它只安装用本项目密钥签名的更新。

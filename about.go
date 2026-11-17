@@ -1,13 +1,11 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/ui"
+
+	"anr-installer/internal/paths"
 )
 
 const repoURL = "https://github.com/JohnsonRan/anr-installer"
@@ -27,16 +25,8 @@ func (a *app) openAbout() {
 	a.aboutOpen = true
 }
 
-// portable reports whether this copy runs from a folder of its own rather than the per-user install, which
-// the installer puts in %LOCALAPPDATA%\Programs.
-func portable() bool {
-	exe, err := os.Executable()
-	if err != nil {
-		return false
-	}
-	programs := filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs")
-	return os.Getenv("LOCALAPPDATA") == "" || !strings.HasPrefix(strings.ToLower(exe), strings.ToLower(programs)+string(filepath.Separator))
-}
+// portable reports whether this copy is the portable version, which keeps its files in its own folder.
+func portable() bool { return paths.Portable() != "" }
 
 // updateStatus is the line under "Software update": why this copy cannot update, the version found, or when
 // the updater last checked.

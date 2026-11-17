@@ -37,10 +37,11 @@ a size or a spacing set anywhere else.
    notes and the text of the update window.
 2. Run the release tier, `scripts/check.sh --release`.
 3. Build, sign and upload to a draft GitHub release of the version, with the secret update key and the GitHub
-   CLI signed in:
+   CLI signed in. The script uploads the installer, `install.ps1`, the signed update files and the portable zip
+   (the executable, `LICENSE` and the `portable` marker):
 
    ```
-   MYGO_UPDATER_PRIVATE_KEY="$(cat path/to/mygo-update.key)" go tool mygo build -upload
+   MYGO_UPDATER_PRIVATE_KEY="$(cat path/to/mygo-update.key)" scripts/release.sh
    ```
 
 4. Publish the draft, which makes it the latest release that installed apps update from:

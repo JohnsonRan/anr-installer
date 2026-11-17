@@ -60,14 +60,17 @@ published packages do not change, so only new releases are read again.
 | `%LOCALAPPDATA%\anr-installer\downloads\` | downloaded packages |
 | `%LOCALAPPDATA%\anr-installer\packages\` | unpacked packages |
 
+The portable version, which a file named `portable` next to its executable marks, keeps `games.json` in its own
+folder and the rest under `cache\` there.
+
 `GITHUB_TOKEN`, when set, raises GitHub's API rate limit; it is sent to GitHub's API only.
 
 ## Updating the installer itself
 
 The installer updates itself with MyGo's updater. It checks
 `https://github.com/JohnsonRan/anr-installer/releases/latest/download/update-windows-amd64.json` 10 seconds after
-launch and then once a day, and the version button in the title bar checks at once. A newer version is offered in
-a window with its release notes, to install, skip or be reminded of later. The update archive, or a smaller delta
-from the running version, is installed only when its signature matches the public key in `mygo.json`. The app
-can update itself where it can write its own folder, as the per-user install in
-`%LOCALAPPDATA%\Programs\ANR FG Installer`.
+launch and then once a day; the About dialog, from the version button in the title bar, checks at once and turns
+the automatic checks on or off. A newer version is offered in a window with its release notes, to install, skip
+or be reminded of later. The update archive, or a smaller delta from the running version, is installed only when
+its signature matches the public key in `mygo.json`. The app can update itself where it can write its own folder:
+the per-user install in `%LOCALAPPDATA%\Programs\ANR FG Installer`, or the portable version's folder.

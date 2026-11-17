@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"anr-installer/internal/detect"
+	"anr-installer/internal/paths"
 )
 
 // Repo is the GitHub repository whose releases carry the packages.
@@ -124,13 +125,7 @@ func Releases(ctx context.Context) ([]*Release, error) {
 }
 
 // CacheDir is where downloaded and extracted packages are kept.
-func CacheDir() string {
-	base, err := os.UserCacheDir()
-	if err != nil {
-		base = os.TempDir()
-	}
-	return filepath.Join(base, "anr-installer")
-}
+func CacheDir() string { return paths.Cache() }
 
 // Progress reports bytes done of total (total 0: unknown).
 type Progress func(done, total int64)

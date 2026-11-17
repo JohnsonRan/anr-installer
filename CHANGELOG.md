@@ -14,5 +14,8 @@ The first release. ANR FG Installer is an unofficial tool, not made or endorsed 
 - Backs up `OptiScaler.ini` and `nr_fg.ini` next to the game's `.exe` before a step would lose them.
 - Shows each game's Steam art, in the system's light or dark appearance and accent color, in English or
   Simplified Chinese.
-- Updates itself: it checks for a new version at launch and daily, or from the version button in the title
-  bar, and installs it after asking.
+- Updates itself: it checks for a new version at launch and daily, and installs it after asking. The About
+  dialog, from the version button in the title bar, checks at once, turns the automatic checks on or off, and
+  links to the project.
+- Comes as an installer, which installs for the current user without administrator rights, or as a portable
+  zip that keeps its settings and downloads in its own folder. Either is one executable, its icon built in.

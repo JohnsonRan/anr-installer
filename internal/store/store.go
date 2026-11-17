@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"anr-installer/internal/paths"
 )
 
 // Game is a game folder added by hand, as a game outside Steam.
@@ -26,13 +28,7 @@ type Data struct {
 }
 
 // Path is the file the data is kept in.
-func Path() string {
-	base, err := os.UserConfigDir()
-	if err != nil {
-		base = os.TempDir()
-	}
-	return filepath.Join(base, "anr-installer", "games.json")
-}
+func Path() string { return filepath.Join(paths.Config(), "games.json") }
 
 // Load reads the data, or returns empty data when there is none or it cannot be read.
 func Load() *Data {
