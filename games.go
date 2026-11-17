@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -110,4 +111,21 @@ func (a *app) confirmInstall(g *game, k detect.Kind) {
 			a.install(g, k)
 		})
 	}()
+}
+
+// play starts the game: through Steam for a Steam game, so that Steam's overlay and launch options apply, else
+// its .exe, from its own folder.
+func (a *app) play(g *game) {
+	if g.AppID != "" {
+		mygo.Shell.OpenExternal("steam://rungameid/" + g.AppID)
+		return
+	}
+	cmd := exec.Command(g.Scan.Exe)
+	cmd.Dir = filepath.Dir(g.Scan.Exe)
+	if err := cmd.Start(); err != nil {
+		a.logOpen = true
+		a.logf("%s", T("failed", err.Error()))
+		return
+	}
+	cmd.Process.Release()
 }

@@ -99,7 +99,8 @@ func (a *app) headerLine(g *game) string {
 // actions are the header's buttons, or the progress of the step that runs.
 func (a *app) actions(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
-	ui.Row(c).Gap(gapControls).Children(func() {
+	// The buttons wrap onto a second line where the window is too narrow for them beside the game's name.
+	ui.Row(c).Gap(gapControls).Wrap().Justify(ui.End).Shrink(1).Children(func() {
 		if a.busy {
 			ui.Spinner(c).Label(T("busy"))
 			if a.progress >= 0 {
@@ -112,6 +113,9 @@ func (a *app) actions(c *ui.Context, t *ui.Theme, g *game) {
 		}
 		if r == nil {
 			return
+		}
+		if g.AppID != "" || r.Exe != "" {
+			ui.Button(c, T("play")).Tooltip(T("play.tip")).OnClick(func() { a.play(g) })
 		}
 		if r.Installed != detect.KindNone {
 			ui.Button(c, T("uninstall")).Disabled(a.uninstallBlocked(r.Installed) != "" || g.Scanning).OnClick(func() { a.uninstall(g) })

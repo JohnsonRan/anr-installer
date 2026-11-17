@@ -104,6 +104,8 @@ var messages = map[string][2]string{
 	"removed":     {"Removed %s (%s) from the list.", "已从列表中移除 %s (%s)。"},
 	"save.failed": {"Couldn't save the game list: %s", "无法保存游戏列表: %s"},
 	"busy":        {"Working…", "正在处理…"},
+	"play":        {"Play", "开始游戏"},
+	"play.tip":    {"Start the game", "启动这款游戏"},
 
 	"anr.full":             {"Full package · OptiScaler loads as %s", "full 版 · OptiScaler 作为 %s 加载"},
 	"anr.addon":            {"Addon package · uses your OptiScaler", "addon 版 · 使用你的 OptiScaler"},
