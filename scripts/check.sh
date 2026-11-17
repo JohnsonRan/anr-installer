@@ -59,8 +59,15 @@ env -u ANR_PKG_DIR -u ANR_OLD_PKG CGO_ENABLED=0 go test -count=1 ./... || exit 1
 
 # The real packages: install, upgrade, uninstall and downgrade them in a scratch game folder.
 if [ -z "${ANR_PKG_DIR:-}" ] || [ -z "${ANR_OLD_PKG:-}" ]; then
-	echo "check.sh --release: set ANR_PKG_DIR (a folder with the newest anr-fg-*-full.zip) and ANR_OLD_PKG (an older anr-fg-*-full.zip)" >&2
+	echo "check.sh --release: set ANR_PKG_DIR (a folder with the newest release's anr-fg-*-full.zip and anr-fg-*-addon.zip) and ANR_OLD_PKG (an older anr-fg-*-full.zip)" >&2
 	exit 2
 fi
-CGO_ENABLED=0 go test -count=1 -run 'Real' -v ./internal/pkg | grep -E '^(--- |ok|FAIL|PASS)' || exit 1
+# Only the summary lines are shown, but the gate takes the tests' own status: a pipe into grep would hide a
+# failure.
+real=$(CGO_ENABLED=0 go test -count=1 -run 'Real' -v ./internal/pkg 2>&1) && status=0 || status=$?
+printf '%s\n' "$real" | grep -E '^(--- |ok|FAIL|PASS)' || true
+if [ "$status" -ne 0 ]; then
+	printf '%s\n' "$real" >&2
+	exit 1
+fi
 go tool mygo build || exit 1
