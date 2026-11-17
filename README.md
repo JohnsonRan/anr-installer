@@ -1,38 +1,64 @@
 # ANR FG Installer
 
-A small desktop installer for [ANR FG](https://github.com/apex-compute/ANR) (Apex Neural Rendering frame generation), built with [MyGo](https://mygo.run) native UI: one Go binary, no WebView.
+English | [简体中文](README.zh-CN.md)
 
-- Finds the games in every Steam library (`libraryfolders.vdf`, `appmanifest_*.acf`) and marks those that ship DLSS frame generation (`nvngx_dlssg.dll`, `sl.dlss_g.dll`). Other game folders can be added by hand.
-- Finds the folder of the game's `.exe` (Unreal's `*-Win64-Shipping.exe`, an earlier OptiScaler, the DLSS libraries, else the largest `.exe`); it can be changed.
-- Keeps games outside Steam, added by their folder, across launches in `%APPDATA%\anr-installer\games.json`, with the .exe folders chosen by hand. Such a game is named after its `.exe`'s product name until renamed, and can be taken off the list (its files stay).
-- Reads what is installed: ANR FG's full package (`OptiScaler/nr_fg_install.json`), its add-on (`custom/Apex Neural Rendering FG/nr_fg_install.json`, or `custom/nrfg` before V.B04), an OptiScaler of your own, and nr-record.
-- Picks the **full** or **add-on** package by itself, or lets you choose; it refuses the combinations the packages' installers refuse.
-- Tells the installed version without downloading a package: it reads `nr_fg_package.json` (whose `provider_sha256` is the hash of that version's `nvngx_dlssg.dll`) out of each release's packages with HTTP range requests, about 64 KB each, once, and compares the installed DLL with it.
-- Installs any `FG-V.*` GitHub release from V.B04 on (V.B01 to V.B03 used another folder), checked against its `SHA256SUMS.txt`, or a local zip (`nr_fg_package.json` tells its kind and version). A newer version goes over the installed one; an older one, or any but the newest when the installed version is unknown, is installed after uninstalling with the newest release's package, so that no newer files stay behind. `OptiScaler.ini` and `nr_fg.ini` are backed up next to the `.exe` first.
-- Runs the package's own `install.ps1` / `uninstall.ps1` (`install.sh` / `uninstall.sh` under Proton), so backups and restores work exactly as with `install.cmd`.
-- The app icon is `resources/logo.svg`, rendered to the `resources/icon.png` the build packages by `go run ./tools/genicon`.
-- Draws its own title bar and window buttons in place of the system's.
-- Shows each game's Steam icon and header art (Steam's `appcache/librarycache`), else the icon of its `.exe`.
-- Before a full-package upgrade, backs up `OptiScaler.ini`, which the package replaces, to `OptiScaler.ini.bak-<time>`; warns when nr-record must be installed again.
+ANR FG Installer installs, upgrades, downgrades and removes [ANR FG](https://github.com/apex-compute/ANR)
+(Apex Neural Rendering frame generation) in your games. It finds your Steam games, tells which ship DLSS frame
+generation, picks the right package, and runs the package's own installer.
 
-Downloads, unpacked packages and the versions read from the releases (`versions.json`) are cached in `%LOCALAPPDATA%\anr-installer`. Set `GITHUB_TOKEN` to raise GitHub's API rate limit.
+> **Unofficial.** This is a community tool. It is not made, endorsed or supported by Apex Compute, the makers
+> of ANR FG. It installs ANR FG's own release packages from the
+> [apex-compute/ANR releases](https://github.com/apex-compute/ANR/releases), unchanged. Report problems with
+> ANR FG itself to [apex-compute/ANR](https://github.com/apex-compute/ANR/issues), and problems with this
+> installer [here](https://github.com/JohnsonRan/anr-installer/issues).
 
-## Build
+## Requirements
 
-Go 1.27 or later, and Python 3.9 or later for the requirements check:
+- Windows 10 or 11 (x64)
+- The Microsoft Visual C++ 2015-2022 Redistributable (x64), which OptiScaler needs
+- A GPU that ANR FG supports: NVIDIA GeForce RTX 20 and newer or GTX 16; AMD Radeon RX 5000 and newer;
+  Intel Arc A and B
+
+Linux and the Steam Deck (Proton) are written for but not tested yet.
+
+## Get it
+
+No binary release is published yet. Build it from source with Go 1.27 or later:
 
 ```
-go tool mygo dev                      # run with live reload
-scripts/check.sh --fast               # before a commit: formatting and vet
-scripts/check.sh                      # before a merge: also the tests and the requirements check
-scripts/check.sh --release            # before a release: also the real packages and the build
-go tool mygo build                    # build/windows-amd64/ANR FG Installer.exe and its NSIS installer
-go tool mygo build -skip-installer    # the executable only
+git clone https://github.com/JohnsonRan/anr-installer.git
+cd anr-installer
+go tool mygo build -skip-installer
 ```
 
-The release tier installs, upgrades, uninstalls and downgrades real packages in scratch folders: set
-ANR_PKG_DIR to a folder holding the newest anr-fg-*-full.zip and ANR_OLD_PKG to an older one.
+The app is `build/windows-amd64/ANR FG Installer.exe`. [Developing](docs/development.md) has the other
+commands.
 
-The rules for changing this repository are in `AGENTS.md`, `UI.md` (the interface) and
-`internal/AGENTS.md`; reviews follow `REVIEW.md`; commands, numbers and gates are in
-`REQUIREMENTS.md`.
+## Use it
+
+1. Close the game.
+2. Open ANR FG Installer and choose the game on the left. "Supported" lists the games that ship DLSS frame
+   generation; a game outside Steam can be added with **+ Add game** and its folder.
+3. Click **Install** on the game's banner. The button reads **Upgrade**, **Reinstall** or **Downgrade** when
+   ANR FG is already there, by the version chosen under **Install**.
+4. In the game, turn on frame generation (the NVIDIA option where the game offers several).
+
+**Uninstall** puts back what the package's installer backed up. Before a step loses one of your settings files,
+the installer copies it next to the game's `.exe` as `<name>.bak-<time>`: `OptiScaler.ini` before the full
+package replaces it, and `nr_fg.ini` before an uninstall or a downgrade removes it.
+
+## Anti-cheat
+
+OptiScaler and ANR FG hook into a game's rendering. Anti-cheat may take them for a cheat and ban the account,
+in online modes above all. When a game ships anti-cheat (Easy Anti-Cheat, EA Javelin, BattlEye and others), the
+installer marks it and asks before installing. Install into such a game only if you accept that risk; you bear
+it yourself.
+
+## How it works
+
+[How it works](docs/how-it-works.md) covers what the installer reads and changes, how it tells the installed
+version without downloading anything, and the files it keeps.
+
+## License
+
+Not chosen yet.
