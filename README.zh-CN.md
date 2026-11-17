@@ -13,12 +13,12 @@ ANR FG 安装器用来在你的游戏中安装、升级、降级和卸载 [ANR F
 
 ## 系统要求
 
-- Windows 10 或 11（x64）
-- Microsoft Visual C++ 2015-2022 Redistributable（x64），OptiScaler 需要它
+- Windows 10 或 11 (x64)
+- Microsoft Visual C++ 2015-2022 Redistributable (x64)，OptiScaler 需要它
 - ANR FG 支持的显卡：NVIDIA GeForce RTX 20 及更新或 GTX 16 系列；AMD Radeon RX 5000 及更新；Intel Arc A 和
   B 系列
 
-Linux 和 Steam Deck（Proton）的支持已经写好，但尚未测试。
+Linux 和 Steam Deck (Proton) 的支持已经写好，但尚未测试。
 
 ## 获取
 
@@ -30,18 +30,18 @@ cd anr-installer
 go tool mygo build -skip-installer
 ```
 
-程序位于 `build/windows-amd64/ANR FG Installer.exe`。其他命令见[开发说明](docs/development.md)（英文）。
+程序位于 `build/windows-amd64/ANR FG Installer.exe`。其他命令见《[开发说明](docs/development.md)》（英文）。
 
 ## 使用
 
 1. 关闭游戏。
-2. 打开 ANR FG 安装器，在左侧选择游戏。「支持」列出带有 DLSS 帧生成的游戏；Steam 以外的游戏可以用
-   **+ 添加游戏** 按文件夹添加。
-3. 点击游戏横幅上的 **安装**。如果已经装过 ANR FG，按钮会根据「安装」卡片里选择的版本显示为
-   **升级**、**重新安装** 或 **降级**。
+2. 打开 ANR FG 安装器，在左侧选择游戏。“支持”列出带有 DLSS 帧生成的游戏；Steam 以外的游戏可以用
+   “+ 添加游戏”按文件夹添加。
+3. 选择游戏横幅上的“安装”。如果已经装过 ANR FG，按钮会根据“安装”卡片里选择的版本显示为
+   “升级”“重新安装”或“降级”。
 4. 进入游戏，打开帧生成（游戏提供多个选项时选 NVIDIA 的）。
 
-**卸载** 会还原安装程序备份的文件。在某一步会丢失你的配置文件之前，安装器会先把它复制到游戏 `.exe` 旁边，
+“卸载”会还原安装程序备份的文件。在某一步会丢失你的配置文件之前，安装器会先把它复制到游戏 `.exe` 旁边，
 命名为 `<文件名>.bak-<时间>`：full 版替换 `OptiScaler.ini` 之前备份它，卸载或降级删除 `nr_fg.ini` 之前备份它。
 
 ## 反作弊
@@ -52,7 +52,7 @@ OptiScaler 和 ANR FG 会接入游戏的渲染。反作弊可能把它们当作�
 
 ## 工作原理
 
-[工作原理](docs/how-it-works.md)（英文）介绍安装器读取和修改哪些内容、如何在不下载的情况下识别已装版本，
+《[工作原理](docs/how-it-works.md)》（英文）介绍安装器读取和修改哪些内容、如何在不下载的情况下识别已装版本，
 以及它保存的文件。
 
 ## 许可证
