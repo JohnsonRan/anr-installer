@@ -27,7 +27,11 @@ func ReadInfo(zipPath string) (*Info, error) {
 		return nil, err
 	}
 	defer zr.Close()
-	for _, f := range zr.File {
+	return infoFromZip(zr.File, filepath.Base(zipPath))
+}
+
+func infoFromZip(files []*zip.File, name string) (*Info, error) {
+	for _, f := range files {
 		if filepath.Base(f.Name) != "nr_fg_package.json" || strings.Count(strings.Trim(f.Name, "/"), "/") > 1 {
 			continue
 		}
@@ -45,7 +49,7 @@ func ReadInfo(zipPath string) (*Info, error) {
 		}
 		return &info, nil
 	}
-	return nil, fmt.Errorf("%s is no ANR FG package (no nr_fg_package.json)", filepath.Base(zipPath))
+	return nil, fmt.Errorf("%s is no ANR FG package (no nr_fg_package.json)", name)
 }
 
 // Extract unpacks a package zip into a folder of the cache named after its content hash, once, and returns the

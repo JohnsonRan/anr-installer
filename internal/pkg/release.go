@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -23,10 +24,28 @@ const userAgent = "anr-installer"
 
 // Release is an ANR FG release on GitHub.
 type Release struct {
-	Tag     string // FG-V.B19
-	Version string // V.B19
-	URL     string
-	Assets  map[string]Asset
+	Tag       string // FG-V.B19
+	Version   string // V.B19
+	URL       string
+	Published time.Time
+	Assets    map[string]Asset
+}
+
+// MinInstallable is the oldest version offered for install: from V.B04 the packages install into
+// custom/Apex Neural Rendering FG, the layout the current installers and uninstallers know; V.B01 to V.B03 used
+// custom/nrfg.
+const MinInstallable = 4
+
+// Number returns the build number of a version such as V.B19 (19), or 0 when it has none.
+func Number(version string) int {
+	n := 0
+	for _, c := range strings.TrimPrefix(version, "V.B") {
+		if c < '0' || c > '9' {
+			return 0
+		}
+		n = n*10 + int(c-'0')
+	}
+	return n
 }
 
 // Asset is a file of a release.
@@ -46,9 +65,9 @@ var client = &http.Client{Timeout: 0}
 // apiBase is GitHub's API (a test server in tests).
 var apiBase = "https://api.github.com"
 
-// Latest returns the newest published ANR FG release (tag FG-V.*) that has both packages.
-func Latest(ctx context.Context) (*Release, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", apiBase+"/repos/"+Repo+"/releases?per_page=30", nil)
+// Releases returns the published ANR FG releases (tags FG-V.*) that have both packages, newest first.
+func Releases(ctx context.Context) ([]*Release, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", apiBase+"/repos/"+Repo+"/releases?per_page=100", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -68,10 +87,11 @@ func Latest(ctx context.Context) (*Release, error) {
 		return nil, fmt.Errorf("GitHub: %s", resp.Status)
 	}
 	var list []struct {
-		Tag        string `json:"tag_name"`
-		Draft      bool   `json:"draft"`
-		Prerelease bool   `json:"prerelease"`
-		HTMLURL    string `json:"html_url"`
+		Tag        string    `json:"tag_name"`
+		Draft      bool      `json:"draft"`
+		Prerelease bool      `json:"prerelease"`
+		HTMLURL    string    `json:"html_url"`
+		Published  time.Time `json:"published_at"`
 		Assets     []struct {
 			Name string `json:"name"`
 			URL  string `json:"browser_download_url"`
@@ -81,21 +101,26 @@ func Latest(ctx context.Context) (*Release, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
 		return nil, err
 	}
+	var rels []*Release
 	for _, r := range list {
 		if r.Draft || r.Prerelease || !strings.HasPrefix(r.Tag, "FG-V.") {
 			continue
 		}
-		rel := &Release{Tag: r.Tag, Version: strings.TrimPrefix(r.Tag, "FG-"), URL: r.HTMLURL, Assets: map[string]Asset{}}
+		rel := &Release{Tag: r.Tag, Version: strings.TrimPrefix(r.Tag, "FG-"), URL: r.HTMLURL, Published: r.Published, Assets: map[string]Asset{}}
 		for _, a := range r.Assets {
 			rel.Assets[a.Name] = Asset{a.Name, a.URL, a.Size}
 		}
 		_, full := rel.Assets[rel.AssetName(detect.KindFull)]
 		_, addon := rel.Assets[rel.AssetName(detect.KindAddon)]
-		if full && addon {
-			return rel, nil
+		if full && addon && Number(rel.Version) > 0 {
+			rels = append(rels, rel)
 		}
 	}
-	return nil, fmt.Errorf("no ANR FG release found in %s", Repo)
+	if len(rels) == 0 {
+		return nil, fmt.Errorf("no ANR FG release found in %s", Repo)
+	}
+	sort.Slice(rels, func(i, j int) bool { return Number(rels[i].Version) > Number(rels[j].Version) })
+	return rels, nil
 }
 
 // CacheDir is where downloaded and extracted packages are kept.
@@ -224,4 +249,13 @@ func fetch(ctx context.Context, url, dest string, size int64, progress Progress)
 		progress(done, size)
 	}
 	return f.Close()
+}
+
+// Latest returns the newest release.
+func Latest(ctx context.Context) (*Release, error) {
+	rels, err := Releases(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return rels[0], nil
 }
