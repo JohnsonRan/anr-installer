@@ -46,15 +46,20 @@ bar checks at once. It installs only updates signed with the project's key. To b
 ## Use it
 
 1. Close the game.
-2. Open ANR FG Installer and choose the game on the left. "Supported" lists the games that ship DLSS frame
-   generation; a game outside Steam can be added with **+ Add game** and its folder.
-3. Click **Install** on the game's banner. The button reads **Upgrade**, **Reinstall** or **Downgrade** when
-   ANR FG is already there, by the version chosen under **Install**.
+2. Open ANR FG Installer and choose the game on the left. **Supported** lists the games that ship DLSS frame
+   generation. To add a game from another store, select **Add game** and choose its folder.
+3. Select **Install** at the top of the game's page. When ANR FG is already there, the button reads **Upgrade**,
+   **Reinstall** or **Downgrade**, for the version chosen with the arrow beside it.
 4. In the game, turn on frame generation (the NVIDIA option where the game offers several).
 
 **Uninstall** puts back what the package's installer backed up. Before a step loses one of your settings files,
 the installer copies it next to the game's `.exe` as `<name>.bak-<time>`: `OptiScaler.ini` before the full
 package replaces it, and `nr_fg.ini` before an uninstall or a downgrade removes it.
+
+When a new ANR FG version comes out and one of your games has an older one, the installer shows the release
+notes once. **Update all** there upgrades those games one after another, each with the package it has. Games
+with anti-cheat are left out: upgrade each of them from its own page. The list marks the games to upgrade, and
+the bar above it shows only those.
 
 ## Anti-cheat
 

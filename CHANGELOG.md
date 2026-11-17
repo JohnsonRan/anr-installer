@@ -12,8 +12,10 @@ The first release. ANR FG Installer is an unofficial tool, not made or endorsed 
 - Tells the installed ANR FG version without downloading a package.
 - Warns before installing into a game that ships anti-cheat: the risk is the user's.
 - Backs up `OptiScaler.ini` and `nr_fg.ini` next to the game's `.exe` before a step would lose them.
-- Shows each game's Steam art, in the system's light or dark appearance and accent color, in English or
-  Simplified Chinese.
+- Lays out a game as Windows 11's Settings does, under its Steam library art, in the dark colors of
+  apexcompute.com, in English or Simplified Chinese.
+- Tells when a newer ANR FG is out: the list marks the games to upgrade, and the release notes open once a
+  release, in the window, with **Update all** for the games without anti-cheat.
 - Updates itself: it checks for a new version at launch and daily, and installs it after asking. The About
   dialog, from the version button in the title bar, checks at once, turns the automatic checks on or off, and
   links to the project.
