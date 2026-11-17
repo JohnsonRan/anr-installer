@@ -8,6 +8,7 @@ A small desktop installer for [ANR FG](https://github.com/apex-compute/ANR) (Ape
 - Picks the **full** or **add-on** package by itself, or lets you choose; it refuses the combinations the packages' installers refuse.
 - Gets the package from the latest `FG-V.*` GitHub release, checked against its `SHA256SUMS.txt`, or from a local zip (`nr_fg_package.json` tells its kind and version).
 - Runs the package's own `install.ps1` / `uninstall.ps1` (`install.sh` / `uninstall.sh` under Proton), so backups and restores work exactly as with `install.cmd`.
+- The app icon is `resources/logo.svg`, rendered to the `resources/icon.png` the build packages by `go run ./tools/genicon`.
 - Before a full-package upgrade, backs up `OptiScaler.ini`, which the package replaces, to `OptiScaler.ini.bak-<time>`; warns when nr-record must be installed again.
 
 Downloads and unpacked packages are cached in `%LOCALAPPDATA%\anr-installer`. Set `GITHUB_TOKEN` to raise GitHub's API rate limit.
