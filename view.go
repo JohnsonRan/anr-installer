@@ -70,6 +70,7 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 		}
 	}
 	roleSmall.on(t, ui.Text(c, T("games.count", len(a.games), supported, installed))).TextColor(t.TextMuted).PaddingX(space1)
+	roleSmall.on(t, ui.Text(c, T("unofficial"))).TextColor(t.TextMuted).PaddingX(space1).Tooltip(T("unofficial.tip"))
 	ui.Row(c).Gap(gapControls).Children(func() {
 		ui.Button(c, T("add.game")).Grow(1).Tooltip(T("add.game.tip")).OnClick(a.addFolder)
 		ui.Button(c, T("refresh")).Disabled(a.loadingGames || a.busy).Tooltip(T("refresh.tip")).OnClick(a.scanSteam)

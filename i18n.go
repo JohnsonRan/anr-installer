@@ -68,6 +68,8 @@ var messages = map[string][2]string{
 	"manual.long":     {"Added by hand", "手动添加的游戏"},
 	"row.supported":   {"DLSS frame generation", "支持 DLSS 帧生成"},
 	"row.unsupported": {"No DLSS frame generation found", "未检测到 DLSS 帧生成"},
+	"unofficial":      {"Unofficial tool, not made or endorsed by Apex Compute", "非官方工具，与 Apex Compute 无关"},
+	"unofficial.tip":  {"Problems with ANR FG itself go to apex-compute/ANR; problems with this installer go to JohnsonRan/anr-installer", "ANR FG 本身的问题请反馈到 apex-compute/ANR，安装器的问题请反馈到 JohnsonRan/anr-installer"},
 	"empty.title":     {"No game yet", "还没有游戏"},
 	"empty.body":      {"Steam games show up here by themselves. Games from other stores can be added by their folder.", "Steam 游戏会自动出现在这里，其他平台的游戏可以按文件夹添加。"},
 
