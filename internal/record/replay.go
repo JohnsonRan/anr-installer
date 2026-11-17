@@ -34,6 +34,7 @@ type Comparison struct {
 	Recording *Recording
 	A, B      Side
 	FFmpeg    string
+	Frames    int // how many recorded real frames to replay, from the first; 0: all
 }
 
 // Out is the folder the comparison's videos and project go to.
@@ -69,6 +70,9 @@ func (c *Comparison) Make(ctx context.Context, step func(label string), out func
 		step(s.Label)
 		replay := exec.CommandContext(ctx, c.tool("nr-replay"), "--record", c.Recording.Dir,
 			"--out", filepath.Join(c.Out(), s.name), "--generator", s.Generator, "--dll", s.DLL, "--label", s.Label, "--stream", "-")
+		if c.Frames > 0 && c.Frames < c.Recording.Frames {
+			replay.Args = append(replay.Args, "--frames", fmt.Sprintf("0:%d", c.Frames))
+		}
 		video := exec.CommandContext(ctx, c.tool("nr-video"), "video", "-", "--out", c.video(s), "--ffmpeg", c.FFmpeg)
 		frames, err := replay.StdoutPipe()
 		if err != nil {

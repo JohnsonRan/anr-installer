@@ -5,7 +5,9 @@
 - Records and compares frame generation with nr-record: installs it into a game, lists the recordings, and
   replays one through ANR FG and the game's DLSS-G. The two videos play together in the window, with a divider
   or side by side, and a paused frame can be exported as lossless stills; nr-record's own viewer opens from
-  there too. FFmpeg and FFprobe, when missing, are installed with Scoop.
+  there too. A comparison takes the first 5 seconds of a recording unless more is chosen, and a recording can
+  be deleted from its row. FFmpeg and FFprobe, when missing, are installed with Scoop.
+- Starts a game from its page.
 
 ## 0.1.0
 

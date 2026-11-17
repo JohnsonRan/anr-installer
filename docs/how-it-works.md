@@ -63,7 +63,10 @@ On Windows, a game's page drives nr-record, whose package ships in the same rele
 - **Recordings**: the folders with a `record.json` in `%LOCALAPPDATA%\nr-record`. A recording belongs to the
   game whose `.exe` has the name in its `game` field. Those with `feature` `fg`, or none, hold frame generation
   inputs.
-- **Comparing**: `nr-replay` replays the recording through the installed ANR FG (`--generator provider`) and
+- **Length**: a recording's length is the time between the first and the last frame in its `frames.idx`
+  (64 bytes a frame, the timestamp at byte 32, in ticks of `record.json`'s `qpc_frequency`).
+- **Comparing**: `nr-replay` replays the recording, or with `--frames 0:N` its first seconds, through the
+  installed ANR FG (`--generator provider`) and
   through the game's own `nvngx_dlssg.dll` (`--generator nvidia`), each streamed into `nr-video`, which writes
   an `.mp4`; `nr-video project` writes the viewer's project of the two. The window plays the two videos with
   Windows' Media Foundation, on one clock but not locked frame by frame; they are HEVC, which needs the

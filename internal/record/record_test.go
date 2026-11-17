@@ -2,6 +2,7 @@ package record
 
 import (
 	"context"
+	"encoding/binary"
 	"os"
 	"path/filepath"
 	"strings"
@@ -162,5 +163,33 @@ func TestRemoveStills(t *testing.T) {
 	c.RemoveStills(5)
 	if _, err := os.Stat(filepath.Join(c.Out(), "stills", "5")); err == nil {
 		t.Error("the stills are still there")
+	}
+}
+
+func TestRecordingLengthFromItsFrameIndex(t *testing.T) {
+	dir := t.TempDir()
+	rec := filepath.Join(dir, "20261118-031622-game")
+	os.MkdirAll(rec, 0o755)
+	os.WriteFile(filepath.Join(rec, "record.json"), []byte(`{"feature":"fg","game":"game.exe","frames":3,"qpc_frequency":10000000}`), 0o644)
+	idx := make([]byte, 3*indexRecord)
+	for i, ticks := range []uint64{1_000_000_000, 1_010_000_000, 1_020_000_000} { // 2 s from the first to the last
+		binary.LittleEndian.PutUint64(idx[i*indexRecord+indexTime:], ticks)
+	}
+	os.WriteFile(filepath.Join(rec, "frames.idx"), idx, 0o644)
+	recs := Recordings(dir)
+	if len(recs) != 1 || recs[0].Seconds != 2 || recs[0].RealFPS() != 1.5 {
+		t.Fatalf("read %+v", recs)
+	}
+	// A damaged index gives no length rather than a wrong one.
+	binary.LittleEndian.PutUint64(idx[indexTime:], 1<<63)
+	os.WriteFile(filepath.Join(rec, "frames.idx"), idx, 0o644)
+	if got := Recordings(dir)[0].Seconds; got != 0 {
+		t.Errorf("a damaged index gave %v s", got)
+	}
+	if err := recs[0].Remove(); err != nil {
+		t.Fatal(err)
+	}
+	if len(Recordings(dir)) != 0 {
+		t.Error("the recording is still there")
 	}
 }

@@ -131,32 +131,12 @@ func (a *app) recordSection(c *ui.Context, t *ui.Theme, g *game) {
 		if why != "" && tools.Ready() && len(recs) > 0 { // without the tools, the bar above says what to do
 			infoBar(c, t, t.Warning, iconWarning, why, nil)
 		}
+		if len(recs) > 0 {
+			infoBar(c, t, apexRoyal, iconInfo, T("rec.slow"), nil)
+		}
 		for _, rec := range recs[:min(len(recs), maxRecordings)] {
 			a.recordingRow(c.Key(rec.Name), t, g, rec, why != "" || a.busy)
 		}
-	})
-}
-
-// recordingRow is a recording: when it was made and what it holds, with its comparison.
-func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Recording, blocked bool) {
-	title := rec.Time.Format("2006-01-02 15:04:05")
-	if !rec.FrameGeneration() {
-		settingsRow(c, t, iconFrames, title, T("rec.item.upscaler"), func() { valueText(c, T("rec.item.cli"), t.TextMuted) })
-		return
-	}
-	detail := T("rec.item", rec.Width, rec.Height, rec.Frames, fmt.Sprintf("%.1f GB", float64(rec.Bytes)/1e9))
-	if rec.Dropped > 0 {
-		detail += T("rec.item.dropped", rec.Dropped)
-	}
-	settingsRow(c, t, iconFrames, title, detail, func() {
-		if a.rec.compared[rec.Name] {
-			ui.Button(c, T("rec.compare.again")).Disabled(blocked).OnClick(func() { a.compare(g, rec) })
-			ui.Button(c, T("rec.compare.open")).Disabled(a.busy).OnClick(func() {
-				a.openCompare(g, rec)
-			})
-			return
-		}
-		ui.Button(c, T("rec.compare")).Disabled(blocked).OnClick(func() { a.compare(g, rec) })
 	})
 }
 
@@ -277,9 +257,16 @@ func (a *app) installFFmpeg(g *game) {
 }
 
 // compare replays rec through the ANR FG installed in g and through g's DLSS-G, then shows the two videos
-// on the comparison page.
-func (a *app) compare(g *game, rec *record.Recording) {
+// on the comparison page. secs is how much of the recording's start to replay, 0 for all of it.
+func (a *app) compare(g *game, rec *record.Recording, secs int) {
 	cmp := a.comparison(g, rec)
+	if secs > 0 {
+		fps := rec.RealFPS()
+		if fps <= 0 {
+			fps = assumedFPS // the length is not known: the replay is still kept short
+		}
+		cmp.Frames = int(float64(secs)*fps + 0.5)
+	}
 	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
 		dir, err := tools()
 		if err != nil {

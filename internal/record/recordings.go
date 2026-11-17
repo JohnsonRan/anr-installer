@@ -1,7 +1,9 @@
 package record
 
 import (
+	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -24,7 +26,56 @@ type Recording struct {
 	Dropped    int    `json:"dropped"` // real frames the recorder could not keep up with
 	Multiplier int    `json:"multiplier"`
 	Bytes      int64  `json:"bytes"`
-	Status     string `json:"status"` // recording, complete, or stopped: <why>
+	Status     string `json:"status"`        // recording, complete, or stopped: <why>
+	QPC        int64  `json:"qpc_frequency"` // ticks a second of the frames' timestamps
+
+	Seconds float64 `json:"-"` // how long it is, from its frames' timestamps; 0 when unknown
+}
+
+// RealFPS is the rate of the recorded real frames, or 0 when unknown.
+func (r *Recording) RealFPS() float64 {
+	if r.Seconds <= 0 {
+		return 0
+	}
+	return float64(r.Frames) / r.Seconds
+}
+
+// Remove deletes the recording and what was made of it.
+func (r *Recording) Remove() error {
+	return errors.Join(os.RemoveAll(r.Dir), os.RemoveAll((&Comparison{Recording: r}).Out()))
+}
+
+// indexRecord is the size of a frame's record in frames.idx; its timestamp is at indexTime.
+const (
+	indexRecord = 64
+	indexTime   = 32
+	maxSeconds  = 24 * 60 * 60 // longer than any recording: nr-record stops one after minutes
+)
+
+// seconds is the time between the first and the last frame of the recording in dir, by frames.idx.
+func seconds(dir string, qpc int64) float64 {
+	f, err := os.Open(filepath.Join(dir, "frames.idx"))
+	if err != nil || qpc <= 0 {
+		return 0
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil || fi.Size() < 2*indexRecord {
+		return 0
+	}
+	at := func(off int64) int64 {
+		var b [8]byte
+		if _, err := f.ReadAt(b[:], off+indexTime); err != nil {
+			return 0
+		}
+		return int64(binary.LittleEndian.Uint64(b[:]))
+	}
+	first, last := at(0), at(fi.Size()/indexRecord*indexRecord-indexRecord)
+	// A damaged index gives no length: timestamps that go backwards, or that are days apart.
+	if first < 0 || last <= first || (last-first)/qpc > maxSeconds {
+		return 0
+	}
+	return float64(last-first) / float64(qpc)
 }
 
 // FrameGeneration reports whether the recording holds the inputs of frame generation, which replays through
@@ -83,6 +134,7 @@ func Recordings(dir string) []*Recording {
 				r.Time = fi.ModTime()
 			}
 		}
+		r.Seconds = seconds(r.Dir, r.QPC)
 		recs = append(recs, r)
 	}
 	sort.SliceStable(recs, func(i, j int) bool { return recs[i].Time.After(recs[j].Time) })

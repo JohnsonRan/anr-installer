@@ -77,6 +77,10 @@ game's page shows **Record and compare** once ANR FG's full package is installed
    choose **Stills**, which exports the frames around it as lossless PNG images. **Open in nr-record's viewer**
    opens the same comparison there, for pixel zoom, marks and exports.
 
+Recordings are large and replays are slow: at 3840 × 2160 a recording takes about 26 MB a frame, and a replay
+takes about a minute for each second recorded. So the button compares the first 5 seconds of a recording; the
+arrow beside it replays the first 15 seconds or all of it, and deletes the recording.
+
 The videos need FFmpeg and FFprobe. When they are missing, **Install with Scoop** installs them; without
 [Scoop](https://scoop.sh), the installer asks you to install Scoop first. Installing ANR FG again switches frame
 generation back to ANR FG, so install nr-record again afterwards to keep recording. Recordings of an upscaler's
