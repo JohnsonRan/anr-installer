@@ -30,6 +30,9 @@ if command -v powershell >/dev/null; then
 else
 	(cd "$stage" && zip -qr "../$zip" "$name") || exit 1
 fi
-gh release upload "v$version" "build/$zip" --repo "$repo" --clobber || exit 1
+# SHA256SUMS, which mygo build uploaded, gets the portable zip too, so that every download can be checked. -t
+# writes the two-space form mygo writes, where Git Bash would mark the file binary with "*".
+(cd build && sha256sum -t "$zip" >> SHA256SUMS) || exit 1
+gh release upload "v$version" "build/$zip" build/SHA256SUMS --repo "$repo" --clobber || exit 1
 echo "Uploaded build/$zip to the draft release v$version. Publish it with:"
 echo "  gh release edit v$version --repo $repo --draft=false"
