@@ -231,3 +231,24 @@ func TestAntiCheatWarning(t *testing.T) {
 		t.Error("a game without anti-cheat shows the warning")
 	}
 }
+
+func TestAboutDialog(t *testing.T) {
+	a := testApp(t)
+	tt := ui.NewTester(a.view, 1040, 760)
+	if tt.HasText(T("about.updates")) {
+		t.Fatal("the About dialog shows before it is opened")
+	}
+	a.openAbout()
+	tt.Frame()
+	for _, s := range []string{T("about.updates"), T("about.cantUpdate"), T("about.auto"), T("about.changelog"), T("about.license"), T("about.notice")} {
+		if !tt.HasText(s) {
+			t.Errorf("missing %q in %q", s, tt.Texts())
+		}
+	}
+	if err := tt.Click(T("about.close")); err != nil {
+		t.Fatal(err)
+	}
+	if a.aboutOpen || tt.HasText(T("about.updates")) {
+		t.Error("Close did not close the dialog")
+	}
+}

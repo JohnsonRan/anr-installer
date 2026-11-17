@@ -90,6 +90,8 @@ type app struct {
 	show         int  // which games the list shows: showAll, showSupported or showInstalled
 	advanced     bool // the advanced install options are open
 	logOpen      bool // the activity log is open
+	aboutOpen    bool // the About dialog is open
+	autoCheck    bool // the About dialog's copy of the updater's automatic checks
 	list         ui.ListState
 	row          int // the row chosen in the filtered list, -1 none
 	visible      []int

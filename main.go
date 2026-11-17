@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/plugins/updater/native"
 	"github.com/egoist/mygo/ui"
 )
@@ -30,6 +31,11 @@ func main() {
 			Content:           ui.View(a.view),
 		})
 		a.start()
+		// The About dialog shows the updater's state: draw it again when a check or a preference changes it.
+		updater.OnChange(func() {
+			a.autoCheck = updater.AutomaticChecks()
+			a.win.Invalidate()
+		})
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)

@@ -34,6 +34,7 @@ func (a *app) view(c *ui.Context) {
 					})
 				}
 				a.activity(c, t)
+				a.about(c, t)
 			})
 		})
 	})
