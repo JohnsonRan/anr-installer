@@ -31,6 +31,8 @@ func main() {
 			Content:           ui.View(a.view),
 		})
 		a.start()
+		// A recording is made in the game, while this window is behind it: look for new ones on the way back.
+		a.win.OnFocus(a.refreshRecord)
 		// The About dialog shows the updater's state: draw it again when a check or a preference changes it.
 		updater.OnChange(func() {
 			a.autoCheck = updater.AutomaticChecks()

@@ -30,6 +30,7 @@ func (a *app) detail(c *ui.Context, t *ui.Theme, g *game) {
 			roleBodyStrong.on(t, ui.Text(c, T("status"))).PaddingY(space1)
 			a.statusCards(c, t, g)
 		})
+		a.recordSection(c, t, g)
 		a.advancedCard(c, t, g)
 	})
 }

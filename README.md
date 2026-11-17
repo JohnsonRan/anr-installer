@@ -61,6 +61,23 @@ notes once. **Update all** there upgrades those games one after another, each wi
 with anti-cheat are left out: upgrade each of them from its own page. The list marks the games to upgrade, and
 the bar above it shows only those.
 
+## Record and compare
+
+[nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation), from the same releases,
+records what a game gives its frame generation, so that ANR FG and DLSS-G can be compared on the same frames. A
+game's page shows **Record and compare** once ANR FG's full package is installed in it.
+
+1. Click **Install nr-record**. Start the game and turn on DLSS frame generation. **F6** starts and stops a
+   recording; **F9** records 8 frames.
+2. Back in the installer, click **Refresh**. Each recording of the game has **Compare with DLSS-G**: it replays
+   the recording through the installed ANR FG and through the game's own `nvngx_dlssg.dll`, then opens
+   nr-record's viewer on the two videos. Replaying through DLSS-G needs an NVIDIA RTX 40 or 50 series GPU.
+
+The videos need FFmpeg and FFprobe. When they are missing, **Install with Scoop** installs them; without
+[Scoop](https://scoop.sh), the installer asks you to install Scoop first. Installing ANR FG again switches frame
+generation back to ANR FG, so install nr-record again afterwards to keep recording. Recordings of an upscaler's
+inputs are listed, but replay from the command line only.
+
 ## Anti-cheat
 
 OptiScaler and ANR FG hook into a game's rendering. Anti-cheat may take them for a cheat and ban the account,

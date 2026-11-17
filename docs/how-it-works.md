@@ -51,6 +51,26 @@ published packages do not change, so only new releases are read again.
   uninstall removes, are copied next to the `.exe` as `<name>.bak-<time>` first.
 - Installing into a game that ships anti-cheat asks first; cancelling is the default.
 
+## Recording and comparing
+
+On Windows, a game's page drives nr-record, whose package ships in the same releases
+(`nr-record-<version>-windows.zip`, checked against `nr-record-<version>-SHA256SUMS.txt`).
+
+- **Installing**: the package's own `install.ps1` and `uninstall.ps1` do the work, as with ANR FG. They need the
+  full package's OptiScaler, keep the original `OptiScaler.ini` in `OptiScaler\nr_record_backup` and restore it.
+  nr-record is in the game when `OptiScaler\custom\nr-record` exists, and in use when `FGNvngxReplacement` is
+  `nr-record`.
+- **Recordings**: the folders with a `record.json` in `%LOCALAPPDATA%\nr-record`. A recording belongs to the
+  game whose `.exe` has the name in its `game` field. Those with `feature` `fg`, or none, hold frame generation
+  inputs.
+- **Comparing**: `nr-replay` replays the recording through the installed ANR FG (`--generator provider`) and
+  through the game's own `nvngx_dlssg.dll` (`--generator nvidia`), each streamed into `nr-video`, which writes
+  an `.mp4`; `nr-video project` writes the viewer's project of the two. The package's viewer, `renderer.exe`,
+  opens it with `--compare --project`, and browses the recordings with `--captures`.
+- **FFmpeg and FFprobe**: looked for on the `PATH`, then in Scoop's shim folders (`%SCOOP%\shims`,
+  `%USERPROFILE%\scoop\shims`, and the same for a global install). `scoop install ffmpeg` installs both. The
+  viewer gets their paths in `NR_FFMPEG` and `NR_FFPROBE`.
+
 ## Files the installer keeps
 
 | Path | Holds |
@@ -59,6 +79,7 @@ published packages do not change, so only new releases are read again.
 | `%LOCALAPPDATA%\anr-installer\versions.json` | each release package's version and provider hash |
 | `%LOCALAPPDATA%\anr-installer\downloads\` | downloaded packages |
 | `%LOCALAPPDATA%\anr-installer\packages\` | unpacked packages |
+| `%LOCALAPPDATA%\anr-installer\compare\<recording>\` | a comparison's two videos and the viewer's project |
 
 The portable version, which a file named `portable` next to its executable marks, keeps `games.json` in its own
 folder and the rest under `cache\` there.

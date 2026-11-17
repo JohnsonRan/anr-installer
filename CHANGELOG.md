@@ -10,6 +10,9 @@ The first release. ANR FG Installer is an unofficial tool, not made or endorsed 
   add-on, from any release from V.B04 on, or from a local zip. Downloads are checked against each release's
   SHA-256 sums.
 - Tells the installed ANR FG version without downloading a package.
+- Records and compares frame generation with nr-record: installs it into a game, lists the recordings, replays
+  one through ANR FG and the game's DLSS-G, and opens the viewer on the two videos. FFmpeg and FFprobe, when
+  missing, are installed with Scoop.
 - Warns before installing into a game that ships anti-cheat: the risk is the user's.
 - Backs up `OptiScaler.ini` and `nr_fg.ini` next to the game's `.exe` before a step would lose them.
 - Lays out a game as Windows 11's Settings does, under its Steam library art, in the dark colors of

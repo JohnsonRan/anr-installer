@@ -30,6 +30,7 @@ type game struct {
 	Icon     *ui.Bitmap // Steam's icon of the game, or its .exe's; nil: none
 	Hero     *ui.Bitmap // the picture Steam's library shows at the top of the game's page, else its store header; nil: none
 	Logo     *ui.Bitmap // the game's logo, which Steam's library draws over the hero; nil: none
+	Recorder bool       // nr-record's capture DLLs are in the game
 }
 
 // steamLanguage is the language Steam names its localized pictures by, for the window's language.
@@ -130,6 +131,8 @@ type app struct {
 	status   string
 	logLines []string
 	logList  ui.ListState
+
+	rec recState // nr-record: its package, the tools it needs and the recordings
 }
 
 func newApp() *app {
@@ -157,6 +160,7 @@ func newApp() *app {
 func (a *app) start() {
 	a.scanSteam()
 	a.fetchRelease()
+	a.refreshRecord()
 }
 
 func (a *app) scanSteam() {

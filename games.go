@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo"
 
 	"anr-installer/internal/detect"
+	"anr-installer/internal/record"
 	"anr-installer/internal/store"
 )
 
@@ -26,6 +27,7 @@ func scanGame(dir, exeDir string, manual bool) (*detect.Result, string) {
 // its .exe's product name.
 func (a *app) scanned(g *game, r *detect.Result, name string) {
 	g.Scan, g.Scanning = r, false
+	g.Recorder = record.Installed(r.ExeDir)
 	if g.Manual && !g.Named && name != "" && name != g.Name {
 		g.Name = name
 		a.persist()

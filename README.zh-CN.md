@@ -54,6 +54,21 @@ ANR FG 发布新版本、而你有游戏装的是旧版本时，安装器会显�
 游戏，各自保持原来的安装包类型。带反作弊的游戏不会一并更新，请在各自的页面中单独升级。列表会标出可升级的游戏，
 列表上方的提示条可以只显示这些游戏。
 
+## 录制和对比
+
+[nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation) 和 ANR FG 在同一处发布，
+用来录制游戏交给帧生成的输入，这样就能用同样的帧对比 ANR FG 和 DLSS-G。游戏装好 ANR FG 的 full 版后，
+它的页面上会出现“录制和对比”。
+
+1. 选择“安装 nr-record”，然后启动游戏并开启 DLSS 帧生成。按 F6 开始或停止录制，按 F9 录制 8 帧。
+2. 回到安装器，选择“刷新”。这款游戏的每段录制内容都有“与 DLSS-G 对比”：安装器会分别通过已安装的 ANR FG
+   和游戏自带的 `nvngx_dlssg.dll` 回放这段录制内容，然后在 nr-record 的查看器中打开两段视频。通过 DLSS-G
+   回放需要 NVIDIA RTX 40 或 50 系列显卡。
+
+生成视频需要 FFmpeg 和 FFprobe。未检测到时，可以选择“通过 Scoop 安装”；如果没有安装
+[Scoop](https://scoop.sh)，安装器会提示你先安装 Scoop。重新安装 ANR FG 后，帧生成会切换回 ANR FG；
+要继续录制，请重新安装 nr-record。超分辨率输入的录制内容也会列出，但只能在命令行中回放。
+
 ## 反作弊
 
 OptiScaler 和 ANR FG 会接入游戏的渲染。反作弊可能把它们当作作弊程序并封禁账号，联机模式下尤其如此。

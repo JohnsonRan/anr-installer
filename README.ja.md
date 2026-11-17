@@ -64,6 +64,24 @@ ANR FG の新しいバージョンが公開され、古いバージョンが入�
 そのままです。アンチチートのあるゲームは対象外なので、各ゲームのページから個別にアップグレードしてください。一覧では
 アップグレードできるゲームに印が付き、一覧の上のバーからそれらだけを表示できます。
 
+## 記録と比較
+
+[nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation) は ANR FG と同じリリースで
+配布されており、ゲームがフレーム生成に渡す入力を記録します。同じフレームで ANR FG と DLSS-G を比較できます。
+ANR FG の full パッケージをインストールしたゲームのページには、[Record and compare] (記録と比較) が表示されます。
+
+1. [Install nr-record] (nr-record をインストール) をクリックします。ゲームを起動して、DLSS フレーム生成を
+   オンにします。F6 で記録を開始および停止し、F9 で 8 フレームを記録します。
+2. ANR FG Installer に戻って、[Refresh] (更新) をクリックします。そのゲームの記録ごとに
+   [Compare with DLSS-G] (DLSS-G と比較) が表示されます。クリックすると、インストール済みの ANR FG と
+   ゲーム付属の `nvngx_dlssg.dll` で記録が再生され、2 本のビデオが nr-record のビューアーで開きます。
+   DLSS-G での再生には、NVIDIA RTX 40 または 50 シリーズの GPU が必要です。
+
+ビデオの作成には FFmpeg と FFprobe が必要です。見つからない場合は、[Install with Scoop] (Scoop でインストール)
+でインストールできます。[Scoop](https://scoop.sh) がない場合は、先に Scoop をインストールするよう案内されます。
+ANR FG を再インストールすると、フレーム生成は ANR FG に戻ります。記録を続けるには、nr-record をもう一度
+インストールしてください。アップスケーラーの入力の記録も一覧に表示されますが、再生できるのはコマンド ラインからのみです。
+
 ## アンチチート
 
 OptiScaler と ANR FG は、ゲームの描画処理に組み込まれます。アンチチートがこれらを不正なツールと判断して、

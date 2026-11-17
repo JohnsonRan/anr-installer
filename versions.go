@@ -9,6 +9,7 @@ import (
 
 	"anr-installer/internal/detect"
 	"anr-installer/internal/pkg"
+	"anr-installer/internal/record"
 )
 
 // fetchRelease lists the releases, then reads the version of each package the cache lacks, so that an installed
@@ -32,6 +33,7 @@ func (a *app) fetchRelease() {
 // setReleases keeps the releases and the versions offered for install, from pkg.MinInstallable on.
 func (a *app) setReleases(rels []*pkg.Release) {
 	a.releases, a.rel = rels, rels[0]
+	a.rec.pkg = record.Find(rels)
 	a.versionRel, a.versionLabels = nil, nil
 	for i, r := range rels {
 		if pkg.Number(r.Version) < pkg.MinInstallable {

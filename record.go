@@ -1,0 +1,316 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"path/filepath"
+	"runtime"
+	"strings"
+
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/ui"
+
+	"anr-installer/internal/detect"
+	"anr-installer/internal/pkg"
+	"anr-installer/internal/record"
+)
+
+// scoopURL is where Scoop says how to install it.
+const scoopURL = "https://scoop.sh"
+
+// maxRecordings is how many of a game's recordings its page lists, the newest first; the folder holds the rest.
+const maxRecordings = 5
+
+// recState is what the "Record and compare" section of a game's page shows, read off the main thread by
+// refreshRecord.
+type recState struct {
+	pkg        *record.Package     // the nr-record package of the newest release that carries one, or nil
+	tools      record.Tools        // FFmpeg, FFprobe and Scoop, as found
+	recordings []*record.Recording // every recording, the newest first
+	compared   map[string]bool     // by a recording's name: its comparison was made before
+}
+
+// refreshRecord looks again for the tools nr-record needs and for the recordings.
+func (a *app) refreshRecord() {
+	go func() {
+		tools := record.FindTools()
+		recs := record.Recordings(record.RecordingsDir())
+		compared := map[string]bool{}
+		for _, r := range recs {
+			compared[r.Name] = (&record.Comparison{Recording: r}).Done()
+		}
+		a.win.Update(func() { a.rec.tools, a.rec.recordings, a.rec.compared = tools, recs, compared })
+	}()
+}
+
+// recordingsOf returns the recordings made in g.
+func (a *app) recordingsOf(g *game) []*record.Recording {
+	var recs []*record.Recording
+	for _, r := range a.rec.recordings {
+		if g.Scan != nil && r.Of(g.Scan.Exe) {
+			recs = append(recs, r)
+		}
+	}
+	return recs
+}
+
+// recordSection is the "Record and compare" group of a game's page: nr-record in the game, the programs its
+// tools need, and the game's recordings, each with its comparison of ANR FG and DLSS-G. nr-record's tools
+// for Windows are the ones driven, so the section shows on Windows only.
+func (a *app) recordSection(c *ui.Context, t *ui.Theme, g *game) {
+	if runtime.GOOS != "windows" {
+		return
+	}
+	r := g.Scan
+	recs := a.recordingsOf(g)
+	idle := !a.busy && !g.Scanning
+	// A row's description is one line; what the user has to read or do is said in an info bar, which wraps.
+	ui.Column(c).Gap(gapCardRows).Children(func() {
+		ui.Row(c).Gap(gapControls).Children(func() {
+			roleBodyStrong.on(t, ui.Text(c, T("rec.title"))).PaddingY(space1).Grow(1)
+			ui.Button(c, T("rec.refresh")).Tooltip(T("rec.refresh.tip")).OnClick(a.refreshRecord)
+		})
+
+		installed := g.Recorder
+		switch {
+		case installed && r.NRRecord:
+			settingsRow(c, t, iconRecord, "nr-record", T("rec.nrrecord"), func() {
+				statusValue(c, T("rec.installed"), t.Success)
+				ui.Button(c, T("rec.uninstall")).Disabled(!idle).OnClick(func() { a.recordInstall(g, pkg.Uninstall) })
+			})
+			infoBar(c, t, apexRoyal, iconInfo, T("rec.nrrecord.on"), nil)
+		case installed:
+			settingsRow(c, t, iconRecord, "nr-record", T("rec.nrrecord"), func() {
+				statusValue(c, T("rec.unused"), t.Warning)
+				ui.Button(c, T("rec.uninstall")).Disabled(!idle).OnClick(func() { a.recordInstall(g, pkg.Uninstall) })
+			})
+			infoBar(c, t, t.Warning, iconWarning, T("rec.nrrecord.off"), func() {
+				ui.Button(c, T("rec.reinstall")).Disabled(!idle).OnClick(func() { a.recordInstall(g, pkg.Install) })
+			})
+		case r.Installed != detect.KindFull:
+			settingsRow(c, t, iconRecord, "nr-record", T("rec.nrrecord.needs"), func() { valueText(c, T("anr.none"), t.TextMuted) })
+		default:
+			settingsRow(c, t, iconRecord, "nr-record", T("rec.nrrecord"), func() {
+				ui.Button(c, T("rec.install")).Disabled(!idle).OnClick(func() { a.recordInstall(g, pkg.Install) })
+			})
+		}
+		if !installed && len(recs) == 0 {
+			return
+		}
+
+		tools := a.rec.tools
+		switch {
+		case tools.Ready():
+			settingsRow(c, t, iconFilm, T("rec.ffmpeg"), T("rec.ffmpeg.detail"), func() { statusValue(c, T("rec.found"), t.Success) })
+		case tools.Scoop != "":
+			settingsRow(c, t, iconFilm, T("rec.ffmpeg"), T("rec.ffmpeg.detail"), func() {
+				statusValue(c, T("rec.missing"), t.Warning)
+				ui.Button(c, T("rec.scoop.install")).Disabled(a.busy).OnClick(func() { a.installFFmpeg(g) })
+			})
+		default:
+			settingsRow(c, t, iconFilm, T("rec.ffmpeg"), T("rec.ffmpeg.detail"), func() { statusValue(c, T("rec.missing"), t.Warning) })
+			infoBar(c, t, t.Warning, iconWarning, T("rec.ffmpeg.noscoop"), func() {
+				ui.Button(c, T("rec.scoop.get")).Tooltip(scoopURL).OnClick(func() { mygo.Shell.OpenExternal(scoopURL) })
+				ui.Button(c, T("rec.check")).OnClick(a.refreshRecord)
+			})
+		}
+
+		dir := record.RecordingsDir()
+		count := T("rec.recordings.none")
+		if len(a.rec.recordings) > 0 {
+			count = T("rec.recordings.count", len(recs), len(a.rec.recordings))
+		}
+		settingsRow(c, t, iconFolder, T("rec.recordings"), count, func() {
+			if len(a.rec.recordings) > 0 {
+				ui.Button(c, T("open.folder")).OnClick(func() { mygo.Shell.OpenPath(dir) })
+			}
+			ui.Button(c, T("rec.browse")).Tooltip(T("rec.browse.tip")).Disabled(a.busy).OnClick(func() { a.openViewer(g, "--captures") })
+		})
+		why := a.compareBlocked(g)
+		if why != "" && tools.Ready() && len(recs) > 0 { // without the tools, the bar above says what to do
+			infoBar(c, t, t.Warning, iconWarning, why, nil)
+		}
+		for _, rec := range recs[:min(len(recs), maxRecordings)] {
+			a.recordingRow(c.Key(rec.Name), t, g, rec, why != "" || a.busy)
+		}
+	})
+}
+
+// recordingRow is a recording: when it was made and what it holds, with its comparison.
+func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Recording, blocked bool) {
+	title := rec.Time.Format("2006-01-02 15:04:05")
+	if !rec.FrameGeneration() {
+		settingsRow(c, t, iconFrames, title, T("rec.item.upscaler"), func() { valueText(c, T("rec.item.cli"), t.TextMuted) })
+		return
+	}
+	detail := T("rec.item", rec.Width, rec.Height, rec.Frames, fmt.Sprintf("%.1f GB", float64(rec.Bytes)/1e9))
+	if rec.Dropped > 0 {
+		detail += T("rec.item.dropped", rec.Dropped)
+	}
+	settingsRow(c, t, iconFrames, title, detail, func() {
+		if a.rec.compared[rec.Name] {
+			ui.Button(c, T("rec.compare.again")).Disabled(blocked).OnClick(func() { a.compare(g, rec) })
+			ui.Button(c, T("rec.compare.open")).Disabled(a.busy).OnClick(func() {
+				a.openViewer(g, "--compare", "--project", (&record.Comparison{Recording: rec}).Project())
+			})
+			return
+		}
+		ui.Button(c, T("rec.compare")).Disabled(blocked).OnClick(func() { a.compare(g, rec) })
+	})
+}
+
+// dlssgDLL returns the game's own nvngx_dlssg.dll, which a recording replays through as DLSS-G, or "".
+func dlssgDLL(r *detect.Result) string {
+	for _, p := range r.DLSSG {
+		if strings.EqualFold(filepath.Base(p), "nvngx_dlssg.dll") {
+			return p
+		}
+	}
+	return ""
+}
+
+// compareBlocked returns why a recording of g cannot be compared now, or "".
+func (a *app) compareBlocked(g *game) string {
+	switch r := g.Scan; {
+	case !a.rec.tools.Ready():
+		return T("rec.why.tools")
+	case r.ANRDll == "" || r.Installed == detect.KindNone:
+		return T("rec.why.anr")
+	case dlssgDLL(r) == "":
+		return T("rec.why.dlssg")
+	}
+	return ""
+}
+
+// recordWork runs work in the background as the one step in progress, with its lines in the activity log, and
+// rescans g after it. work gets say, which logs a line and shows it as the status, and tools, which returns
+// the unpacked nr-record package, downloading it when the cache lacks it.
+func (a *app) recordWork(g *game, work func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error) {
+	if a.busy {
+		return
+	}
+	a.busy, a.progress = true, -1
+	p, listed := a.rec.pkg, a.rel != nil
+	update := func(fn func()) { a.win.Update(fn) }
+	name, said := g.Name, false
+	say := func(format string, args ...any) {
+		line := fmt.Sprintf(format, args...)
+		update(func() {
+			if !said { // the log opens, under the game's name, once a step has something to say
+				said, a.logOpen = true, true
+				a.logLines = append(a.logLines, "── "+name)
+			}
+			a.status = line
+			a.logLines = append(a.logLines, line)
+		})
+	}
+	go func() {
+		ctx := context.Background()
+		err := work(ctx, say, func() (string, error) {
+			dir, err := record.Unpack(ctx, p, func(done, total int64) {
+				update(func() {
+					if total > 0 {
+						a.progress = float64(done) / float64(total)
+					}
+					a.status = T("downloading", p.Asset(), fmt.Sprintf("%.1f / %.1f MB", float64(done)/1e6, float64(total)/1e6))
+				})
+			})
+			update(func() { a.progress = -1 })
+			switch {
+			case errors.Is(err, record.ErrNoPackage) && listed:
+				err = errors.New(T("rec.why.no-asset"))
+			case errors.Is(err, record.ErrNoPackage):
+				err = errors.New(T("rec.why.no-package"))
+			}
+			return dir, err
+		})
+		update(func() {
+			a.busy, a.progress = false, -2
+			if err != nil {
+				a.status = T("failed", err.Error())
+				a.logLines = append(a.logLines, a.status)
+			}
+			a.rescan(g)
+			a.refreshRecord()
+		})
+	}()
+}
+
+// logLine adds a line a program printed to the activity log, from off the main thread.
+func (a *app) logLine(line string) {
+	a.win.Update(func() { a.logLines = append(a.logLines, "  "+line) })
+}
+
+// recordInstall runs the nr-record package's installer or uninstaller for g. The package's own scripts do the
+// work, as with ANR FG: they keep and restore OptiScaler.ini.
+func (a *app) recordInstall(g *game, action pkg.Action) {
+	gameDir := g.Scan.ExeDir
+	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
+		dir, err := tools()
+		if err != nil {
+			return err
+		}
+		say("%s", T("rec.running."+string(action)))
+		if err := pkg.Run(ctx, dir, action, gameDir, a.logLine); err != nil {
+			return err
+		}
+		say("%s", T("rec.done."+string(action), gameDir))
+		return nil
+	})
+}
+
+// installFFmpeg installs FFmpeg and FFprobe with Scoop.
+func (a *app) installFFmpeg(g *game) {
+	scoop := a.rec.tools.Scoop
+	a.recordWork(g, func(ctx context.Context, say func(string, ...any), _ func() (string, error)) error {
+		say("%s", T("rec.scoop.running"))
+		if err := record.InstallFFmpeg(ctx, scoop, a.logLine); err != nil {
+			return err
+		}
+		if !record.FindTools().Ready() {
+			return errors.New(T("rec.scoop.missing"))
+		}
+		say("%s", T("rec.scoop.done"))
+		return nil
+	})
+}
+
+// compare replays rec through the ANR FG installed in g and through g's DLSS-G, then opens the viewer on the
+// two videos.
+func (a *app) compare(g *game, rec *record.Recording) {
+	t := a.rec.tools
+	cmp := &record.Comparison{Recording: rec, A: record.ANR(g.Scan.ANRDll), B: record.DLSSG(dlssgDLL(g.Scan)), FFmpeg: t.FFmpeg}
+	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
+		dir, err := tools()
+		if err != nil {
+			return err
+		}
+		cmp.Tools = dir
+		side := ""
+		step := func(label string) {
+			side = label
+			say("%s", T("rec.replaying", label))
+		}
+		if err := cmp.Make(ctx, step, a.logLine); err != nil {
+			if side == cmp.B.Label {
+				say("%s", T("rec.hint.dlssg"))
+			}
+			return err
+		}
+		say("%s", T("rec.done.compare", cmp.Out()))
+		return record.View(dir, t, "--compare", "--project", cmp.Project())
+	})
+}
+
+// openViewer opens nr-record's viewer with args.
+func (a *app) openViewer(g *game, args ...string) {
+	t := a.rec.tools
+	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
+		dir, err := tools()
+		if err != nil {
+			return err
+		}
+		return record.View(dir, t, args...)
+	})
+}
