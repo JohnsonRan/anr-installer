@@ -92,6 +92,43 @@ func TestLangOf(t *testing.T) {
 	}
 }
 
+func TestQuitAsks(t *testing.T) {
+	for _, c := range []struct {
+		busy, forced, final, want bool
+	}{
+		{false, false, false, false}, // no task: quits at once
+		{true, false, false, true},
+		{true, true, false, false},  // the answer "Quit anyway"
+		{true, false, true, false},  // the session ends, or a quit let through closes the window
+		{false, true, false, false}, // the flag left over changes nothing
+	} {
+		if got := quitAsks(c.busy, c.forced, c.final); got != c.want {
+			t.Errorf("quitAsks(%v, %v, %v) = %v", c.busy, c.forced, c.final, got)
+		}
+	}
+}
+
+func TestQuitDialog(t *testing.T) {
+	a := testApp(t)
+	tt := ui.NewTester(a.view, 1040, 760)
+	if tt.HasText(T("quit.title")) {
+		t.Fatal("the question shows before it is asked")
+	}
+	a.quitAsk = true
+	tt.Frame()
+	for _, s := range []string{T("quit.title"), T("quit.detail"), T("quit.keep"), T("quit.anyway")} {
+		if !tt.HasText(s) {
+			t.Errorf("missing %q in %q", s, tt.Texts())
+		}
+	}
+	if err := tt.Click(T("quit.keep")); err != nil {
+		t.Fatal(err)
+	}
+	if a.quitAsk || a.quitForced || tt.HasText(T("quit.title")) {
+		t.Error("Keep running should close the question and let no quit through")
+	}
+}
+
 func TestCloseHides(t *testing.T) {
 	for _, c := range []struct {
 		toTray, hasTray, quitting, want bool

@@ -138,6 +138,9 @@ type app struct {
 	settings *settingsState // the settings page, shown in place of the others; nil: none
 	tray     *mygo.Tray     // the notification area icon, while closing the window hides it; nil: none
 	quitting bool           // a quit is under way, which closes the window whatever the setting
+	quitAsk  bool           // the dialog asking whether to quit while a task runs is open
+	// quitForced lets the next quit through without asking: the user answered "Quit anyway".
+	quitForced bool
 }
 
 func newApp() *app {

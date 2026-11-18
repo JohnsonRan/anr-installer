@@ -278,6 +278,10 @@ var messages = map[string][2]string{
 	"tray.show":                {"Show window", "显示窗口"},
 	"tray.quit":                {"Quit", "退出"},
 	"tray.failed":              {"Couldn't add the tray icon: %s. Closing the window quits the app.", "无法添加托盘图标: %s。关闭窗口将退出应用。"},
+	"quit.title":               {"Quit while a task is running?", "要在任务进行中退出吗?"},
+	"quit.detail":              {"What the installer does itself stops at once, and a program it started, such as a package's installer, may stop partway or go on unseen. A game's files may be left half changed.", "安装器自身的操作会立即停止，它启动的程序(例如安装包的安装程序)可能中途停止，也可能在后台继续运行。游戏文件可能只更改了一半。"},
+	"quit.keep":                {"Keep running", "继续运行"},
+	"quit.anyway":              {"Quit anyway", "仍然退出"},
 
 	// The comparison page.
 	"cmp.title":         {"%s and %s", "%s 和 %s"},

@@ -44,13 +44,28 @@ func main() {
 			a.win.Invalidate()
 		})
 		mygo.App.OnSecondInstance(func([]string, string) { a.showWindow() })
-		mygo.App.OnBeforeQuit(func(*mygo.QuitEvent) { a.quitting = true })
+		// A quit from the tray or an update's restart waits for the user's answer while a task runs; the answer
+		// "Quit anyway" lets the one quit after it through.
+		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
+			forced := a.quitForced
+			a.quitForced = false
+			if quitAsks(a.busy, forced, e.SessionEnding) {
+				e.PreventDefault()
+				a.askQuit()
+				return
+			}
+			a.quitting = true
+		})
 		mygo.App.OnQuitCanceled(func() { a.quitting = false })
 		mygo.App.OnWillQuit(func(*mygo.QuitEvent) { a.removeTray() })
 		a.win.OnClose(func(e *mygo.CloseEvent) {
-			if closeHides(a.saved.CloseToTray, a.tray != nil, a.quitting) {
+			switch {
+			case closeHides(a.saved.CloseToTray, a.tray != nil, a.quitting):
 				e.PreventDefault()
 				a.win.Hide()
+			case quitAsks(a.busy, false, a.quitting): // closing the only window quits
+				e.PreventDefault()
+				a.askQuit()
 			}
 		})
 		a.syncTray()

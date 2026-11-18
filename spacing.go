@@ -50,6 +50,7 @@ const (
 	cardRadius        = 8
 	notesWidth        = 600 // the release notes dialog
 	notesHeight       = 420
+	confirmWidth      = 440 // a dialog that asks before going on
 	titleLogo         = 24
 	titleIcon         = 16 // the settings button's icon in the title bar
 	captionIcon       = 10 // the window buttons' icons, as Windows draws them
