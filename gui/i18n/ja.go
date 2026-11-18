@@ -287,6 +287,22 @@ var messagesJa = map[string]string{
 	"quit.keep":                 "実行を続ける",
 	"quit.anyway":               "このまま終了",
 
+	"merge.title":             "OptiScaler の設定を残しますか?",
+	"merge.detail":            "ANR FG %s には新しい OptiScaler.ini が含まれています。次の設定は変更済みで、新しいバージョンでも変わっています。それぞれ使う値を選んでください。",
+	"merge.mine":              "現在: %s",
+	"merge.new":               "新しい値: %s",
+	"merge.kept":              "ほかの変更はそのまま残ります: %s。",
+	"merge.pinned.title":      "ANR FG が設定",
+	"merge.pinned":            "%s は %s に設定されます。ANR FG にはこの値が必要です。以前の値は %s です。",
+	"merge.all.mine":          "すべて現在の値にする",
+	"merge.all.new":           "すべて新しい値にする",
+	"merge.apply":             "設定を保存",
+	"merge.log.kept":          "OptiScaler.ini の設定を残しました: %s。",
+	"merge.log.kept.conflict": "%s (新しい値: %s)",
+	"merge.log.new":           "OptiScaler.ini の新しい値にしました: %s。",
+	"merge.log.pinned":        "ANR FG に必要なため、ANR FG が設定しました: %s。",
+	"merge.log.failed":        "OptiScaler.ini の設定を残せませんでした: %s。新しいファイルが使われ、以前のファイルはバックアップされています。",
+
 	// The comparison page.
 	"cmp.title":         "%s と %s",
 	"cmp.viewer":        "nr-record のビューアーで開く",

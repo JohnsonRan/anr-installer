@@ -287,6 +287,22 @@ var messagesZhHant = map[string]string{
 	"quit.keep":                 "繼續執行",
 	"quit.anyway":               "仍要結束",
 
+	"merge.title":             "保留你的 OptiScaler 設定?",
+	"merge.detail":            "ANR FG %s 附帶新的 OptiScaler.ini。下列設定你改過，新版本也改了: 請為每一項選擇要保留的值。",
+	"merge.mine":              "你的: %s",
+	"merge.new":               "新版: %s",
+	"merge.kept":              "你的其他變更會保留: %s。",
+	"merge.pinned.title":      "由 ANR FG 設定",
+	"merge.pinned":            "%s 設為 %s，ANR FG 需要這個值。你的值是 %s。",
+	"merge.all.mine":          "全部保留我的",
+	"merge.all.new":           "全部使用新版",
+	"merge.apply":             "儲存設定",
+	"merge.log.kept":          "已保留你的 OptiScaler.ini 設定: %s。",
+	"merge.log.kept.conflict": "%s (新版為 %s)",
+	"merge.log.new":           "已改用 OptiScaler.ini 的新值: %s。",
+	"merge.log.pinned":        "由 ANR FG 設定，它需要這些值: %s。",
+	"merge.log.failed":        "無法保留你的 OptiScaler.ini 設定: %s。已使用新檔案，你的檔案已備份。",
+
 	// The comparison page.
 	"cmp.title":         "%s 和 %s",
 	"cmp.viewer":        "在 nr-record 檢視器中開啟",

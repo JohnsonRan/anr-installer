@@ -140,8 +140,9 @@ type app struct {
 	status   string       // what the task in progress does now
 	log      activity.Log // the tasks and notes the activity panel shows
 
-	rec recState     // nr-record: its package, the tools it needs and the recordings
-	cmp *compareView // the comparison page, shown in place of a game's page; nil: none
+	rec   recState     // nr-record: its package, the tools it needs and the recordings
+	merge *mergeState  // the dialog asking which OptiScaler.ini values to keep; nil: none
+	cmp   *compareView // the comparison page, shown in place of a game's page; nil: none
 
 	settings *settingsState // the settings page, shown in place of the others; nil: none
 	tray     *mygo.Tray     // the notification area icon, while closing the window hides it; nil: none

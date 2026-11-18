@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Installing or upgrading ANR FG's full package keeps what you changed in `OptiScaler.ini`. Where the new
+  version changed the same setting too, a dialog asks which value each one keeps; **Update all** keeps yours and
+  says so in the activity log. The two settings that load ANR FG always take the new values.
+- The chosen segment of a segmented control, as the list's filter, is filled with the accent, so the choice is
+  plain to see.
 - When the list of ANR FG releases cannot be loaded, a game's page says why, as "Couldn't connect to GitHub" with
   the error, instead of "The version list hasn't loaded yet." An installed game no longer shows "Switch to" or a
   downgrade note without a version meanwhile.

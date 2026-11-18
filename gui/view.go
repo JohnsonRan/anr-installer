@@ -51,6 +51,7 @@ func (a *app) view(c *ui.Context) {
 				a.log.View(c, t, &a.logOpen, activity.Work{Busy: a.busy, Status: a.status, Progress: a.progress})
 				a.about(c, t)
 				a.releaseNotes(c, t)
+				a.mergeDialog(c, t)
 				a.quitDialog(c, t)
 			})
 		})

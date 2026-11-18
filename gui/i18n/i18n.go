@@ -360,6 +360,23 @@ var messages = map[string][2]string{
 	"quit.keep":                 {"Keep running", "继续运行"},
 	"quit.anyway":               {"Quit anyway", "仍然退出"},
 
+	// Keeping the user's OptiScaler.ini settings across an install.
+	"merge.title":             {"Keep your OptiScaler settings?", "保留你的 OptiScaler 设置?"},
+	"merge.detail":            {"ANR FG %s comes with a new OptiScaler.ini. You changed these settings, and so did the new version: choose the value each one keeps.", "ANR FG %s 带有新的 OptiScaler.ini。下面这些设置你改过，新版本也改了: 请为每一项选择保留哪个值。"},
+	"merge.mine":              {"Yours: %s", "你的: %s"},
+	"merge.new":               {"New: %s", "新版: %s"},
+	"merge.kept":              {"Your other changes are kept: %s.", "你的其他改动会保留: %s。"},
+	"merge.pinned.title":      {"Set by ANR FG", "由 ANR FG 设置"},
+	"merge.pinned":            {"%s is set to %s, which ANR FG needs. Yours was %s.", "%s 设为 %s，ANR FG 需要这个值。你的值是 %s。"},
+	"merge.all.mine":          {"Keep all mine", "全部保留我的"},
+	"merge.all.new":           {"Use all new", "全部使用新版"},
+	"merge.apply":             {"Save settings", "保存设置"},
+	"merge.log.kept":          {"Kept your OptiScaler.ini settings: %s.", "已保留你的 OptiScaler.ini 设置: %s。"},
+	"merge.log.kept.conflict": {"%s (new: %s)", "%s (新版为 %s)"},
+	"merge.log.new":           {"Took the new OptiScaler.ini values of: %s.", "已改用 OptiScaler.ini 的新值: %s。"},
+	"merge.log.pinned":        {"Set by ANR FG, as it needs them: %s.", "由 ANR FG 设置，它需要这些值: %s。"},
+	"merge.log.failed":        {"Couldn't keep your OptiScaler.ini settings: %s. The new file is in place, and yours is backed up.", "无法保留你的 OptiScaler.ini 设置: %s。已使用新文件，你的文件已备份。"},
+
 	// The comparison page.
 	"cmp.title":         {"%s and %s", "%s 和 %s"},
 	"cmp.viewer":        {"Open in nr-record's viewer", "在 nr-record 查看器中打开"},

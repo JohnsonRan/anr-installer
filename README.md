@@ -20,8 +20,9 @@ package's own installer.
   stores by their folder.
 - **Installs the right package**: full or add-on, any release from V.B04 on, checked against its SHA-256 sums.
   Upgrade, reinstall, downgrade or uninstall from the same page.
-- **Keeps your settings**: `OptiScaler.ini` and `nr_fg.ini` are backed up next to the game's `.exe` before a step
-  would lose them.
+- **Keeps your settings**: what you changed in `OptiScaler.ini` carries over to the new file. Where the new
+  version changed the same setting, you choose, as in a merge conflict. `OptiScaler.ini` and `nr_fg.ini` are also
+  backed up next to the game's `.exe`.
 - **Tells you about new versions**: the list marks the games to upgrade, and **Update all** upgrades them in one
   go, except games with anti-cheat.
 - **Records and compares**: replays an [nr-record](#record-and-compare) recording through ANR FG and DLSS-G and
