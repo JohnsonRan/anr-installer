@@ -35,8 +35,13 @@ type game struct {
 
 // steamLanguage is the language Steam names its localized pictures by, for the window's language.
 func steamLanguage() string {
-	if lang == "zh" {
+	switch currentLang() {
+	case "zh-Hans":
 		return "schinese"
+	case "zh-Hant":
+		return "tchinese"
+	case "ja":
+		return "japanese"
 	}
 	return "english"
 }

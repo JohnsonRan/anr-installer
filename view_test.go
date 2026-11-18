@@ -18,7 +18,7 @@ func testApp(t *testing.T) *app {
 	t.Setenv("APPDATA", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	lang = "en"
+	setLang("en")
 	a := newApp()
 	day := time.Date(2026, 11, 17, 12, 0, 0, 0, time.Local)
 	var rels []*pkg.Release

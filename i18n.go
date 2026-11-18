@@ -3,28 +3,54 @@ package main
 import (
 	"fmt"
 	"strings"
+	"sync/atomic"
 )
 
-// lang is the language the window shows: "zh" or "en". It follows mygo.App.Locale, which the setting chooses.
-var lang = "en"
+// appLanguages are the languages the window is written in, as MyGo's locale tags, its own first.
+var appLanguages = []string{"en", "zh-Hans", "zh-Hant", "ja"}
 
-// langOf returns the window's language for a locale tag of MyGo's, such as "zh-Hans".
-func langOf(tag string) string {
-	if strings.HasPrefix(strings.ToLower(tag), "zh") {
-		return "zh"
+// lang is the language the window shows, one of appLanguages. It follows mygo.App.Locale, which the setting
+// chooses. Background work formats its texts with T too, so it is read and written atomically.
+var lang atomic.Pointer[string]
+
+func setLang(l string) { lang.Store(&l) }
+
+func currentLang() string {
+	if l := lang.Load(); l != nil {
+		return *l
 	}
 	return "en"
 }
 
-// T returns the text of key in the window's language, formatted with args.
+// langOf returns the language of appLanguages for a locale tag, such as MyGo's "zh-Hans" or a system's "zh-TW".
+func langOf(tag string) string {
+	t := strings.ToLower(tag)
+	switch {
+	case t == "zh-hant" || strings.HasPrefix(t, "zh-hant-") || t == "zh-tw" || t == "zh-hk" || t == "zh-mo":
+		return "zh-Hant"
+	case t == "zh" || strings.HasPrefix(t, "zh-"):
+		return "zh-Hans"
+	case t == "ja" || strings.HasPrefix(t, "ja-"):
+		return "ja"
+	}
+	return "en"
+}
+
+// T returns the text of key in the window's language, formatted with args. A text a translation lacks is said in
+// English; the tests keep every translation whole.
 func T(key string, args ...any) string {
 	m, ok := messages[key]
 	if !ok {
 		return key
 	}
 	s := m[0]
-	if lang == "zh" {
+	switch currentLang() {
+	case "zh-Hans":
 		s = m[1]
+	case "zh-Hant":
+		s = translated(messagesZhHant, key, s)
+	case "ja":
+		s = translated(messagesJa, key, s)
 	}
 	if len(args) > 0 {
 		return fmt.Sprintf(s, args...)
@@ -32,7 +58,15 @@ func T(key string, args ...any) string {
 	return s
 }
 
-// messages holds each text in English and Simplified Chinese.
+func translated(m map[string]string, key, english string) string {
+	if s, ok := m[key]; ok {
+		return s
+	}
+	return english
+}
+
+// messages holds each text in English and Simplified Chinese; i18n_zh_hant.go and i18n_ja.go hold the other
+// languages.
 var messages = map[string][2]string{
 	// The window.
 	"title":              {"ANR FG Installer", "ANR FG 安装器"},
@@ -280,42 +314,44 @@ var messages = map[string][2]string{
 	"rec.done.compare":      {"Done: the comparison is in %s.", "完成: 对比结果已保存到 %s。"},
 
 	// Settings.
-	"settings.open":            {"Settings", "设置"},
-	"settings.language":        {"Language", "语言"},
-	"settings.language.detail": {"The language the app shows", "应用显示的语言"},
-	"settings.language.system": {"System default", "跟随系统"},
-	"settings.language.en":     {"English", "English"},
-	"settings.language.zh":     {"简体中文", "简体中文"},
-	"settings.close":           {"Close button", "关闭按钮"},
-	"settings.close.detail":    {"What closing the window does", "关闭窗口时执行的操作"},
-	"settings.close.quit":      {"Quit the app", "退出应用"},
-	"settings.close.tray":      {"Minimize to the tray", "最小化到托盘"},
-	"settings.login":           {"Start with Windows", "随 Windows 启动"},
-	"settings.login.detail":    {"Starts in the background when you sign in", "登录时在后台启动"},
-	"settings.login.failed":    {"Couldn't change whether the app starts with Windows: %s", "无法更改是否随 Windows 启动: %s"},
-	"settings.notify":          {"Notify me about new ANR FG versions", "ANR FG 有新版本时通知我"},
-	"settings.notify.detail":   {"When the app runs in the background", "应用在后台运行时"},
-	"settings.updates":         {"Check for updates automatically", "自动检查更新"},
-	"settings.updates.detail":  {"When the app starts and once a day", "在启动时和每天检查一次"},
-	"settings.folder":          {"Data folder", "数据文件夹"},
-	"settings.cache":           {"Downloaded packages", "已下载的安装包"},
-	"settings.cache.detail":    {"%s of ANR FG and nr-record packages", "ANR FG 和 nr-record 安装包，共 %s"},
-	"settings.cache.measuring": {"Calculating…", "正在计算…"},
-	"settings.cache.delete":    {"Delete downloads", "删除下载内容"},
-	"settings.cache.deleted":   {"Deleted %s of downloaded packages.", "已删除下载的安装包，共 %s。"},
-	"settings.cache.failed":    {"Couldn't delete the downloaded packages: %s", "无法删除下载的安装包: %s"},
-	"tray.show":                {"Show window", "显示窗口"},
-	"tray.quit":                {"Quit", "退出"},
-	"tray.failed":              {"Couldn't add the tray icon: %s. Closing the window quits the app.", "无法添加托盘图标: %s。关闭窗口将退出应用。"},
-	"notify.title":             {"ANR FG %s is available", "ANR FG %s 已发布"},
-	"notify.upgrade":           {"%d of your games can be upgraded.", "你有 %d 款游戏可以升级。"},
-	"notify.open":              {"Open the installer to see what's new.", "打开安装器查看更新内容。"},
-	"notify.failed":            {"Couldn't show the notification of the new ANR FG version: %s", "无法显示 ANR FG 新版本的通知: %s"},
-	"notify.check.failed":      {"Couldn't check GitHub for a new ANR FG version: %s", "无法在 GitHub 上检查 ANR FG 新版本: %s"},
-	"quit.title":               {"Quit while a task is running?", "要在任务进行中退出吗?"},
-	"quit.detail":              {"What the installer does itself stops at once, and a program it started, such as a package's installer, may stop partway or go on unseen. A game's files may be left half changed.", "安装器自身的操作会立即停止，它启动的程序(例如安装包的安装程序)可能中途停止，也可能在后台继续运行。游戏文件可能只更改了一半。"},
-	"quit.keep":                {"Keep running", "继续运行"},
-	"quit.anyway":              {"Quit anyway", "仍然退出"},
+	"settings.open":             {"Settings", "设置"},
+	"settings.language":         {"Language", "语言"},
+	"settings.language.detail":  {"The language the app shows", "应用显示的语言"},
+	"settings.language.system":  {"System default", "跟随系统"},
+	"settings.language.en":      {"English", "English"},
+	"settings.language.zh-Hans": {"简体中文", "简体中文"},
+	"settings.language.zh-Hant": {"繁體中文", "繁體中文"},
+	"settings.language.ja":      {"日本語", "日本語"},
+	"settings.close":            {"Close button", "关闭按钮"},
+	"settings.close.detail":     {"What closing the window does", "关闭窗口时执行的操作"},
+	"settings.close.quit":       {"Quit the app", "退出应用"},
+	"settings.close.tray":       {"Minimize to the tray", "最小化到托盘"},
+	"settings.login":            {"Start with Windows", "随 Windows 启动"},
+	"settings.login.detail":     {"Starts in the background when you sign in", "登录时在后台启动"},
+	"settings.login.failed":     {"Couldn't change whether the app starts with Windows: %s", "无法更改是否随 Windows 启动: %s"},
+	"settings.notify":           {"Notify me about new ANR FG versions", "ANR FG 有新版本时通知我"},
+	"settings.notify.detail":    {"When the app runs in the background", "应用在后台运行时"},
+	"settings.updates":          {"Check for updates automatically", "自动检查更新"},
+	"settings.updates.detail":   {"When the app starts and once a day", "在启动时和每天检查一次"},
+	"settings.folder":           {"Data folder", "数据文件夹"},
+	"settings.cache":            {"Downloaded packages", "已下载的安装包"},
+	"settings.cache.detail":     {"%s of ANR FG and nr-record packages", "ANR FG 和 nr-record 安装包，共 %s"},
+	"settings.cache.measuring":  {"Calculating…", "正在计算…"},
+	"settings.cache.delete":     {"Delete downloads", "删除下载内容"},
+	"settings.cache.deleted":    {"Deleted %s of downloaded packages.", "已删除下载的安装包，共 %s。"},
+	"settings.cache.failed":     {"Couldn't delete the downloaded packages: %s", "无法删除下载的安装包: %s"},
+	"tray.show":                 {"Show window", "显示窗口"},
+	"tray.quit":                 {"Quit", "退出"},
+	"tray.failed":               {"Couldn't add the tray icon: %s. Closing the window quits the app.", "无法添加托盘图标: %s。关闭窗口将退出应用。"},
+	"notify.title":              {"ANR FG %s is available", "ANR FG %s 已发布"},
+	"notify.upgrade":            {"%d of your games can be upgraded.", "你有 %d 款游戏可以升级。"},
+	"notify.open":               {"Open the installer to see what's new.", "打开安装器查看更新内容。"},
+	"notify.failed":             {"Couldn't show the notification of the new ANR FG version: %s", "无法显示 ANR FG 新版本的通知: %s"},
+	"notify.check.failed":       {"Couldn't check GitHub for a new ANR FG version: %s", "无法在 GitHub 上检查 ANR FG 新版本: %s"},
+	"quit.title":                {"Quit while a task is running?", "要在任务进行中退出吗?"},
+	"quit.detail":               {"What the installer does itself stops at once, and a program it started, such as a package's installer, may stop partway or go on unseen. A game's files may be left half changed.", "安装器自身的操作会立即停止，它启动的程序(例如安装包的安装程序)可能中途停止，也可能在后台继续运行。游戏文件可能只更改了一半。"},
+	"quit.keep":                 {"Keep running", "继续运行"},
+	"quit.anyway":               {"Quit anyway", "仍然退出"},
 
 	// The comparison page.
 	"cmp.title":         {"%s and %s", "%s 和 %s"},

@@ -104,12 +104,16 @@ func TestSettingsStayAsFirstGameIsChosen(t *testing.T) {
 }
 
 func TestLangOf(t *testing.T) {
-	for tag, want := range map[string]string{"zh-Hans": "zh", "zh-Hant-TW": "zh", "ZH": "zh", "en": "en", "en-GB": "en", "de": "en", "": "en"} {
+	for tag, want := range map[string]string{
+		"zh-Hans": "zh-Hans", "zh-CN": "zh-Hans", "zh-SG": "zh-Hans", "ZH": "zh-Hans",
+		"zh-Hant": "zh-Hant", "zh-Hant-TW": "zh-Hant", "zh-TW": "zh-Hant", "zh-HK": "zh-Hant",
+		"ja": "ja", "ja-JP": "ja", "en": "en", "en-GB": "en", "de": "en", "": "en",
+	} {
 		if got := langOf(tag); got != want {
 			t.Errorf("langOf(%q) = %q, want %q", tag, got, want)
 		}
 	}
-	for tag, want := range map[string]int{"": 0, "en": 1, "zh-Hans": 2, "zh-CN": 2, "de": 1} {
+	for tag, want := range map[string]int{"": 0, "en": 1, "zh-Hans": 2, "zh-CN": 2, "zh-Hant": 3, "zh-TW": 3, "ja": 4, "ja-JP": 4, "de": 1} {
 		if got := localeIndex(tag); got != want {
 			t.Errorf("localeIndex(%q) = %d, want %d", tag, got, want)
 		}

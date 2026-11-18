@@ -7,7 +7,10 @@ import (
 	"log"
 
 	"github.com/egoist/mygo"
-	_ "github.com/egoist/mygo/locales/zh-Hans" // MyGo's own controls and dialogs in Simplified Chinese
+	// MyGo's own controls and dialogs in the languages the window speaks besides English.
+	_ "github.com/egoist/mygo/locales/ja"
+	_ "github.com/egoist/mygo/locales/zh-Hans"
+	_ "github.com/egoist/mygo/locales/zh-Hant"
 	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/plugins/updater/native"
 	"github.com/egoist/mygo/ui"
@@ -49,9 +52,9 @@ func main() {
 	// then daily, and from the version button of the title bar. It speaks the language the window does, which
 	// MyGo resolves among these and keeps when the settings choose one.
 	mygo.Use(native.New(updater.Options{Icon: iconPNG}))
-	mygo.App.SetLanguages("en", "zh-Hans")
+	mygo.App.SetLanguages(appLanguages...)
 	mygo.App.WhenReady(func() {
-		lang = langOf(mygo.App.Locale())
+		setLang(langOf(mygo.App.Locale()))
 		// Started as the user signs in, the window stays out of sight: hidden behind the tray icon when there is
 		// one (below), else minimized.
 		atLogin := mygo.App.WasOpenedAtLogin()
@@ -69,7 +72,7 @@ func main() {
 			Content:           ui.View(a.view),
 		})
 		mygo.App.OnLocaleChanged(func(locale string) {
-			lang = langOf(locale)
+			setLang(langOf(locale))
 			a.win.SetTitle(T("title"))
 			a.relabelTray()
 			a.win.Invalidate()

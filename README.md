@@ -61,8 +61,8 @@ notes once. **Update all** there upgrades those games one after another, each wi
 with anti-cheat are left out: upgrade each of them from its own page. The list marks the games to upgrade, and
 the bar above it shows only those.
 
-The gear button in the title bar opens **Settings**. **Language** follows the system by default, or shows English
-or Simplified Chinese. **Close button** quits the app by default, or hides the window to the notification area,
+The gear button in the title bar opens **Settings**. **Language** follows the system by default, or shows English,
+Simplified Chinese, Traditional Chinese or Japanese. **Close button** quits the app by default, or hides the window to the notification area,
 where the app's icon brings it back and its menu quits. Starting the app again while it runs brings its window
 forward. **Start with Windows** starts the app when you sign in: hidden in the notification area when the close
 button minimizes to the tray, else minimized. The portable version registers the path it runs from: after you

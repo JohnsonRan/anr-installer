@@ -11,7 +11,7 @@ import (
 )
 
 // localeTags are the languages the language setting offers, as MyGo's locale tags: "" follows the system.
-var localeTags = []string{"", "en", "zh-Hans"}
+var localeTags = append([]string{""}, appLanguages...)
 
 // settingsState is the settings page, shown in place of a game's page or a comparison, which stays beneath it.
 type settingsState struct {
@@ -49,10 +49,7 @@ func localeIndex(tag string) int {
 	if i := slices.Index(localeTags, tag); i >= 0 {
 		return i
 	}
-	if langOf(tag) == "zh" {
-		return 2
-	}
-	return 1
+	return slices.Index(localeTags, langOf(tag))
 }
 
 // chooseLocale shows the language of tag and keeps it for the next launches; OnLocaleChanged redraws the window.
@@ -100,7 +97,10 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 		})
 		ui.Column(c).Gap(gapCardRows).Children(func() {
 			settingsRow(c, t, iconGlobe, T("settings.language"), T("settings.language.detail"), func() {
-				labels := []string{T("settings.language.system"), T("settings.language.en"), T("settings.language.zh")}
+				labels := []string{T("settings.language.system")}
+				for _, tag := range appLanguages {
+					labels = append(labels, T("settings.language."+tag))
+				}
 				choose(c.Key("language"), &s.langSel, labels, localeIndex(s.locale), T("settings.language"), func(i int) {
 					a.chooseLocale(localeTags[i])
 				})

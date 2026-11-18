@@ -10,7 +10,7 @@ import (
 )
 
 func TestTaskLifecycle(t *testing.T) {
-	lang = "en"
+	setLang("en")
 	start := time.Date(2026, 11, 18, 15, 4, 0, 0, time.Local)
 	tk := &task{title: "Delta · Upgrade to V.B19", start: start}
 	tk.step(levelInfo, "Installing V.B19 (full package)…")
@@ -62,7 +62,7 @@ func testLog() activityLog {
 }
 
 func TestLogText(t *testing.T) {
-	lang = "en"
+	setLang("en")
 	l := testLog()
 	want := `2026-11-18 15:04:05  Alpha · Install V.B19 · Succeeded · 12 s
   ANR FG V.B19 is installed in C:\g\alpha.

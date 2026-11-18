@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Adds a settings page, from the gear button in the title bar. The language follows the system by default, or
-  is English or Simplified Chinese; the update window follows it too. The close button quits the app by
+  is English, Simplified Chinese, Traditional Chinese or Japanese; the update window follows it too. The close button quits the app by
   default, or hides the window to the notification area, whose icon brings it back.
 - Starting the app again while it runs brings its window forward instead of opening a second one.
 - The first window fits the display: 1280 × 900 where there is room, else 90% of the display's work area, so
