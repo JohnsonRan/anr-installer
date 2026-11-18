@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 - Installing or upgrading ANR FG's full package keeps what you changed in `OptiScaler.ini`. Where the new
   version changed the same setting too, a dialog asks which value each one keeps; **Update all** keeps yours and
