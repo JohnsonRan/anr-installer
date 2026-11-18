@@ -100,7 +100,7 @@ func settingsCard(c *ui.Context, t *ui.Theme, icon *ui.SVG, end func(), text fun
 }
 
 // segmentInset is the room between a segmented control's track and its segments, and between the segments.
-const segmentInset = Space1 / 2
+const segmentInset = Space1
 
 // Segmented is a segmented control of labels, as ui.Segmented, whose chosen segment is filled with the accent of
 // what is chosen, so that it stands out from the others in the dark theme.
