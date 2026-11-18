@@ -219,10 +219,10 @@ func (s *State) Page(c *ui.Context, t *ui.Theme, act Actions) {
 		}
 		ui.Row(c).Gap(style.GapGroup).Wrap().Children(func() {
 			if s.a != nil { // a comparison without videos shows the stills only
-				ui.Segmented(c, &s.mode, i18n.T("cmp.video"), i18n.T("cmp.stills")).Label(i18n.T("cmp.mode"))
+				style.Segmented(c, t, &s.mode, i18n.T("cmp.video"), i18n.T("cmp.stills")).Label(i18n.T("cmp.mode"))
 			}
 			ui.Column(c).Grow(1)
-			ui.Segmented(c, &s.layout, i18n.T("cmp.divider"), i18n.T("cmp.side"), s.cmp.A.Label, s.cmp.B.Label).Label(i18n.T("cmp.layout"))
+			style.Segmented(c, t, &s.layout, i18n.T("cmp.divider"), i18n.T("cmp.side"), s.cmp.A.Label, s.cmp.B.Label).Label(i18n.T("cmp.layout"))
 		})
 		if s.mode == cmpVideo {
 			s.videos(c, t)
@@ -262,7 +262,7 @@ func (s *State) videos(c *ui.Context, t *ui.Theme) {
 		for i, r := range cmpRates {
 			labels[i] = fmt.Sprintf("%g×", r)
 		}
-		if ui.Segmented(c, &s.rate, labels...).MarginStart(ui.Auto).Label(i18n.T("cmp.rate")).Changed() {
+		if style.Segmented(c, t, &s.rate, labels...).MarginStart(ui.Auto).Label(i18n.T("cmp.rate")).Changed() {
 			s.a.SetRate(cmpRates[s.rate])
 			s.b.SetRate(cmpRates[s.rate])
 		}
