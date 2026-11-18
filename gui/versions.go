@@ -149,6 +149,9 @@ func (a *app) plan(r *detect.Result) planKind {
 		return planInstall
 	}
 	tv := a.targetVersion()
+	if tv == "" { // no version to install is known: the release list or the zip is missing, as the page says
+		return planReinstall
+	}
 	iv := a.versionOf(r)
 	if iv == "" {
 		if a.rel != nil && tv == a.rel.Version {
@@ -202,9 +205,17 @@ func (a *app) sourceBlocked(k detect.Kind) string {
 		return ""
 	}
 	if a.target() == nil {
-		return i18n.T("why.no-release")
+		return a.noRelease()
 	}
 	return ""
+}
+
+// noRelease says why no release can be used: the list failed to load, or has not loaded yet.
+func (a *app) noRelease() string {
+	if a.relErr != "" {
+		return i18n.T("latest.error", a.relErr)
+	}
+	return i18n.T("why.no-release")
 }
 
 // uninstallBlocked returns why ANR FG of kind k cannot be uninstalled, or "". Uninstalling takes the newest
@@ -217,7 +228,7 @@ func (a *app) uninstallBlocked(k detect.Kind) string {
 	if a.local != nil && a.local.Kind == k {
 		return ""
 	}
-	return i18n.T("why.no-release")
+	return a.noRelease()
 }
 
 // step is one run of a package's script.

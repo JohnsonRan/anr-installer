@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- When the list of ANR FG releases cannot be loaded, a game's page says why, as "Couldn't connect to GitHub" with
+  the error, instead of "The version list hasn't loaded yet." An installed game no longer shows "Switch to" or a
+  downgrade note without a version meanwhile.
+
 ## 0.3.0
 
 - Adds a settings page, from the gear button in the title bar. The language follows the system by default, or

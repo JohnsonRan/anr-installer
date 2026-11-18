@@ -12,6 +12,8 @@ ANR FG Installer は、ゲームに [ANR FG](https://github.com/apex-compute/ANR
 > [apex-compute/ANR](https://github.com/apex-compute/ANR/issues) に、このインストーラーの問題は
 > [JohnsonRan/anr-installer](https://github.com/JohnsonRan/anr-installer/issues) にお知らせください。
 
+![ゲームのページ: インストールされている ANR FG のバージョン、最新リリースへのアップグレード、ゲームの状態](docs/images/game.ja.png)
+
 ## 動作環境
 
 - Windows 10 または 11 (x64)
@@ -56,6 +58,8 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 コピーされます。full パッケージが `OptiScaler.ini` を置き換える前と、アンインストールやダウングレードで
 `nr_fg.ini` が削除される前です。
 
+![アクティビティ ログ: インストールとアップグレードの各手順](docs/images/log.ja.png)
+
 ANR FG の新しいバージョンが公開され、古いバージョンが入っているゲームがある場合は、リリース ノートが 1 回表示されます。
 そこで [すべて更新] を選ぶと、それらのゲームが順番にアップグレードされます。パッケージの種類はそれぞれ
 そのままです。アンチチートのあるゲームは対象外なので、各ゲームのページから個別にアップグレードしてください。一覧では
@@ -75,6 +79,8 @@ ANR FG の新しいバージョンが公開され、古いバージョンが入�
 [ダウンロードを削除] では、ダウンロードした ANR FG と nr-record のパッケージを削除します。これらは必要になったときに
 再びダウンロードされます。
 
+![設定](docs/images/settings.ja.png)
+
 インストールなどのタスクの実行中にウィンドウを閉じるかアプリを終了しようとすると、確認が表示されます。終了すると
 タスクが完了せず、ゲームのファイルが変更の途中のまま残る可能性があります。
 
@@ -83,6 +89,8 @@ ANR FG の新しいバージョンが公開され、古いバージョンが入�
 [nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation) は ANR FG と同じリリースで
 配布されており、ゲームがフレーム生成に渡す入力を記録します。同じフレームで ANR FG と DLSS-G を比較できます。
 ANR FG の full パッケージをインストールしたゲームのページには、[記録と比較] が表示されます。
+
+![記録があるゲームの [記録と比較] セクション](docs/images/record.ja.png)
 
 1. [nr-record をインストール] をクリックします。ゲームを起動して、DLSS フレーム生成を
    オンにします。F6 で記録を開始および停止し、F9 で 8 フレームを記録します。
