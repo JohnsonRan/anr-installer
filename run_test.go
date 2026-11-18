@@ -11,7 +11,7 @@ import (
 	"anr-installer/assets"
 )
 
-// TestMain uses the updater plugin as main does, so that views reading its state run in tests.
+// TestMain uses the updater plugin as run does, so that views reading its state run in tests.
 func TestMain(m *testing.M) {
 	mygo.Use(native.New(updater.Options{Icon: assets.IconPNG}))
 	os.Exit(m.Run())
