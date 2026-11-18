@@ -1,6 +1,10 @@
 package main
 
-import "github.com/egoist/mygo"
+import (
+	"github.com/egoist/mygo"
+
+	"anr-installer/assets"
+)
 
 // closeHides reports whether the window's close button hides the window rather than closing it: only with the
 // setting on and a tray icon to bring the window back by, and never while the app quits (Quit from the tray, an
@@ -38,7 +42,7 @@ func (a *app) syncTray() {
 	}
 	switch {
 	case a.saved.CloseToTray && a.tray == nil:
-		tray, err := mygo.NewTray(mygo.TrayOptions{ID: "main", Icon: iconPNG, ToolTip: T("title")})
+		tray, err := mygo.NewTray(mygo.TrayOptions{ID: "main", Icon: assets.IconPNG, ToolTip: T("title")})
 		if err != nil {
 			a.note(levelError, T("tray.failed", err.Error()))
 			return

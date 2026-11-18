@@ -15,6 +15,7 @@ import (
 	"github.com/egoist/mygo/plugins/updater/native"
 	"github.com/egoist/mygo/ui"
 
+	"anr-installer/assets"
 	"anr-installer/internal/paths"
 )
 
@@ -51,7 +52,7 @@ func main() {
 	// Updates are offered in a window MyGo draws itself, which needs no WebView2: checked 10 seconds after launch,
 	// then daily, and from the version button of the title bar. It speaks the language the window does, which
 	// MyGo resolves among these and keeps when the settings choose one.
-	mygo.Use(native.New(updater.Options{Icon: iconPNG}))
+	mygo.Use(native.New(updater.Options{Icon: assets.IconPNG}))
 	mygo.App.SetLanguages(appLanguages...)
 	mygo.App.WhenReady(func() {
 		setLang(langOf(mygo.App.Locale()))

@@ -7,11 +7,13 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/plugins/updater/native"
+
+	"anr-installer/assets"
 )
 
 // TestMain uses the updater plugin as main does, so that views reading its state run in tests.
 func TestMain(m *testing.M) {
-	mygo.Use(native.New(updater.Options{Icon: iconPNG}))
+	mygo.Use(native.New(updater.Options{Icon: assets.IconPNG}))
 	os.Exit(m.Run())
 }
 

@@ -1,6 +1,21 @@
 package main
 
-import "github.com/egoist/mygo/ui"
+import (
+	"github.com/egoist/mygo/ui"
+
+	"anr-installer/assets"
+)
+
+// logo is the app's logo.
+var logo = mustSVG(assets.LogoSVG)
+
+func mustSVG(data []byte) *ui.SVG {
+	s, err := ui.ParseSVG(data)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
 
 // The colors of apexcompute.com, whose pages are dark navy: four steps of surface, lines, ink, a silver primary
 // button, teal for focus and what went well, and royal blue for what is chosen.

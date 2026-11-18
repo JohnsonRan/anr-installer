@@ -1,35 +1,17 @@
 package main
 
 import (
-	_ "embed"
-
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 )
 
-//go:embed assets/logo.svg
-var logoSVG []byte
-
-// iconPNG is the app icon, built into the executable for the update window: nothing ships beside the executable.
-//
-//go:embed assets/icon.png
-var iconPNG []byte
-
+// The window buttons' glyphs.
 var (
-	logo        = mustSVG(logoSVG)
 	iconMin     = mustSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><rect x="0" y="4.5" width="10" height="1" fill="#000"/></svg>`))
 	iconMax     = mustSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" fill="none" stroke="#000"/></svg>`))
 	iconRestore = mustSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 2.5V0.5h7v7h-2" fill="none" stroke="#000"/><rect x="0.5" y="2.5" width="7" height="7" fill="none" stroke="#000"/></svg>`))
 	iconClose   = mustSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M0.5 0.5l9 9M9.5 0.5l-9 9" stroke="#000" stroke-width="1.1"/></svg>`))
 )
-
-func mustSVG(data []byte) *ui.SVG {
-	s, err := ui.ParseSVG(data)
-	if err != nil {
-		panic(err)
-	}
-	return s
-}
 
 const titleBarHeight = 52
 
