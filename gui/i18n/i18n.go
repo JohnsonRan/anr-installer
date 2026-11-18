@@ -376,6 +376,10 @@ var messages = map[string][2]string{
 	"merge.log.new":           {"Took the new OptiScaler.ini values of: %s.", "已改用 OptiScaler.ini 的新值: %s。"},
 	"merge.log.pinned":        {"Set by ANR FG, as it needs them: %s.", "由 ANR FG 设置，它需要这些值: %s。"},
 	"merge.log.failed":        {"Couldn't keep your OptiScaler.ini settings: %s. The new file is in place, and yours is backed up.", "无法保留你的 OptiScaler.ini 设置: %s。已使用新文件，你的文件已备份。"},
+	"merge.detail.nobase":     {"ANR FG %s comes with a new OptiScaler.ini. The installer couldn't read the file your settings came from, so it can't tell which of these you changed: choose the value each one keeps.", "ANR FG %s 带有新的 OptiScaler.ini。安装器无法读取你的设置原来所基于的文件，分不清下面哪些是你改的: 请为每一项选择保留哪个值。"},
+	"merge.log.unknown":       {"The ANR FG version installed before is unknown, so the installer can't tell which OptiScaler.ini settings you changed.", "之前安装的 ANR FG 版本未知，安装器分不清你改过哪些 OptiScaler.ini 设置。"},
+	"merge.log.nobase":        {"Couldn't read the OptiScaler.ini of ANR FG %s, so the installer can't tell which settings you changed: %s", "无法读取 ANR FG %s 的 OptiScaler.ini，安装器分不清你改过哪些设置: %s"},
+	"merge.log.batch.nobase":  {"Kept the new OptiScaler.ini. Yours is backed up next to the game's .exe.", "已使用新的 OptiScaler.ini。你的文件已备份到游戏 .exe 所在的文件夹。"},
 
 	// The comparison page.
 	"cmp.title":         {"%s and %s", "%s 和 %s"},

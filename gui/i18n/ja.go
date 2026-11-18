@@ -302,6 +302,10 @@ var messagesJa = map[string]string{
 	"merge.log.new":           "OptiScaler.ini の新しい値にしました: %s。",
 	"merge.log.pinned":        "ANR FG に必要なため、ANR FG が設定しました: %s。",
 	"merge.log.failed":        "OptiScaler.ini の設定を残せませんでした: %s。新しいファイルが使われ、以前のファイルはバックアップされています。",
+	"merge.detail.nobase":     "ANR FG %s には新しい OptiScaler.ini が含まれています。元になったファイルを読み取れなかったため、次のうちどれが変更されたものかを判断できません。それぞれ使う値を選んでください。",
+	"merge.log.unknown":       "以前にインストールされていた ANR FG のバージョンが不明なため、変更された OptiScaler.ini の設定を判断できません。",
+	"merge.log.nobase":        "ANR FG %s の OptiScaler.ini を読み取れなかったため、変更された設定を判断できません: %s",
+	"merge.log.batch.nobase":  "新しい OptiScaler.ini を使います。以前のファイルはゲームの .exe と同じフォルダーにバックアップされています。",
 
 	// The comparison page.
 	"cmp.title":         "%s と %s",

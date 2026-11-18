@@ -54,10 +54,11 @@ published packages do not change, so only new releases are read again.
   section and name, against the `game/OptiScaler.ini` of the package the user's file came with (read from the
   downloaded package, else with range requests). A value only the user changed is kept; a value only the new file
   changed takes the new one; a value both changed is asked about, or kept in an **Update all**, which logs it as a
-  warning. When the installed version is unknown, every value that differs is asked about. `[FrameGen]`
-  `FGInput` and `FGNvngxReplacement` always take the new file's values, which load ANR FG. Values are written
-  into the new file's own lines, so its comments and layout stay; a merge that fails leaves the new file and the
-  backup.
+  warning. When the installed version is unknown or its file cannot be read, the installer cannot tell what the
+  user changed: one install asks about every value that differs and says so, and **Update all** keeps the new
+  file. `[FrameGen]` `FGInput` and `FGNvngxReplacement` always take the new file's values, which load ANR FG.
+  Values are written into the new file's own lines, through a file beside it, so its comments and layout stay and
+  a failed write leaves it whole; a merge that fails leaves the new file and the backup.
 - Installing into a game that ships anti-cheat asks first; cancelling is the default.
 
 ## Recording and comparing

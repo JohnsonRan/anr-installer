@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 
@@ -29,10 +30,14 @@ func isPinned(k ini.Key) bool {
 	return false
 }
 
+// baseTimeout bounds reading the base file, so that a stalled download does not hold up the end of an install.
+const baseTimeout = 30 * time.Second
+
 // keepSettings writes the user's OptiScaler.ini values (mine, the file before the install) into the one the
 // install put in exeDir, merged three ways against the file of the release the user's came with (base; nil when
-// the version is unknown, which makes every value both changed). Values both changed are asked about in the
-// dialog, or kept in a batch. It runs in the background, after the install of version.
+// the version is unknown). Values both changed are asked about in the dialog, or kept in a batch. Without the base
+// file the installer cannot tell what the user changed: the dialog asks about every value that differs, saying
+// so, and a batch keeps the new file. It runs in the background, after the install of version.
 func (a *app) keepSettings(ctx context.Context, r *reporter, exeDir string, mine []byte, base *pkg.Release, version string, batch bool) error {
 	path := filepath.Join(exeDir, "OptiScaler.ini")
 	theirs, err := os.ReadFile(path)
@@ -40,8 +45,15 @@ func (a *app) keepSettings(ctx context.Context, r *reporter, exeDir string, mine
 		return err
 	}
 	var baseFile *ini.File
-	if base != nil {
-		if data, err := pkg.PackageFile(ctx, base, detect.KindFull, "game/OptiScaler.ini"); err == nil {
+	if base == nil {
+		r.warn(i18n.T("merge.log.unknown"))
+	} else {
+		bctx, cancel := context.WithTimeout(ctx, baseTimeout)
+		data, err := pkg.PackageFile(bctx, base, detect.KindFull, "game/OptiScaler.ini")
+		cancel()
+		if err != nil {
+			r.warn(i18n.T("merge.log.nobase", base.Version, err.Error()))
+		} else {
 			baseFile = ini.Parse(data)
 		}
 	}
@@ -50,18 +62,27 @@ func (a *app) keepSettings(ctx context.Context, r *reporter, exeDir string, mine
 		return nil
 	}
 	keepMine := make([]bool, len(res.Conflicts))
-	if len(res.Conflicts) > 0 {
-		if batch {
-			setAll(keepMine, true)
-		} else {
-			answer := make(chan []bool, 1)
-			a.update(func() { a.merge = newMerge(version, res, func(choices []bool) { answer <- choices }) })
-			select {
-			case keepMine = <-answer:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
+	switch {
+	case len(res.Conflicts) == 0:
+	case batch && baseFile == nil:
+		// Every difference counts as a conflict, most of them likely the new version's own: keep the new file,
+		// as before this merge existed. The user's is backed up.
+		r.warn(i18n.T("merge.log.batch.nobase"))
+		if len(res.Pinned) > 0 {
+			r.say("%s", i18n.T("merge.log.pinned", keyNames(res.Pinned)))
 		}
+		return nil
+	case batch:
+		setAll(keepMine, true)
+	default:
+		answer := make(chan []bool, 1)
+		a.update(func() {
+			a.merge = newMerge(version, res, baseFile == nil, func(choices []bool) { answer <- choices })
+			if a.win != nil {
+				a.showWindow() // the window may be hidden in the notification area, where the question would wait unseen
+			}
+		})
+		keepMine = <-answer
 	}
 	values := map[ini.Key]string{}
 	var kept, taken []string
@@ -80,7 +101,7 @@ func (a *app) keepSettings(ctx context.Context, r *reporter, exeDir string, mine
 		conflictKept = true
 	}
 	if len(values) > 0 {
-		if err := os.WriteFile(path, ini.Apply(theirs, values), 0o644); err != nil {
+		if err := writeAtomic(path, ini.Apply(theirs, values)); err != nil {
 			return err
 		}
 	}
@@ -101,19 +122,40 @@ func (a *app) keepSettings(ctx context.Context, r *reporter, exeDir string, mine
 	return nil
 }
 
+// writeAtomic replaces the file at path with data through a file beside it, so that a failed write leaves the
+// file as it was.
+func writeAtomic(path string, data []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
+	if err != nil {
+		return err
+	}
+	_, err = tmp.Write(data)
+	if cerr := tmp.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil {
+		err = os.Rename(tmp.Name(), path)
+	}
+	if err != nil {
+		os.Remove(tmp.Name())
+	}
+	return err
+}
+
 // mergeState is the dialog that asks which OptiScaler.ini values to keep after an install replaced the file: the
 // settings the user and the new version both changed, one choice each.
 type mergeState struct {
 	version string     // the version installed, which brought the new file
 	result  ini.Result // what the merge found
+	noBase  bool       // the file the user's came from was not read: the conflicts are every value that differs
 	mine    []bool     // per conflict: keep the user's value
 	open    bool
 	answer  func([]bool) // gets the choices once, as the dialog closes
 }
 
 // newMerge opens the dialog for result, with the user's values chosen. answer gets the choices as it closes.
-func newMerge(version string, result ini.Result, answer func([]bool)) *mergeState {
-	m := &mergeState{version: version, result: result, mine: make([]bool, len(result.Conflicts)), open: true, answer: answer}
+func newMerge(version string, result ini.Result, noBase bool, answer func([]bool)) *mergeState {
+	m := &mergeState{version: version, result: result, noBase: noBase, mine: make([]bool, len(result.Conflicts)), open: true, answer: answer}
 	for i := range m.mine {
 		m.mine[i] = true
 	}
@@ -149,7 +191,11 @@ func (a *app) mergeDialog(c *ui.Context, t *ui.Theme) {
 		ui.Column(c).Width(style.NotesWidth).Gap(style.GapSection).Children(func() {
 			ui.Column(c).Gap(style.GapInCard).Children(func() {
 				style.RoleHeading.On(t, ui.Text(c, i18n.T("merge.title")))
-				ui.Text(c, i18n.T("merge.detail", m.version)).TextColor(t.TextMuted)
+				detail := i18n.T("merge.detail", m.version)
+				if m.noBase {
+					detail = i18n.T("merge.detail.nobase", m.version)
+				}
+				ui.Text(c, detail).TextColor(t.TextMuted)
 			})
 			ui.Scroll(c).MaxHeight(style.NotesHeight).Children(func() {
 				ui.Column(c).Gap(style.GapCardRows).Children(func() {

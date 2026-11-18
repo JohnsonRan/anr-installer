@@ -302,6 +302,10 @@ var messagesZhHant = map[string]string{
 	"merge.log.new":           "已改用 OptiScaler.ini 的新值: %s。",
 	"merge.log.pinned":        "由 ANR FG 設定，它需要這些值: %s。",
 	"merge.log.failed":        "無法保留你的 OptiScaler.ini 設定: %s。已使用新檔案，你的檔案已備份。",
+	"merge.detail.nobase":     "ANR FG %s 附帶新的 OptiScaler.ini。安裝程式無法讀取你的設定原本依據的檔案，分不清下列哪些是你改的: 請為每一項選擇要保留的值。",
+	"merge.log.unknown":       "先前安裝的 ANR FG 版本不明，安裝程式分不清你改過哪些 OptiScaler.ini 設定。",
+	"merge.log.nobase":        "無法讀取 ANR FG %s 的 OptiScaler.ini，安裝程式分不清你改過哪些設定: %s",
+	"merge.log.batch.nobase":  "已使用新的 OptiScaler.ini。你的檔案已備份到遊戲 .exe 所在的資料夾。",
 
 	// The comparison page.
 	"cmp.title":         "%s 和 %s",
