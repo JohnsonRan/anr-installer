@@ -197,7 +197,7 @@ func (a *app) comparePage(c *ui.Context, t *ui.Theme) {
 	c.OnWindowShortcut(0, ui.KeyEscape, a.closeCompare)
 	ui.Column(c).Padding(padPage, padPageX).Gap(gapSection).Children(func() {
 		ui.Row(c).Gap(gapGroup).Children(func() {
-			ui.Button(c, T("cmp.back")).OnClick(a.closeCompare)
+			ui.Button(c, T("back")).OnClick(a.closeCompare)
 			ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
 				roleHeading.on(t, ui.Text(c, T("cmp.title", s.cmp.A.Label, s.cmp.B.Label))).MaxLines(1).Ellipsis("…")
 				line := s.game.Name + " · " + s.cmp.Recording.Time.Format("2006-01-02 15:04:05")

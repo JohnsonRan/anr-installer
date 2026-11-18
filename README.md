@@ -34,7 +34,7 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 
 The portable version, `anr-fg-installer-<version>-windows-amd64-portable.zip`, needs no install: extract its
 `ANR FG Installer` folder to a place you can write to and run `ANR FG Installer.exe`. It keeps its settings and
-downloads in that folder.
+downloads in that folder, except the language chosen in Settings.
 
 The app and its installer are not code-signed, so Windows SmartScreen may warn before the first run: choose
 **More info**, then **Run anyway**.
@@ -60,6 +60,11 @@ When a new ANR FG version comes out and one of your games has an older one, the 
 notes once. **Update all** there upgrades those games one after another, each with the package it has. Games
 with anti-cheat are left out: upgrade each of them from its own page. The list marks the games to upgrade, and
 the bar above it shows only those.
+
+The gear button in the title bar opens **Settings**. **Language** follows the system by default, or shows English
+or Simplified Chinese. **Close button** quits the app by default, or hides the window to the notification area,
+where the app's icon brings it back and its menu quits. Starting the app again while it runs brings its window
+forward.
 
 ## Record and compare
 

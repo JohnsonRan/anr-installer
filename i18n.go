@@ -5,21 +5,15 @@ import (
 	"strings"
 )
 
-// lang is the language the window shows: "zh" or "en".
+// lang is the language the window shows: "zh" or "en". It follows mygo.App.Locale, which the setting chooses.
 var lang = "en"
 
-func setLanguage(preferred []string) {
-	for _, l := range preferred {
-		l = strings.ToLower(l)
-		switch {
-		case strings.HasPrefix(l, "zh"):
-			lang = "zh"
-			return
-		case strings.HasPrefix(l, "en"):
-			lang = "en"
-			return
-		}
+// langOf returns the window's language for a locale tag of MyGo's, such as "zh-Hans".
+func langOf(tag string) string {
+	if strings.HasPrefix(strings.ToLower(tag), "zh") {
+		return "zh"
 	}
+	return "en"
 }
 
 // T returns the text of key in the window's language, formatted with args.
@@ -67,6 +61,7 @@ var messages = map[string][2]string{
 	"win.maximize":       {"Maximize", "最大化"},
 	"win.restore":        {"Restore", "还原"},
 	"win.close":          {"Close", "关闭"},
+	"back":               {"Back", "返回"},
 
 	// The list of games.
 	"search":           {"Search games", "搜索游戏"},
@@ -269,8 +264,22 @@ var messages = map[string][2]string{
 	"rec.hint.dlssg":        {"Replaying through DLSS-G needs an NVIDIA RTX 40 or 50 series GPU.", "通过 DLSS-G 回放需要 NVIDIA RTX 40 或 50 系列显卡。"},
 	"rec.done.compare":      {"Done: the comparison is in %s.", "完成: 对比结果已保存到 %s。"},
 
+	// Settings.
+	"settings.open":            {"Settings", "设置"},
+	"settings.language":        {"Language", "语言"},
+	"settings.language.detail": {"The language the app shows", "应用显示的语言"},
+	"settings.language.system": {"System default", "跟随系统"},
+	"settings.language.en":     {"English", "English"},
+	"settings.language.zh":     {"简体中文", "简体中文"},
+	"settings.close":           {"Close button", "关闭按钮"},
+	"settings.close.detail":    {"What closing the window does", "关闭窗口时执行的操作"},
+	"settings.close.quit":      {"Quit the app", "退出应用"},
+	"settings.close.tray":      {"Minimize to the tray", "最小化到托盘"},
+	"tray.show":                {"Show window", "显示窗口"},
+	"tray.quit":                {"Quit", "退出"},
+	"tray.failed":              {"Couldn't add the tray icon: %s. Closing the window quits the app.", "无法添加托盘图标: %s。关闭窗口将退出应用。"},
+
 	// The comparison page.
-	"cmp.back":          {"Back", "返回"},
 	"cmp.title":         {"%s and %s", "%s 和 %s"},
 	"cmp.viewer":        {"Open in nr-record's viewer", "在 nr-record 查看器中打开"},
 	"cmp.error":         {"Couldn't play the videos: %s. They are HEVC videos: if Windows has no HEVC decoder, install “HEVC Video Extensions” from the Microsoft Store, or open the comparison in nr-record's viewer.", "无法播放视频: %s。视频采用 HEVC 编码: 如果 Windows 没有 HEVC 解码器，请从 Microsoft Store 安装“HEVC 视频扩展”，或者在 nr-record 查看器中打开对比。"},

@@ -26,7 +26,8 @@ Reference for what the installer reads, decides and changes. For using it, see t
 - **Anti-cheat**: Easy Anti-Cheat, EA Javelin Anticheat, BattlEye, nProtect GameGuard, XIGNCODE3, Anti-Cheat
   Expert, mhyprot and PunkBuster are recognized by the folders and files they leave in the game's folder.
 - **Pictures**: Steam's cached icon, library hero, logo and store header, from `appcache/librarycache/<appid>/`
-  in the window's language, else the `.exe`'s icon.
+  in the window's language, else the `.exe`'s icon. Pictures already shown keep their language when the
+  language setting changes, until the next scan.
 
 ## Versions
 
@@ -83,14 +84,16 @@ On Windows, a game's page drives nr-record, whose package ships in the same rele
 
 | Path | Holds |
 | --- | --- |
-| `%APPDATA%\anr-installer\games.json` | games added by hand, and `.exe` folders chosen by hand |
+| `%APPDATA%\anr-installer\games.json` | games added by hand, `.exe` folders chosen by hand, and what the close button does |
+| `%APPDATA%\ANR FG Installer\locale` | the language chosen in Settings, kept by MyGo; absent while the app follows the system |
 | `%LOCALAPPDATA%\anr-installer\versions.json` | each release package's version and provider hash |
 | `%LOCALAPPDATA%\anr-installer\downloads\` | downloaded packages |
 | `%LOCALAPPDATA%\anr-installer\packages\` | unpacked packages |
 | `%LOCALAPPDATA%\anr-installer\compare\<recording>\` | a comparison's two videos, the viewer's project, and its stills under `stills` |
 
 The portable version, which a file named `portable` next to its executable marks, keeps `games.json` in its own
-folder and the rest under `cache\` there.
+folder and the rest under `cache\` there. The language chosen in Settings stays in
+`%APPDATA%\ANR FG Installer\locale` for the portable version too.
 
 `GITHUB_TOKEN`, when set, raises GitHub's API rate limit; it is sent to GitHub's API only.
 
