@@ -17,8 +17,6 @@ var localeTags = append([]string{""}, appLanguages...)
 type settingsState struct {
 	game   *game  // the game chosen when the page opened: choosing another closes the page
 	locale string // the language chosen, as mygo.App.ChosenLocale reported it when the page opened
-	// The selects' choices, as their labels, kept across frames: a select writes its choice after the frame.
-	langSel, closeSel string
 	// The switches' states, which they write between frames: whether the app starts at sign-in, as
 	// mygo.App.OpenAtLogin reported it when the page opened, and whether a new release notifies.
 	atLogin, notify bool
@@ -98,17 +96,20 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 				for _, tag := range appLanguages {
 					labels = append(labels, T("settings.language."+tag))
 				}
-				choose(c.Key("language"), &s.langSel, labels, localeIndex(s.locale), T("settings.language"), func(i int) {
-					a.chooseLocale(localeTags[i])
-				})
+				sel := labels[localeIndex(s.locale)]
+				if ui.Select(c.Key("language"), &sel, labels).Label(T("settings.language")).Changed() {
+					a.chooseLocale(localeTags[slices.Index(labels, sel)])
+				}
 			})
 			settingsRow(c, t, iconWindow, T("settings.close"), T("settings.close.detail"), func() {
-				labels := []string{T("settings.close.quit"), T("settings.close.tray")}
-				cur := 0
+				quit, tray := T("settings.close.quit"), T("settings.close.tray")
+				sel := quit
 				if a.saved.CloseToTray {
-					cur = 1
+					sel = tray
 				}
-				choose(c.Key("close"), &s.closeSel, labels, cur, T("settings.close"), func(i int) { a.setCloseToTray(i == 1) })
+				if ui.Select(c.Key("close"), &sel, []string{quit, tray}).Label(T("settings.close")).Changed() {
+					a.setCloseToTray(sel == tray)
+				}
 			})
 			settingsRow(c, t, iconPower, T("settings.login"), T("settings.login.detail"), func() {
 				if ui.Switch(c, &s.atLogin).Label(T("settings.login")).Changed() {
@@ -142,16 +143,4 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 			})
 		})
 	})
-}
-
-// choose draws a select of labels showing labels[cur], and calls pick with the index of another label chosen.
-// sel holds the choice across frames: the select writes it after the frame that drew it, so pick is called as
-// the next frame starts, before the select shows the new choice.
-func choose(c *ui.Context, sel *string, labels []string, cur int, label string, pick func(int)) {
-	if i := slices.Index(labels, *sel); i >= 0 && i != cur {
-		pick(i)
-		cur = i
-	}
-	*sel = labels[cur]
-	ui.Select(c, sel, labels).Label(label)
 }

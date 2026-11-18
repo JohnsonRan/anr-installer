@@ -30,12 +30,20 @@ func TestSettingsPage(t *testing.T) {
 	if err := tt.Click(T("settings.close.tray")); err != nil {
 		t.Fatal(err)
 	}
-	tt.Frame()
 	if !a.saved.CloseToTray || !store.Load().CloseToTray {
 		t.Error("Minimize to the tray was not kept")
 	}
 	if !tt.HasText(T("settings.close.tray")) || tt.HasText(T("settings.close.quit")) {
 		t.Errorf("the select does not show the choice: %q", tt.Texts())
+	}
+	if err := tt.Click(T("settings.language.system")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click(T("settings.language.ja")); err != nil {
+		t.Fatal(err)
+	}
+	if a.settings.locale != "ja" {
+		t.Errorf("choosing Japanese chose %q", a.settings.locale)
 	}
 	if err := tt.Click(T("back")); err != nil {
 		t.Fatal(err)
