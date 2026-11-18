@@ -51,6 +51,7 @@ func (a *app) view(c *ui.Context) {
 				a.log.View(c, t, &a.logOpen, activity.Work{Busy: a.busy, Status: a.status, Progress: a.progress})
 				a.about(c, t)
 				a.releaseNotes(c, t)
+				a.mergeDialog(c, t)
 				a.quitDialog(c, t)
 			})
 		})
@@ -62,7 +63,7 @@ func (a *app) view(c *ui.Context) {
 func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 	ui.SearchField(c, &a.query).Label(i18n.T("search")).Placeholder(i18n.T("search"))
 	// As wide as its labels: shared equally, the list's width cuts the longest, "Supported" or "インストール済み".
-	ui.Segmented(c, &a.show, i18n.T("show.all"), i18n.T("show.supported"), i18n.T("show.installed")).AlignSelf(ui.Start).Label(i18n.T("show"))
+	style.Segmented(c, t, &a.show, i18n.T("show.all"), i18n.T("show.supported"), i18n.T("show.installed")).AlignSelf(ui.Start).Label(i18n.T("show"))
 	a.updatesBar(c, t)
 	a.filter()
 	// The chosen game shows as a lighter row with a bar beside it, as the navigation of Windows 11's Settings.

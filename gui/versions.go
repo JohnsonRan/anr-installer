@@ -261,16 +261,17 @@ func (a *app) install(g *game, k detect.Kind) {
 		steps = append(steps, a.uninstallStep(g.Scan.Installed))
 	}
 	steps = append(steps, a.installStep(k))
-	a.run(g, a.planLabel(p), steps)
+	a.run(g, a.planLabel(p), steps, false)
 }
 
 func (a *app) uninstall(g *game) {
-	a.run(g, i18n.T("uninstall"), []step{a.uninstallStep(g.Scan.Installed)})
+	a.run(g, i18n.T("uninstall"), []step{a.uninstallStep(g.Scan.Installed)}, false)
 }
 
 // backups copies what the steps would lose: OptiScaler.ini, which the full package replaces or its uninstaller
-// restores, and nr_fg.ini, which an uninstall removes. The copies go next to the game's .exe.
-func backups(r *detect.Result, steps []step, say func(string, ...any)) error {
+// restores, and nr_fg.ini, which an uninstall removes. The copies go next to the game's .exe. It returns the
+// user's OptiScaler.ini when the steps install the full package over it, for keepSettings; else nil.
+func backups(r *detect.Result, steps []step, say func(string, ...any)) (opti []byte, err error) {
 	uninstalls, fullInstall := false, false
 	for _, s := range steps {
 		uninstalls = uninstalls || s.action == pkg.Uninstall
@@ -284,35 +285,42 @@ func backups(r *detect.Result, steps []step, say func(string, ...any)) error {
 	if uninstalls && r.ANRDll != "" {
 		files = append(files, filepath.Join(filepath.Dir(r.ANRDll), "nr_fg.ini"))
 	}
-	for _, f := range files {
+	for i, f := range files {
 		data, err := os.ReadFile(f)
 		if err != nil {
 			continue
 		}
 		bak := filepath.Join(r.ExeDir, filepath.Base(f)+".bak-"+stamp)
 		if err := os.WriteFile(bak, data, 0o644); err != nil {
-			return err
+			return nil, err
 		}
 		say("%s", i18n.T("backup.file", filepath.Base(f), filepath.Base(bak)))
+		if i == 0 && filepath.Base(f) == "OptiScaler.ini" && fullInstall {
+			opti = data
+		}
 	}
-	return nil
+	return opti, nil
 }
 
 // run runs the steps for g in the background, one after the other, stopping at the first failure, as the task
-// named action in the log.
-func (a *app) run(g *game, action string, steps []step) {
+// named action in the log. A run of a batch, as Update all, asks nothing: it keeps the user's OptiScaler.ini
+// values where the new file changed them too.
+func (a *app) run(g *game, action string, steps []step, batch bool) {
 	if a.busy || g.Scan == nil || len(steps) == 0 {
 		return
 	}
 	a.busy, a.progress, a.logOpen = true, -1, true
 	scan := g.Scan
 	gameDir := scan.ExeDir
+	installedVersion := a.versionOf(scan) // the version the user's OptiScaler.ini came with, or ""
+	base := a.releaseOf(installedVersion)
 	r := &reporter{a: a, tk: a.begin(gameTask(g, action)), opened: true}
-	update := func(fn func()) { a.win.Update(fn) }
+	update := a.update
 	go func() {
 		err := func() error {
 			ctx := context.Background()
-			if err := backups(scan, steps, r.say); err != nil {
+			opti, err := backups(scan, steps, r.say)
+			if err != nil {
 				return err
 			}
 			var installed string
@@ -357,6 +365,11 @@ func (a *app) run(g *game, action string, steps []step) {
 				}
 			}
 			if installed != "" {
+				if opti != nil {
+					if err := a.keepSettings(ctx, r, gameDir, opti, base, installed, batch); err != nil {
+						r.warn(i18n.T("merge.log.failed", err.Error()))
+					}
+				}
 				r.say("%s", i18n.T("done.install", installed, gameDir))
 				if scan.NRRecord {
 					r.warn(i18n.T("warn.nrrecord"))
@@ -373,6 +386,16 @@ func (a *app) run(g *game, action string, steps []step) {
 			a.next()
 		})
 	}()
+}
+
+// releaseOf returns the release of version, or nil when the list lacks it.
+func (a *app) releaseOf(version string) *pkg.Release {
+	for _, r := range a.releases {
+		if version != "" && r.Version == version {
+			return r
+		}
+	}
+	return nil
 }
 
 // outdated returns the newest version when the version of ANR FG installed in r is known and older than it.
@@ -436,7 +459,7 @@ func (a *app) next() {
 		if _, ok := a.outdated(g.Scan); !ok || a.rel == nil {
 			continue
 		}
-		a.run(g, i18n.T("upgrade", a.rel.Version), []step{{pkg.Install, g.Scan.Installed, a.rel, ""}})
+		a.run(g, i18n.T("upgrade", a.rel.Version), []step{{pkg.Install, g.Scan.Installed, a.rel, ""}}, true)
 	}
 }
 

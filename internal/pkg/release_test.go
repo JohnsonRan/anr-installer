@@ -29,6 +29,8 @@ func fakePackage(t *testing.T, version string, kind detect.Kind) []byte {
 	rand.Read(pad)
 	w, _ := zw.CreateHeader(&zip.FileHeader{Name: "game/OptiScaler/custom/Apex Neural Rendering FG/dlssg/programs.bin", Method: zip.Store})
 	w.Write(pad)
+	w, _ = zw.Create("game/OptiScaler.ini")
+	fmt.Fprintf(w, "[FrameGen]\nFGInput=nvngxfg\n; %s\n", version)
 	w, _ = zw.Create("nr_fg_package.json")
 	fmt.Fprintf(w, `{"product":"ANR FG Beta","version":%q,"kind":%q,"provider_sha256":"sha-%s-%s"}`, version, kind, version, kind)
 	if err := zw.Close(); err != nil {
@@ -182,5 +184,33 @@ func TestProbeReadsVersionsWithoutDownloading(t *testing.T) {
 	n := 0
 	if err := again.Probe(context.Background(), rels, func(*Info) { n++ }); err != nil || n != 4 {
 		t.Fatalf("cached probe: %d infos, %v", n, err)
+	}
+}
+
+func TestPackageFile(t *testing.T) {
+	useTempCache(t)
+	gh := newFakeGitHub(t, "V.B19")
+	rels, err := Releases(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	want := "[FrameGen]\nFGInput=nvngxfg\n; V.B19\n"
+	data, err := PackageFile(ctx, rels[0], detect.KindFull, "game/OptiScaler.ini")
+	if err != nil || string(data) != want {
+		t.Fatalf("PackageFile = %q, %v", data, err)
+	}
+	if gh.full.Load() != 0 || gh.ranges.Load() == 0 {
+		t.Errorf("a file of a package not downloaded is read with range requests: %d whole, %d ranges", gh.full.Load(), gh.ranges.Load())
+	}
+	if _, err := Download(ctx, rels[0], detect.KindFull, nil); err != nil {
+		t.Fatal(err)
+	}
+	ranges := gh.ranges.Load()
+	if data, err := PackageFile(ctx, rels[0], detect.KindFull, "game/OptiScaler.ini"); err != nil || string(data) != want || gh.ranges.Load() != ranges {
+		t.Errorf("a downloaded package is read from the cache: %q, %v, %d more ranges", data, err, gh.ranges.Load()-ranges)
+	}
+	if _, err := PackageFile(ctx, rels[0], detect.KindFull, "game/missing.ini"); err == nil {
+		t.Error("a file the package lacks should fail")
 	}
 }

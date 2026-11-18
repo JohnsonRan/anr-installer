@@ -122,7 +122,13 @@ func onMainThread(a *app) mainThread {
 
 func (m mainThread) run(t *testing.T, done func() bool) {
 	t.Helper()
-	timeout := time.After(2 * time.Second)
+	m.runFor(t, 2*time.Second, done)
+}
+
+// runFor is run with a timeout of its own, for work that runs real programs.
+func (m mainThread) runFor(t *testing.T, d time.Duration, done func() bool) {
+	t.Helper()
+	timeout := time.After(d)
 	for !done() {
 		select {
 		case fn := <-m:

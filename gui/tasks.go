@@ -38,7 +38,7 @@ type reporter struct {
 // say adds a step, which the status shows too.
 func (r *reporter) say(format string, args ...any) {
 	text := fmt.Sprintf(format, args...)
-	r.a.win.Update(func() {
+	r.a.update(func() {
 		if !r.opened {
 			r.opened, r.a.logOpen = true, true
 		}
@@ -49,8 +49,8 @@ func (r *reporter) say(format string, args ...any) {
 
 // warn adds a step to heed.
 func (r *reporter) warn(text string) {
-	r.a.win.Update(func() { r.tk.Step(activity.LevelWarning, text) })
+	r.a.update(func() { r.tk.Step(activity.LevelWarning, text) })
 }
 
 // out adds a line a program printed.
-func (r *reporter) out(text string) { r.a.win.Update(func() { r.tk.Out(text) }) }
+func (r *reporter) out(text string) { r.a.update(func() { r.tk.Out(text) }) }

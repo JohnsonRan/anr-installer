@@ -3,7 +3,6 @@
 package detect
 
 import (
-	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -13,6 +12,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"anr-installer/internal/ini"
 )
 
 // ANRDir is the folder ANR FG installs into, under OptiScaler's custom/ folder.
@@ -291,30 +292,18 @@ func OptiMainDir(gameDir, ini string) string {
 
 // IniValue returns key's value in section of an INI file ("" section: the first key of that name anywhere).
 func IniValue(path, section, key string) string {
-	f, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return ""
 	}
-	defer f.Close()
-	in := section == ""
-	sc := bufio.NewScanner(f)
-	sc.Buffer(make([]byte, 64*1024), 1024*1024)
-	for sc.Scan() {
-		l := strings.TrimSpace(strings.TrimPrefix(sc.Text(), "\ufeff"))
-		if strings.HasPrefix(l, "[") && strings.HasSuffix(l, "]") {
-			if section != "" {
-				in = l[1:len(l)-1] == section
-			}
-			continue
-		}
-		if !in {
-			continue
-		}
-		if k, v, ok := strings.Cut(l, "="); ok && strings.EqualFold(strings.TrimSpace(k), key) {
-			return strings.TrimSpace(v)
-		}
+	f := ini.Parse(data)
+	var v string
+	if section == "" {
+		v, _ = f.First(key)
+	} else {
+		v, _ = f.Get(ini.Key{Section: section, Name: key})
 	}
-	return ""
+	return v
 }
 
 // HashFile returns the SHA-256 of a file, in lower-case hex.

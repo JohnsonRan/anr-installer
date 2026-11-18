@@ -98,3 +98,31 @@ func settingsCard(c *ui.Context, t *ui.Theme, icon *ui.SVG, end func(), text fun
 		})
 	})
 }
+
+// segmentInset is the room between a segmented control's track and its segments, and between the segments.
+const segmentInset = Space1
+
+// Segmented is a segmented control of labels, as ui.Segmented, whose chosen segment is filled with the accent of
+// what is chosen, so that it stands out from the others in the dark theme. To disable it, disable an element
+// around it: its segments are styled as they are built, before a Disabled called on it.
+func Segmented(c *ui.Context, t *ui.Theme, selected *int, labels ...string) ui.Element {
+	parts := ui.SegmentedBase(c, selected, len(labels))
+	track := parts.Track.AlignItems(ui.Stretch).Padding(segmentInset).Gap(segmentInset).Radius(CardRadius).
+		Background(t.Surface).Border(1, t.Border)
+	track.Children(func() {
+		for i, label := range labels {
+			s := parts.Segment(i).Padding(Space1, space3).Radius(CardRadius-segmentInset).Border(1, ui.Color{})
+			color := t.TextMuted
+			switch {
+			case i == *selected:
+				s.Background(ApexRoyal.Alpha(0.3)).Border(1, ApexRoyal)
+				color = ApexInk
+			case s.Hovered() && !s.IsDisabled():
+				s.Background(t.SurfaceHover)
+				color = t.Text
+			}
+			s.Children(func() { ui.Text(c, label).SingleLine().TextColor(color) })
+		}
+	})
+	return track
+}
