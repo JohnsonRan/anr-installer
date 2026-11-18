@@ -2,125 +2,105 @@
 
 English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
-ANR FG Installer installs, upgrades, downgrades and removes [ANR FG](https://github.com/apex-compute/ANR)
-(Apex Neural Rendering frame generation) in your games. It finds your Steam games, tells which ship DLSS frame
-generation, picks the right package, and runs the package's own installer.
-
-> **Unofficial.** This is a community tool. It is not made, endorsed or supported by Apex Compute, the makers
-> of ANR FG. It installs ANR FG's own release packages from the
-> [apex-compute/ANR releases](https://github.com/apex-compute/ANR/releases), unchanged. Report problems with
-> ANR FG itself to [apex-compute/ANR](https://github.com/apex-compute/ANR/issues), and problems with this
-> installer [here](https://github.com/JohnsonRan/anr-installer/issues).
+Install, upgrade and remove [ANR FG](https://github.com/apex-compute/ANR) (Apex Neural Rendering frame
+generation) in your games. It finds your Steam games, tells which ship DLSS frame generation, and runs the right
+package's own installer.
 
 ![The page of a game, with its ANR FG version, the upgrade to the newest release and its status](docs/images/game.en.png)
 
-## Requirements
+> [!NOTE]
+> An unofficial community tool, not made or supported by Apex Compute. It installs ANR FG's own
+> [release packages](https://github.com/apex-compute/ANR/releases), unchanged. Report problems with ANR FG to
+> [apex-compute/ANR](https://github.com/apex-compute/ANR/issues), and problems with this installer
+> [here](https://github.com/JohnsonRan/anr-installer/issues).
 
-- Windows 10 or 11 (x64)
-- The Microsoft Visual C++ 2015-2022 Redistributable (x64), which OptiScaler needs
-- A GPU that ANR FG supports: NVIDIA GeForce RTX 20 and newer or GTX 16; AMD Radeon RX 5000 and newer;
-  Intel Arc A and B
+## Features
 
+- **Finds your games**: every Steam library, and which games ship DLSS frame generation. Add games from other
+  stores by their folder.
+- **Installs the right package**: full or add-on, any release from V.B04 on, checked against its SHA-256 sums.
+  Upgrade, reinstall, downgrade or uninstall from the same page.
+- **Keeps your settings**: `OptiScaler.ini` and `nr_fg.ini` are backed up next to the game's `.exe` before a step
+  would lose them.
+- **Tells you about new versions**: the list marks the games to upgrade, and **Update all** upgrades them in one
+  go, except games with anti-cheat.
+- **Records and compares**: replays an [nr-record](#record-and-compare) recording through ANR FG and DLSS-G and
+  plays the two side by side.
+- **Warns about anti-cheat** before installing into a game that ships it.
+- English, Simplified Chinese, Traditional Chinese and Japanese.
+
+## Install
+
+Requires Windows 10 or 11 (x64), the
+[Visual C++ v14 Redistributable (x64)](https://aka.ms/vc14/vc_redist.x64.exe), and a GPU that ANR
+FG supports: NVIDIA RTX 20 and newer or GTX 16, AMD Radeon RX 5000 and newer, or Intel Arc.
+
+| Version | How |
+| --- | --- |
+| Installer | Run `anr-fg-installer-setup-<version>-amd64.exe` from the [latest release](https://github.com/JohnsonRan/anr-installer/releases/latest). No administrator rights needed. |
+| PowerShell | `irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install.ps1 \| iex` |
+| Portable | Extract `anr-fg-installer-<version>-windows-amd64-portable.zip` and run `ANR FG Installer.exe`. Settings and downloads stay in its folder. |
+
+The app is not code-signed: if SmartScreen warns, choose **More info**, then **Run anyway**. It updates itself.
 Linux and the Steam Deck (Proton) are written for but not tested yet.
 
-## Get it
-
-Download `anr-fg-installer-setup-<version>-amd64.exe` from the
-[latest release](https://github.com/JohnsonRan/anr-installer/releases/latest) and run it. It installs the app for
-your Windows account only, in `%LOCALAPPDATA%\Programs\ANR FG Installer`, without administrator rights. Or install
-it from PowerShell:
-
-```
-irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install.ps1 | iex
-```
-
-The portable version, `anr-fg-installer-<version>-windows-amd64-portable.zip`, needs no install: extract its
-`ANR FG Installer` folder to a place you can write to and run `ANR FG Installer.exe`. It keeps its settings and
-downloads in that folder.
-
-The app and its installer are not code-signed, so Windows SmartScreen may warn before the first run: choose
-**More info**, then **Run anyway**.
-
-The app updates itself. It checks for a new version at launch and once a day, and the version button in its title
-bar checks at once. It installs only updates signed with the project's key. To build it from source instead, see
-[Developing](docs/development.md).
-
-## Use it
+## Quick start
 
 1. Close the game.
-2. Open ANR FG Installer and choose the game on the left. **Supported** lists the games that ship DLSS frame
-   generation. To add a game from another store, select **Add game** and choose its folder.
-3. Select **Install** at the top of the game's page. When ANR FG is already there, the button reads **Upgrade**,
-   **Reinstall** or **Downgrade**, for the version chosen with the arrow beside it.
-4. In the game, turn on frame generation (the NVIDIA option where the game offers several).
+2. Open ANR FG Installer and choose the game on the left.
+3. Select **Install** at the top of its page. If ANR FG is already there, the button reads **Upgrade**,
+   **Reinstall** or **Downgrade**; the arrow beside it picks another version.
+4. Start the game and turn on frame generation (the NVIDIA option, where the game offers several).
 
-**Uninstall** puts back what the package's installer backed up. Before a step loses one of your settings files,
-the installer copies it next to the game's `.exe` as `<name>.bak-<time>`: `OptiScaler.ini` before the full
-package replaces it, and `nr_fg.ini` before an uninstall or a downgrade removes it.
+Each install shows its steps in the activity log at the bottom. **Uninstall** puts back what the package backed
+up.
 
 ![The activity log, with the steps of an install and an upgrade](docs/images/log.en.png)
 
-When a new ANR FG version comes out and one of your games has an older one, the installer shows the release
-notes once. **Update all** there upgrades those games one after another, each with the package it has. Games
-with anti-cheat are left out: upgrade each of them from its own page. The list marks the games to upgrade, and
-the bar above it shows only those.
+## Settings
 
-The gear button in the title bar opens **Settings**. **Language** follows the system by default, or shows English,
-Simplified Chinese, Traditional Chinese or Japanese. **Close button** quits the app by default, or hides the window to the notification area,
-where the app's icon brings it back and its menu quits. Starting the app again while it runs brings its window
-forward. **Start with Windows** starts the app when you sign in: hidden in the notification area when the close
-button minimizes to the tray, else minimized. Uninstalling the installed version removes its entry; the entry of a
-portable copy stays. The portable version registers the path it runs from: after you
-move its folder, the setting shows off until you turn it on again. **Notify me about new ANR FG versions**, on by
-default, shows a Windows notification once for each new ANR FG release while the window is hidden or minimized;
-the app looks for one at launch and every 6 hours. **Check for updates automatically** turns the installer's own
-update checks on or off. **Data folder** opens the folder of your settings. **Delete downloads** removes the
-downloaded ANR FG and nr-record packages, which download again when needed.
+The gear button in the title bar opens them.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Language | System | English, Simplified Chinese, Traditional Chinese or Japanese |
+| Close button | Quit the app | Or hide the window to the notification area |
+| Start with Windows | Off | Starts the app, out of sight, when you sign in |
+| Check for updates automatically | On | The installer's own updates, at launch and daily |
+| Notify me about new ANR FG versions | On | A Windows notification while the window is hidden |
+| Delete downloads | | Frees the downloaded packages; they download again when needed |
 
 ![The settings](docs/images/settings.en.png)
 
-Closing or quitting while a task runs, such as an install, asks first: quitting can leave the task unfinished and
-a game's files half changed.
-
 ## Record and compare
 
-[nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation), from the same releases,
-records what a game gives its frame generation, so that ANR FG and DLSS-G can be compared on the same frames. A
-game's page shows **Record and compare** once ANR FG's full package is installed in it.
+[nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation) records what a game gives its
+frame generation, so ANR FG and DLSS-G can be compared on the same frames. It needs ANR FG's full package in the
+game, FFmpeg (the app installs it with [Scoop](https://scoop.sh)), and for the DLSS-G side an RTX 40 or 50 GPU.
 
 ![The "Record and compare" section of a game with recordings](docs/images/record.en.png)
 
-1. Click **Install nr-record**. Start the game and turn on DLSS frame generation. **F6** starts and stops a
+1. Select **Install nr-record**, start the game and turn on DLSS frame generation. **F6** starts and stops a
    recording; **F9** records 8 frames.
-2. Back in the installer, click **Refresh**. Each recording of the game has **Compare with DLSS-G**: it replays
-   the recording through the installed ANR FG and through the game's own `nvngx_dlssg.dll`, then shows the two
-   videos in the window. Replaying through DLSS-G needs an NVIDIA RTX 40 or 50 series GPU.
-3. On the comparison page, play both videos together, drag the divider between them, or put them side by side.
-   The videos are compressed and are not locked frame by frame: to compare a frame exactly, pause on it and
-   choose **Stills**, which exports the frames around it as lossless PNG images. **Open in nr-record's viewer**
-   opens the same comparison there, for pixel zoom, marks and exports.
+2. Back in the installer, select **Refresh**, then **Compare with DLSS-G** on a recording.
+3. Play the two videos together, with a divider or side by side. To compare one frame exactly, pause on it and
+   export **Stills**, lossless PNG images.
 
-Recordings are large and replays are slow: at 3840 × 2160 a recording takes about 26 MB a frame, and a replay
-takes about a minute for each second recorded. So the button compares the first 5 seconds of a recording; the
-arrow beside it replays the first 15 seconds or all of it, and deletes the recording.
-
-The videos need FFmpeg and FFprobe. When they are missing, **Install with Scoop** installs them; without
-[Scoop](https://scoop.sh), the installer asks you to install Scoop first. Installing ANR FG again switches frame
-generation back to ANR FG, so install nr-record again afterwards to keep recording. Recordings of an upscaler's
-inputs are listed, but replay from the command line only.
+Replays are slow, about a minute for each second recorded at 3840 × 2160, so the button compares the first 5
+seconds. Installing ANR FG again turns recording off: install nr-record again afterwards.
 
 ## Anti-cheat
 
-OptiScaler and ANR FG hook into a game's rendering. Anti-cheat may take them for a cheat and ban the account,
-in online modes above all. When a game ships anti-cheat (Easy Anti-Cheat, EA Javelin, BattlEye and others), the
-installer marks it and asks before installing. Install into such a game only if you accept that risk; you bear
-it yourself.
+OptiScaler and ANR FG hook into a game's rendering, which anti-cheat may take for a cheat and ban the account for,
+in online modes above all. The installer marks games that ship anti-cheat and asks before installing into them.
+The risk is yours.
 
-## How it works
+## More
 
-[How it works](docs/how-it-works.md) covers what the installer reads and changes, how it tells the installed
-version without downloading anything, and the files it keeps.
+- [How it works](docs/how-it-works.md): what the installer reads and changes, and the files it keeps.
+- [Developing](docs/development.md): building from source, the checks and releasing.
+- [Changelog](CHANGELOG.md)
 
 ## License
 
-[MIT](LICENSE). ANR FG and OptiScaler, which the installer downloads and installs, keep their own licenses.
+[MIT](LICENSE). ANR FG and OptiScaler keep their own licenses.
