@@ -19,8 +19,10 @@ type settingsState struct {
 	locale string // the language chosen, as mygo.App.ChosenLocale reported it when the page opened
 	// The selects' choices, as their labels, kept across frames: a select writes its choice after the frame.
 	langSel, closeSel string
-	notify            bool  // the release notification switch, which writes it between frames
-	cacheSize         int64 // bytes of the downloaded packages, -1 while they are counted
+	// The switches' states, which they write between frames: whether the app starts at sign-in, as
+	// mygo.App.OpenAtLogin reported it when the page opened, and whether a new release notifies.
+	atLogin, notify bool
+	cacheSize       int64 // bytes of the downloaded packages, -1 while they are counted
 }
 
 // toggleSettings opens the settings page, or closes it.
@@ -32,6 +34,7 @@ func (a *app) toggleSettings() {
 	s := &settingsState{game: a.selected(), notify: !a.saved.ReleaseNotifyOff}
 	if a.win != nil { // tests: no MyGo app runs
 		s.locale = mygo.App.ChosenLocale()
+		s.atLogin = mygo.App.OpenAtLogin()
 	}
 	a.autoCheck = updater.AutomaticChecks()
 	a.measureCache(s)
@@ -68,6 +71,18 @@ func (a *app) saveSettings() {
 	}
 }
 
+// setOpenAtLogin makes the app start when the user signs in, or stops it from doing so, as the switch of s says.
+// On a failure the switch goes back to what the system has.
+func (a *app) setOpenAtLogin(s *settingsState) {
+	if a.win == nil { // tests: the user's sign-in entries stay as they are
+		return
+	}
+	if err := mygo.App.SetOpenAtLogin(s.atLogin); err != nil {
+		a.logf("%s", T("settings.login.failed", err.Error()))
+		s.atLogin = mygo.App.OpenAtLogin()
+	}
+}
+
 // setCloseToTray keeps what the close button does, and adds or removes the tray icon to match.
 func (a *app) setCloseToTray(on bool) {
 	a.saved.CloseToTray = on
@@ -97,6 +112,11 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 					cur = 1
 				}
 				choose(c.Key("close"), &s.closeSel, labels, cur, T("settings.close"), func(i int) { a.setCloseToTray(i == 1) })
+			})
+			settingsRow(c, t, iconPower, T("settings.login"), T("settings.login.detail"), func() {
+				if ui.Switch(c, &s.atLogin).Label(T("settings.login")).Changed() {
+					a.setOpenAtLogin(s)
+				}
 			})
 			settingsRow(c, t, iconBell, T("settings.notify"), T("settings.notify.detail"), func() {
 				if ui.Switch(c, &s.notify).Label(T("settings.notify")).Changed() {

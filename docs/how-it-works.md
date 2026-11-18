@@ -84,7 +84,7 @@ On Windows, a game's page drives nr-record, whose package ships in the same rele
 
 | Path | Holds |
 | --- | --- |
-| `%APPDATA%\anr-installer\games.json` | games added by hand, `.exe` folders chosen by hand, and what the close button does |
+| `%APPDATA%\anr-installer\games.json` | games added by hand, `.exe` folders chosen by hand, what the close button does (`close_to_tray`), whether a new ANR FG release notifies (`release_notify_off`), the newest release whose notes opened by themselves (`seen_release`), and the newest release a check found (`notified_release`) |
 | `%APPDATA%\ANR FG Installer\locale` | the language chosen in Settings, kept by MyGo; absent while the app follows the system |
 | `%LOCALAPPDATA%\anr-installer\versions.json` | each release package's version and provider hash |
 | `%LOCALAPPDATA%\anr-installer\downloads\` | downloaded packages |
@@ -93,7 +93,29 @@ On Windows, a game's page drives nr-record, whose package ships in the same rele
 
 The portable version, which a file named `portable` next to its executable marks, keeps `games.json` in its own
 folder and the rest under `cache\` there. The language chosen in Settings stays in
-`%APPDATA%\ANR FG Installer\locale` for the portable version too.
+`%APPDATA%\ANR FG Installer\locale` for the portable version too. Settings shows the folder of `games.json` as
+**Data folder**.
+
+**Delete downloads** in Settings removes `downloads\` and `packages\` only. An install, an uninstall and nr-record
+download and unpack a missing package again, which needs GitHub. `versions.json` stays, as rebuilding it reads
+every package again, and so do the comparisons.
+
+## Running in the background
+
+- **New releases**: the release list is read at launch and every 6 hours after. A check every 6 hours that fails
+  keeps the list already read and shows no error. When a check finds a newest release other than
+  `notified_release`, a Windows notification tells of it while the window is hidden or minimized, unless
+  `release_notify_off` is set; the release is recorded either way, once the games are scanned. In the window, its notes open instead (`seen_release`). Notifications are notification-area
+  balloons, which Windows 10 and later show as toasts.
+- **Start with Windows**: MyGo writes the value `io.github.johnsonran.anrinstaller` under
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, the executable's path followed by
+  `--mygo-opened-at-login`. Task Manager's Startup page can turn it off. Started so, the window stays hidden behind
+  the tray icon when the close button hides to it, and starts minimized otherwise. The setting shows on only while
+  the value names the running executable, so a portable folder moved elsewhere shows it off until it is turned
+  on again. Uninstalling the app leaves the value.
+- **Quitting while a task runs**: the close button, the tray's Quit and an update's restart ask first. A quit
+  stops what the installer does itself; a program it started, such as a package's `install.ps1`, is not stopped
+  by it. The end of a Windows session quits without asking.
 
 `GITHUB_TOKEN`, when set, raises GitHub's API rate limit; it is sent to GitHub's API only.
 
@@ -101,8 +123,8 @@ folder and the rest under `cache\` there. The language chosen in Settings stays 
 
 The installer updates itself with MyGo's updater. It checks
 `https://github.com/JohnsonRan/anr-installer/releases/latest/download/update-windows-amd64.json` 10 seconds after
-launch and then once a day; the About dialog, from the version button in the title bar, checks at once and turns
-the automatic checks on or off. A newer version is offered in a window with its release notes, to install, skip
+launch and then once a day; the About dialog, from the version button in the title bar, checks at once, and
+Settings turns the automatic checks on or off. A newer version is offered in a window with its release notes, to install, skip
 or be reminded of later. The update archive, or a smaller delta from the running version, is installed only when
 its signature matches the public key in `mygo.json`. The app can update itself where it can write its own folder:
 the per-user install in `%LOCALAPPDATA%\Programs\ANR FG Installer`, or the portable version's folder.

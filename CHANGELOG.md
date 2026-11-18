@@ -6,6 +6,16 @@
   is English or Simplified Chinese; the update window follows it too. The close button quits the app by
   default, or hides the window to the notification area, whose icon brings it back.
 - Starting the app again while it runs brings its window forward instead of opening a second one.
+- The automatic checks for a new version of the installer are turned on or off in Settings. The About dialog
+  keeps the update status and **Check for updates**.
+- Closing or quitting while an install, an uninstall, a replay or another task runs asks first, as quitting can
+  leave the task unfinished and a game's files half changed. The end of a Windows session is never held up.
+- Settings shows the data folder, and the size of the downloaded ANR FG and nr-record packages. **Delete
+  downloads** removes them; they download again when needed. Comparisons and the list of package versions stay.
+- While the window is hidden or minimized, a Windows notification tells of a new ANR FG version, once a release.
+  The app looks for one at launch and every 6 hours. It can be turned off in Settings.
+- **Start with Windows** in Settings starts the app when the user signs in: hidden in the notification area when
+  the close button minimizes to the tray, else minimized.
 
 ## 0.2.0
 

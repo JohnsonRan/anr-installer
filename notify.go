@@ -25,6 +25,7 @@ func (a *app) watchReleases() {
 }
 
 // releasesFound keeps the releases a check found, reads the versions of their packages, and tells of a new one.
+// It clears the error of a check that failed before.
 func (a *app) releasesFound(rels []*pkg.Release) {
 	a.relErr = ""
 	a.setReleases(rels)

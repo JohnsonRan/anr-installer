@@ -26,6 +26,9 @@ func main() {
 	mygo.App.SetLanguages("en", "zh-Hans")
 	mygo.App.WhenReady(func() {
 		lang = langOf(mygo.App.Locale())
+		// Started as the user signs in, the window stays out of sight: hidden behind the tray icon when there is
+		// one (below), else minimized.
+		atLogin := mygo.App.WasOpenedAtLogin()
 		a.win = mygo.NewWindow(mygo.WindowOptions{
 			Title:             T("title"),
 			Width:             1040,
@@ -35,6 +38,7 @@ func main() {
 			StateKey:          "main",
 			TitleBarStyle:     mygo.TitleBarHidden,
 			HideWindowButtons: true,
+			Hidden:            atLogin,
 			Content:           ui.View(a.view),
 		})
 		mygo.App.OnLocaleChanged(func(locale string) {
@@ -69,6 +73,10 @@ func main() {
 			}
 		})
 		a.syncTray()
+		if atLogin && a.tray == nil {
+			// No tray icon, by the setting or a failure, would bring a hidden window back: it shows minimized.
+			a.win.Minimize()
+		}
 		a.start()
 		// A recording is made in the game, while this window is behind it: look for new ones on the way back.
 		a.win.OnFocus(a.refreshRecord)

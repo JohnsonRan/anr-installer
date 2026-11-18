@@ -16,7 +16,7 @@ func TestSettingsPage(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, s := range []string{T("settings.language"), T("settings.language.system"), T("settings.close"), T("settings.close.quit"),
-		T("settings.updates"), T("settings.updates.detail")} {
+		T("settings.updates"), T("settings.updates.detail"), T("settings.login"), T("settings.login.detail")} {
 		if !tt.HasText(s) {
 			t.Errorf("missing %q in %q", s, tt.Texts())
 		}
