@@ -31,7 +31,7 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 ```
 
 便携版 `anr-fg-installer-<版本>-windows-amd64-portable.zip` 无需安装：把其中的 `ANR FG Installer` 文件夹解压到可写入的位置，
-运行 `ANR FG Installer.exe` 即可。它会把设置和下载的文件保存在这个文件夹里，但“设置”中选择的语言除外。
+运行 `ANR FG Installer.exe` 即可。它会把设置和下载的文件保存在这个文件夹里。
 
 程序和安装程序都没有代码签名，首次运行时 Windows SmartScreen 可能会发出警告：选择“更多信息”，再选择“仍要运行”。
 

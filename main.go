@@ -11,6 +11,8 @@ import (
 	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/plugins/updater/native"
 	"github.com/egoist/mygo/ui"
+
+	"anr-installer/internal/paths"
 )
 
 // The window's sizes in DIPs: the minimum, and the size its pages are laid out for, which it opens at the first
@@ -35,6 +37,9 @@ func defaultSize(work mygo.Rectangle) (width, height int) {
 }
 
 func main() {
+	// MyGo keeps the language chosen, the window's place and the updater's state in the folder of the app's own
+	// settings: one folder for everything, and the portable version's beside its executable.
+	mygo.App.SetPath(mygo.PathUserData, paths.Config())
 	// A second launch brings the running window forward (OnSecondInstance) and exits.
 	if !mygo.App.RequestSingleInstanceLock() {
 		return

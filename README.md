@@ -34,7 +34,7 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 
 The portable version, `anr-fg-installer-<version>-windows-amd64-portable.zip`, needs no install: extract its
 `ANR FG Installer` folder to a place you can write to and run `ANR FG Installer.exe`. It keeps its settings and
-downloads in that folder, except the language chosen in Settings.
+downloads in that folder.
 
 The app and its installer are not code-signed, so Windows SmartScreen may warn before the first run: choose
 **More info**, then **Run anyway**.

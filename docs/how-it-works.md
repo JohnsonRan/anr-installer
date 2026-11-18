@@ -85,15 +85,16 @@ On Windows, a game's page drives nr-record, whose package ships in the same rele
 | Path | Holds |
 | --- | --- |
 | `%APPDATA%\anr-installer\games.json` | games added by hand, `.exe` folders chosen by hand, what the close button does (`close_to_tray`), whether a new ANR FG release notifies (`release_notify_off`), the newest release whose notes opened by themselves (`seen_release`), and the newest release a check found (`notified_release`) |
-| `%APPDATA%\ANR FG Installer\locale` | the language chosen in Settings, kept by MyGo; absent while the app follows the system |
+| `%APPDATA%\anr-installer\locale` | the language chosen in Settings, kept by MyGo; absent while the app follows the system |
+| `%APPDATA%\anr-installer\window-state.json` | the window's size, place and maximized state, kept by MyGo |
+| `%APPDATA%\anr-installer\updater.json` | whether the installer checks for its own updates, and when it last did, kept by MyGo's updater |
 | `%LOCALAPPDATA%\anr-installer\versions.json` | each release package's version and provider hash |
 | `%LOCALAPPDATA%\anr-installer\downloads\` | downloaded packages |
 | `%LOCALAPPDATA%\anr-installer\packages\` | unpacked packages |
 | `%LOCALAPPDATA%\anr-installer\compare\<recording>\` | a comparison's two videos, the viewer's project, and its stills under `stills` |
 
-The portable version, which a file named `portable` next to its executable marks, keeps `games.json` in its own
-folder and the rest under `cache\` there. The language chosen in Settings stays in
-`%APPDATA%\ANR FG Installer\locale` for the portable version too. Settings shows the folder of `games.json` as
+The portable version, which a file named `portable` next to its executable marks, keeps `games.json` and MyGo's files in
+its own folder and the rest under `cache\` there. Settings shows the folder of `games.json` as
 **Data folder**.
 
 **Delete downloads** in Settings removes `downloads\` and `packages\` only. An install, an uninstall and nr-record

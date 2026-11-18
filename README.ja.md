@@ -33,7 +33,7 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 
 ポータブル版の `anr-fg-installer-<バージョン>-windows-amd64-portable.zip` はインストール不要です。`ANR FG Installer`
 フォルダーを書き込みできる場所に展開して、`ANR FG Installer.exe` を実行します。設定とダウンロードしたファイルは、
-そのフォルダーに保存されます ([Settings] で選んだ言語を除く)。
+そのフォルダーに保存されます。
 
 アプリとインストーラーにはコード署名がないため、初回の実行時に Windows SmartScreen の警告が表示される場合があります。
 [詳細情報] を選び、[実行] を選んでください。

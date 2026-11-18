@@ -8,6 +8,10 @@
 - Starting the app again while it runs brings its window forward instead of opening a second one.
 - The first window fits the display: 1280 × 900 where there is room, else 90% of the display's work area, so
   its title bar stays on screen on a small laptop display. Later launches keep the size the user left it at.
+- MyGo's files (the language chosen, the window's size and place, the update preference) move to
+  `%APPDATA%\anr-installer` with `games.json`, and the portable version keeps them in its own folder. The
+  window's size and the update preference start from their defaults once; `%APPDATA%\ANR FG Installer` can be
+  deleted.
 - The automatic checks for a new version of the installer are turned on or off in Settings. The About dialog
   keeps the update status and **Check for updates**.
 - Closing or quitting while an install, an uninstall, a replay or another task runs asks first, as quitting can
