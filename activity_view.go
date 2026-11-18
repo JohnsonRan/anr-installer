@@ -55,52 +55,59 @@ func (l *activityLog) layout() []logRow {
 	return rows
 }
 
-// activity is the log, folded to a bar until opened: the bar tells what runs, or how the newest entry ended. It
-// opens as a run starts.
-func (a *app) activity(c *ui.Context, t *ui.Theme) {
+// work is the task in progress as the activity bar tells it: whether one runs, what it does now, and how far it
+// is, -1 unknown or -2 none.
+type work struct {
+	busy     bool
+	status   string
+	progress float64
+}
+
+// view is the log, folded to a bar until open: the bar tells what runs, or how the newest entry ended.
+func (l *activityLog) view(c *ui.Context, t *ui.Theme, open *bool, w work) {
 	ui.Divider(c)
 	ui.Column(c).Background(t.Text.Alpha(0.025)).Children(func() {
 		head := ui.Row(c.Key("activity")).Padding(padRowY, padPageX).Gap(gapControls).AlignItems(ui.Center).Cursor(ui.CursorPointer).Label(T("log"))
 		if head.Clicked() {
-			a.logOpen = !a.logOpen
+			*open = !*open
 		}
 		head.Children(func() {
 			arrow := "▸"
-			if a.logOpen {
+			if *open {
 				arrow = "▾"
 			}
 			// In the column of the tasks' marks, so that the bar's label starts where their titles do.
 			ui.Text(c, arrow).TextColor(t.TextMuted).Width(logMark).TextAlign(ui.Center)
 			roleBodyStrong.on(t, ui.Text(c, T("log")))
-			a.activitySummary(c, t)
-			if a.logOpen && len(a.log.entries) > 0 {
-				a.copyLogButton(c)
-				ui.Button(c, T("clear")).Disabled(a.busy).OnClick(func() { a.log = activityLog{} })
+			l.summary(c, t, w)
+			if *open && len(l.entries) > 0 {
+				l.copyButton(c)
+				ui.Button(c, T("clear")).Disabled(w.busy).OnClick(func() { *l = activityLog{} })
 			}
 		})
-		if a.logOpen {
-			a.activityPanel(c, t)
+		if *open {
+			l.panel(c, t)
 		}
 	})
 }
 
-// activitySummary is the bar's line: the status and progress of the task that runs, else the newest entry, a
-// task's result or a note.
-func (a *app) activitySummary(c *ui.Context, t *ui.Theme) {
-	if a.busy {
-		status := a.status
-		if tk := a.log.running(); status == "" && tk != nil {
+// summary is the bar's line: the status and progress of the task that runs, else the newest entry, a task's
+// result or a note.
+func (l *activityLog) summary(c *ui.Context, t *ui.Theme, w work) {
+	if w.busy {
+		status := w.status
+		if tk := l.running(); status == "" && tk != nil {
 			status = tk.title
 		}
 		roleSmall.on(t, ui.Text(c, status)).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Grow(1).Shrink(1)
-		if a.progress >= 0 {
-			ui.Progress(c, a.progress).Width(progressWidth).Label(a.status)
+		if w.progress >= 0 {
+			ui.Progress(c, w.progress).Width(progressWidth).Label(w.status)
 		} else {
 			ui.Spinner(c).Label(T("busy"))
 		}
 		return
 	}
-	e := a.log.last()
+	e := l.last()
 	text, color := "", t.TextMuted
 	switch {
 	case e == nil:
@@ -130,10 +137,9 @@ func taskMark(c *ui.Context, t *ui.Theme, tk *task) ui.Element {
 	return ui.Icon(c, iconCheck).Size(logMark, logMark).TextColor(t.Success).Label(T("log.ok"))
 }
 
-// copyLogButton copies the log as text, and its label tells for a moment whether that worked, as GitHub's copy
+// copyButton copies the log as text, and its label tells for a moment whether that worked, as GitHub's copy
 // buttons do.
-func (a *app) copyLogButton(c *ui.Context) {
-	l := &a.log
+func (l *activityLog) copyButton(c *ui.Context) {
 	label := T("log.copy")
 	if since := c.Now().Sub(l.copiedAt); !l.copiedAt.IsZero() && since < copiedFor {
 		label = T("log.copied")
@@ -148,9 +154,8 @@ func (a *app) copyLogButton(c *ui.Context) {
 	}
 }
 
-// activityPanel lists the log, the newest at the bottom, which it follows as lines come.
-func (a *app) activityPanel(c *ui.Context, t *ui.Theme) {
-	l := &a.log
+// panel lists the log, the newest at the bottom, which it follows as lines come.
+func (l *activityLog) panel(c *ui.Context, t *ui.Theme) {
 	rows := l.layout()
 	l.list.FollowEnd = true
 	l.list.Key = func(i int) any {
@@ -163,7 +168,7 @@ func (a *app) activityPanel(c *ui.Context, t *ui.Theme) {
 	if l.running() != nil {
 		c.After(time.Second) // the running task's duration counts up
 	}
-	list := ui.List(c, &l.list, len(rows), func(i int) { a.logRow(c, t, rows[i]) })
+	list := ui.List(c, &l.list, len(rows), func(i int) { l.row(c, t, rows[i]) })
 	list.Height(activityHeight).PaddingY(space1).Selectable().Children(func() {
 		if len(rows) == 0 {
 			roleSmall.on(t, ui.Text(c, T("log.empty"))).TextColor(t.TextMuted).Padding(padRowY, padPageX, padRowY, padLogText)
@@ -171,8 +176,8 @@ func (a *app) activityPanel(c *ui.Context, t *ui.Theme) {
 	})
 }
 
-func (a *app) logRow(c *ui.Context, t *ui.Theme, r logRow) {
-	e := &a.log.entries[r.entry]
+func (l *activityLog) row(c *ui.Context, t *ui.Theme, r logRow) {
+	e := &l.entries[r.entry]
 	tk := e.task
 	switch r.kind {
 	case rowTask:
@@ -185,7 +190,7 @@ func (a *app) logRow(c *ui.Context, t *ui.Theme, r logRow) {
 		s := tk.steps[r.i]
 		roleSmall.on(t, ui.Text(c, s.text)).TextColor(levelColor(t, s.level, t.Text)).Padding(0, padPageX, 0, padLogText)
 	case rowFold:
-		a.outputFold(c, t, tk)
+		l.outputFold(c, t, tk)
 	case rowOutput:
 		roleSmall.on(t, ui.Text(c, tk.output[r.i])).Font("monospace").TextColor(t.TextMuted).Padding(0, padPageX, 0, padLogText)
 	case rowNote:
@@ -206,7 +211,7 @@ func logTimes(c *ui.Context, t *ui.Theme, at time.Time, took string) {
 }
 
 // outputFold is the row that shows a task's output, or hides it, and says how many lines it holds.
-func (a *app) outputFold(c *ui.Context, t *ui.Theme, tk *task) {
+func (l *activityLog) outputFold(c *ui.Context, t *ui.Theme, tk *task) {
 	n, total := len(tk.output), len(tk.output)+tk.dropped
 	arrow, label := "▸", T("log.output.show", n)
 	switch {
@@ -226,7 +231,7 @@ func (a *app) outputFold(c *ui.Context, t *ui.Theme, tk *task) {
 			color = t.Text
 		}
 		// The rows below come or go: the row clicked stays where it is rather than the list following its end.
-		b.OnClick(func() { tk.open = !tk.open; a.log.list.HoldPlace() }).Children(func() {
+		b.OnClick(func() { tk.open = !tk.open; l.list.HoldPlace() }).Children(func() {
 			ui.Text(c, arrow).TextColor(color)
 			roleSmall.on(t, ui.Text(c, label)).TextColor(color)
 		})

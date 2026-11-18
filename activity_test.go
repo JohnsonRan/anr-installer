@@ -81,9 +81,13 @@ func TestLogText(t *testing.T) {
 }
 
 func TestActivityPanel(t *testing.T) {
-	a := testApp(t)
-	a.log, a.logOpen = testLog(), true
-	tt := ui.NewTester(a.view, 1040, 760)
+	setLang("en")
+	l, open := testLog(), true
+	tt := ui.NewTester(func(c *ui.Context) {
+		th := apexTheme()
+		c.SetTheme(th)
+		ui.Column(c).Fill().Children(func() { l.view(c, th, &open, work{}) })
+	}, 1040, 760)
 	for _, s := range []string{
 		"Delta · Upgrade to V.B19", "Couldn't complete: exit status 1", "Access to nr_fg.dll is denied",
 		"Hide output (last 1 of 4 lines)", "Removed Epic (D:\\Epic) from the list.",
@@ -105,7 +109,7 @@ func TestActivityPanel(t *testing.T) {
 	if err := tt.Click(T("log.copy")); err != nil {
 		t.Fatal(err)
 	}
-	if tt.Clipboard() != a.log.text() || !tt.HasText(T("log.copied")) {
+	if tt.Clipboard() != l.text() || !tt.HasText(T("log.copied")) {
 		t.Errorf("Copy log: clipboard %q, texts %q", tt.Clipboard(), tt.Texts())
 	}
 	tt.Advance(copiedFor)

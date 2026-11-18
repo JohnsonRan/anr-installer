@@ -45,7 +45,7 @@ func (a *app) view(c *ui.Context) {
 				} else {
 					ui.Scroll(c.Key(g)).Grow(1).Children(func() { a.detail(c, t, g) })
 				}
-				a.activity(c, t)
+				a.log.view(c, t, &a.logOpen, work{a.busy, a.status, a.progress})
 				a.about(c, t)
 				a.releaseNotes(c, t)
 				a.quitDialog(c, t)

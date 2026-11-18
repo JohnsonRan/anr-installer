@@ -98,7 +98,7 @@ func TestDeleteDownloads(t *testing.T) {
 	}
 	a.busy = true
 	a.deleteDownloads()
-	if len(a.log.entries) != 0 {
+	if a.log.last() != nil {
 		t.Fatal("Delete downloads started while another task ran")
 	}
 	a.busy, a.settings.cacheSize = false, 2

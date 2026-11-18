@@ -155,7 +155,7 @@ func TestDeleteRecording(t *testing.T) {
 	a.busy = true
 	a.removeRecording(a.games[3], gone)
 	m.run(t, func() bool { return len(m) == 0 })
-	if len(a.log.entries) != 0 {
+	if a.log.last() != nil {
 		t.Fatal("a recording was deleted while another task ran")
 	}
 	a.busy = false
