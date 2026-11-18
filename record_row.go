@@ -16,7 +16,7 @@ func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Reco
 		valueRow(c, t, iconFrames, title, T("rec.item.upscaler"), func() { valueText(c, T("rec.item.cli"), t.TextMuted) })
 		return
 	}
-	detail := T("rec.item", rec.Width, rec.Height, rec.Frames, fmt.Sprintf("%.1f GB", float64(rec.Bytes)/1e9))
+	detail := T("rec.item", rec.Width, rec.Height, rec.Frames, sizeText(rec.Bytes))
 	if rec.Seconds > 0 {
 		detail = T("rec.item.seconds", seconds(rec.Seconds)) + " · " + detail
 	}

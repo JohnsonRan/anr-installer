@@ -43,7 +43,7 @@ func TestRecordSectionOfAGameThatRecords(t *testing.T) {
 	tt := open(t, a, "Delta")
 	for _, want := range []string{
 		T("rec.title"), T("rec.nrrecord.on"), T("rec.uninstall"), T("rec.found"),
-		T("rec.recordings.count", 2, 3), "2026-11-17 21:04:05", "10 s · 3840 × 2160 · 600 frames · 15.6 GB · 4 dropped", T("rec.slow"),
+		T("rec.recordings.count", 2, 3), "2026-11-17 21:04:05", "10 s · 3840 × 2160 · 600 frames · 15.6 GB · 4 dropped", T("rec.slow"),
 		T("rec.compare"), T("rec.item.upscaler"), T("rec.item.cli"),
 	} {
 		if !tt.HasText(want) {

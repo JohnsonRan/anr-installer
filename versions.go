@@ -293,7 +293,7 @@ func (a *app) run(g *game, action string, steps []step) {
 							if total > 0 {
 								a.progress = float64(done) / float64(total)
 							}
-							a.status = T("downloading", name, fmt.Sprintf("%.1f / %.1f MB", float64(done)/1e6, float64(total)/1e6))
+							a.status = T("downloading", name, sizeText(done)+" / "+sizeText(total))
 						})
 					})
 					if err != nil {

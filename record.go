@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -178,7 +177,7 @@ func (a *app) recordWork(g *game, title string, work func(ctx context.Context, r
 					if total > 0 {
 						a.progress = float64(done) / float64(total)
 					}
-					a.status = T("downloading", p.Asset(), fmt.Sprintf("%.1f / %.1f MB", float64(done)/1e6, float64(total)/1e6))
+					a.status = T("downloading", p.Asset(), sizeText(done)+" / "+sizeText(total))
 				})
 			})
 			update(func() { a.progress = -1 })
