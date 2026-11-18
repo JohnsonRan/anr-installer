@@ -37,6 +37,7 @@ func (a *app) closeCompare() {
 	a.cmp = nil
 }
 
+// comparePage draws the comparison page with the app's state and actions.
 func (a *app) comparePage(c *ui.Context, t *ui.Theme) {
 	p := a.cmp
 	p.Page(c, t, compare.Actions{

@@ -11,6 +11,7 @@ import (
 // Logo is the app's logo.
 var Logo = MustSVG(assets.LogoSVG)
 
+// MustSVG parses an SVG built into the app, which cannot fail but by a programming error.
 func MustSVG(data []byte) *ui.SVG {
 	s, err := ui.ParseSVG(data)
 	if err != nil {

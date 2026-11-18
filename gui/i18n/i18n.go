@@ -15,8 +15,10 @@ var Languages = []string{"en", "zh-Hans", "zh-Hant", "ja"}
 // chooses. Background work formats its texts with T too, so it is read and written atomically.
 var lang atomic.Pointer[string]
 
+// SetLang sets the language the window shows, one of Languages.
 func SetLang(l string) { lang.Store(&l) }
 
+// CurrentLang is the language the window shows, English until SetLang sets one.
 func CurrentLang() string {
 	if l := lang.Load(); l != nil {
 		return *l

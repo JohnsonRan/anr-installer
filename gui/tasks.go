@@ -15,7 +15,7 @@ func (a *app) begin(title string) *activity.Task {
 	return a.log.Begin(title, time.Now())
 }
 
-// end ends tk as finish does. A failure opens the log, which shows it.
+// end ends tk as Task.Finish does. A failure opens the log, which shows it.
 func (a *app) end(tk *activity.Task, failure string) {
 	tk.Finish(time.Now(), failure)
 	a.status = ""
