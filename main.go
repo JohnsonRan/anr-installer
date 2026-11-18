@@ -58,6 +58,7 @@ func main() {
 		// Started as the user signs in, the window stays out of sight: hidden behind the tray icon when there is
 		// one (below), else minimized.
 		atLogin := mygo.App.WasOpenedAtLogin()
+		hidden := atLogin && a.saved.CloseToTray
 		width, height := defaultSize(mygo.Screen.PrimaryDisplay().WorkArea)
 		a.win = mygo.NewWindow(mygo.WindowOptions{
 			Title:             T("title"),
@@ -68,7 +69,7 @@ func main() {
 			StateKey:          "main",
 			TitleBarStyle:     mygo.TitleBarHidden,
 			HideWindowButtons: true,
-			Hidden:            atLogin,
+			Hidden:            hidden,
 			Content:           ui.View(a.view),
 		})
 		mygo.App.OnLocaleChanged(func(locale string) {
@@ -105,7 +106,12 @@ func main() {
 		})
 		a.syncTray()
 		if atLogin && a.tray == nil {
-			// No tray icon, by the setting or a failure, would bring a hidden window back: it shows minimized.
+			// No tray icon, by the setting or a failure, would bring a hidden window back: it shows minimized. A
+			// window made hidden for the icon that failed shows first: MyGo takes a window out of its cloak as it
+			// shows, and Minimize is a bare SW_MINIMIZE.
+			if hidden {
+				a.win.Show()
+			}
 			a.win.Minimize()
 		}
 		a.start()
