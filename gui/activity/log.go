@@ -27,7 +27,7 @@ const (
 // line is a line the app itself wrote to the log.
 type line struct {
 	level Level
-	Text  string
+	text  string
 }
 
 // Task is one run of work in the background, as an install, a replay or a deletion: its steps are the app's own
@@ -35,16 +35,17 @@ type line struct {
 type Task struct {
 	title      string    // the game and the action, as "Delta · Upgrade to V.B19"
 	start, end time.Time // end is zero while it runs
-	Failed     bool
-	Steps      []line
+	failed     bool
+	steps      []line
 	output     []string // the last maxOutput lines
 	dropped    int      // the lines before them, no longer kept
 	open       bool     // the output shows, unfolded
 }
 
-func (tk *Task) Running() bool { return tk.end.IsZero() }
+func (tk *Task) running() bool { return tk.end.IsZero() }
 
-func (tk *Task) Step(lv Level, text string) { tk.Steps = append(tk.Steps, line{lv, text}) }
+// Step adds a line the app wrote to the task.
+func (tk *Task) Step(lv Level, text string) { tk.steps = append(tk.steps, line{lv, text}) }
 
 // Out keeps a line a program printed, dropping the oldest beyond maxOutput.
 func (tk *Task) Out(text string) {
@@ -61,13 +62,13 @@ func (tk *Task) Finish(at time.Time, failure string) {
 	tk.end = at
 	if failure != "" {
 		tk.Step(LevelError, failure)
-		tk.Failed, tk.open = true, true
+		tk.failed, tk.open = true, true
 	}
 }
 
 // took is how long the task ran, until now while it runs.
 func (tk *Task) took(now time.Time) time.Duration {
-	if tk.Running() {
+	if tk.running() {
 		return now.Sub(tk.start)
 	}
 	return tk.end.Sub(tk.start)
@@ -95,7 +96,7 @@ func durationText(d time.Duration) string {
 
 // entry is an item of the log: a task, or else a note, a line of no task, as a game removed from the list.
 type entry struct {
-	Task *Task
+	task *Task
 	at   time.Time // the note's
 	note line
 }
@@ -116,10 +117,10 @@ func (l *Log) Begin(title string, at time.Time) *Task {
 	return tk
 }
 
-func (l *Log) add(tk *Task) { l.entries = append(l.entries, entry{Task: tk}) }
+func (l *Log) add(tk *Task) { l.entries = append(l.entries, entry{task: tk}) }
 
-// Last returns the newest entry, or nil.
-func (l *Log) Last() *entry {
+// last returns the newest entry, or nil.
+func (l *Log) last() *entry {
 	if len(l.entries) == 0 {
 		return nil
 	}
@@ -129,8 +130,8 @@ func (l *Log) Last() *entry {
 // running returns the task that runs, or nil. Tasks run one at a time, so only the newest can.
 func (l *Log) running() *Task {
 	for i := len(l.entries) - 1; i >= 0; i-- {
-		if tk := l.entries[i].Task; tk != nil {
-			if tk.Running() {
+		if tk := l.entries[i].task; tk != nil {
+			if tk.running() {
 				return tk
 			}
 			return nil
@@ -142,26 +143,26 @@ func (l *Log) running() *Task {
 // stamp writes a time of the log in full, for the copied text and the time column's tooltip.
 func stamp(t time.Time) string { return t.Format("2006-01-02 15:04:05") }
 
-// text is the log as plain text, for Copy log: a task's header with its start, title and result, its steps, then
+// Text is the log as plain text, for Copy log: a task's header with its start, title and result, its steps, then
 // its output after "> "; a note is one line after its time.
-func (l *Log) text() string {
+func (l *Log) Text() string {
 	var b strings.Builder
 	for _, e := range l.entries {
-		tk := e.Task
+		tk := e.task
 		if tk == nil {
-			fmt.Fprintf(&b, "%s  %s\n", stamp(e.at), e.note.Text)
+			fmt.Fprintf(&b, "%s  %s\n", stamp(e.at), e.note.text)
 			continue
 		}
 		result := i18n.T("log.running")
 		switch {
-		case tk.Failed:
+		case tk.failed:
 			result = i18n.T("log.failed") + " · " + durationText(tk.took(tk.end))
-		case !tk.Running():
+		case !tk.running():
 			result = i18n.T("log.ok") + " · " + durationText(tk.took(tk.end))
 		}
 		fmt.Fprintf(&b, "%s  %s · %s\n", stamp(tk.start), tk.title, result)
-		for _, s := range tk.Steps {
-			fmt.Fprintf(&b, "  %s\n", s.Text)
+		for _, s := range tk.steps {
+			fmt.Fprintf(&b, "  %s\n", s.text)
 		}
 		if tk.dropped > 0 {
 			fmt.Fprintf(&b, "  %s\n", i18n.T("log.output.kept", len(tk.output), len(tk.output)+tk.dropped))

@@ -20,12 +20,12 @@ func TestTaskLifecycle(t *testing.T) {
 	for i := range maxOutput + 5 {
 		tk.Out(fmt.Sprint(i))
 	}
-	if !tk.Running() || len(tk.output) != maxOutput || tk.dropped != 5 || tk.output[0] != "5" {
-		t.Fatalf("running %v, %d lines kept, %d dropped, first %q", tk.Running(), len(tk.output), tk.dropped, tk.output[0])
+	if !tk.running() || len(tk.output) != maxOutput || tk.dropped != 5 || tk.output[0] != "5" {
+		t.Fatalf("running %v, %d lines kept, %d dropped, first %q", tk.running(), len(tk.output), tk.dropped, tk.output[0])
 	}
 	tk.Finish(start.Add(65*time.Second), Failure(nil))
-	if tk.Running() || tk.Failed || tk.open || len(tk.Steps) != 1 {
-		t.Errorf("a success: failed %v, open %v, steps %v", tk.Failed, tk.open, tk.Steps)
+	if tk.running() || tk.failed || tk.open || len(tk.steps) != 1 {
+		t.Errorf("a success: failed %v, open %v, steps %v", tk.failed, tk.open, tk.steps)
 	}
 	if got := durationText(tk.took(time.Now())); got != "1 min 5 s" {
 		t.Errorf("duration %q", got)
@@ -34,7 +34,7 @@ func TestTaskLifecycle(t *testing.T) {
 	bad := &Task{start: start}
 	bad.Out("Access denied")
 	bad.Finish(start.Add(12*time.Second), Failure(errors.New("exit status 1")))
-	if !bad.Failed || !bad.open || bad.Steps[0] != (line{LevelError, "Couldn't complete: exit status 1"}) {
+	if !bad.failed || !bad.open || bad.steps[0] != (line{LevelError, "Couldn't complete: exit status 1"}) {
 		t.Errorf("a failure should end with its error step and show its output: %+v", bad)
 	}
 	for d, want := range map[time.Duration]string{
@@ -78,7 +78,7 @@ func TestLogText(t *testing.T) {
   > Access to nr_fg.dll is denied
 2026-11-18 15:07:05  Removed Epic (D:\Epic) from the list.
 `
-	if got := l.text(); got != want {
+	if got := l.Text(); got != want {
 		t.Errorf("text:\n%s\nwant:\n%s", got, want)
 	}
 }
@@ -112,7 +112,7 @@ func TestActivityPanel(t *testing.T) {
 	if err := tt.Click(i18n.T("log.copy")); err != nil {
 		t.Fatal(err)
 	}
-	if tt.Clipboard() != l.text() || !tt.HasText(i18n.T("log.copied")) {
+	if tt.Clipboard() != l.Text() || !tt.HasText(i18n.T("log.copied")) {
 		t.Errorf("Copy log: clipboard %q, texts %q", tt.Clipboard(), tt.Texts())
 	}
 	tt.Advance(copiedFor)

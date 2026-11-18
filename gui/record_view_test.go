@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -156,7 +157,7 @@ func TestDeleteRecording(t *testing.T) {
 	a.busy = true
 	a.removeRecording(a.games[3], gone)
 	m.run(t, func() bool { return len(m) == 0 })
-	if a.log.Last() != nil {
+	if a.log.Text() != "" {
 		t.Fatal("a recording was deleted while another task ran")
 	}
 	a.busy = false
@@ -171,8 +172,8 @@ func TestDeleteRecording(t *testing.T) {
 			t.Errorf("%s: kept %v, want %v", p, err == nil, want)
 		}
 	}
-	if e := a.log.Last(); e == nil || e.Task == nil || e.Task.Running() || e.Task.Failed {
-		t.Errorf("the deletion's task did not end well: %+v", e)
+	if log := a.log.Text(); !strings.Contains(log, i18n.T("log.ok")) {
+		t.Errorf("the deletion's task did not end well:\n%s", log)
 	}
 }
 

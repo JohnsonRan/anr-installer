@@ -35,13 +35,13 @@ type logRow struct {
 func (l *Log) layout() []logRow {
 	rows := l.rows[:0]
 	for e, en := range l.entries {
-		tk := en.Task
+		tk := en.task
 		if tk == nil {
 			rows = append(rows, logRow{rowNote, e, 0})
 			continue
 		}
 		rows = append(rows, logRow{rowTask, e, 0})
-		for i := range tk.Steps {
+		for i := range tk.steps {
 			rows = append(rows, logRow{rowStep, e, i})
 		}
 		if len(tk.output) == 0 {
@@ -110,20 +110,20 @@ func (l *Log) summary(c *ui.Context, t *ui.Theme, w Work) {
 		}
 		return
 	}
-	e := l.Last()
+	e := l.last()
 	text, color := "", t.TextMuted
 	switch {
 	case e == nil:
-	case e.Task == nil:
-		text, color = e.note.Text, levelColor(t, e.note.level, t.TextMuted)
-	case e.Task.Failed:
-		text, color = e.Task.title+" · "+e.Task.Steps[len(e.Task.Steps)-1].Text, t.Danger
+	case e.task == nil:
+		text, color = e.note.text, levelColor(t, e.note.level, t.TextMuted)
+	case e.task.failed:
+		text, color = e.task.title+" · "+e.task.steps[len(e.task.steps)-1].text, t.Danger
 	default:
-		text = e.Task.title
+		text = e.task.title
 	}
 	ui.Row(c).Gap(style.GapControls).AlignItems(ui.Center).Grow(1).Shrink(1).Children(func() {
-		if e != nil && e.Task != nil {
-			taskMark(c, t, e.Task)
+		if e != nil && e.task != nil {
+			taskMark(c, t, e.task)
 		}
 		style.RoleSmall.On(t, ui.Text(c, text)).TextColor(color).MaxLines(1).Ellipsis("…").Tooltip(text).Grow(1).Shrink(1)
 	})
@@ -132,9 +132,9 @@ func (l *Log) summary(c *ui.Context, t *ui.Theme, w Work) {
 // taskMark is a task's state: a spinner while it runs, then a check, or a cross when it failed.
 func taskMark(c *ui.Context, t *ui.Theme, tk *Task) ui.Element {
 	switch {
-	case tk.Running():
+	case tk.running():
 		return ui.Spinner(c).Size(style.LogMark, style.LogMark).Label(i18n.T("log.running"))
-	case tk.Failed:
+	case tk.failed:
 		return ui.Icon(c, style.IconCross).Size(style.LogMark, style.LogMark).TextColor(t.Danger).Label(i18n.T("log.failed"))
 	}
 	return ui.Icon(c, style.IconCheck).Size(style.LogMark, style.LogMark).TextColor(t.Success).Label(i18n.T("log.ok"))
@@ -153,7 +153,7 @@ func (l *Log) copyButton(c *ui.Context) {
 	}
 	if ui.Button(c, label).Clicked() {
 		now := c.Now()
-		c.WriteClipboardThen(l.text(), func(err error) { l.copiedAt, l.copyFailed = now, err != nil })
+		c.WriteClipboardThen(l.Text(), func(err error) { l.copiedAt, l.copyFailed = now, err != nil })
 	}
 }
 
@@ -164,7 +164,7 @@ func (l *Log) panel(c *ui.Context, t *ui.Theme) {
 	l.list.Key = func(i int) any {
 		r := l.rows[i]
 		if r.kind == rowOutput {
-			r.i += l.entries[r.entry].Task.dropped
+			r.i += l.entries[r.entry].task.dropped
 		}
 		return r
 	}
@@ -181,7 +181,7 @@ func (l *Log) panel(c *ui.Context, t *ui.Theme) {
 
 func (l *Log) row(c *ui.Context, t *ui.Theme, r logRow) {
 	e := &l.entries[r.entry]
-	tk := e.Task
+	tk := e.task
 	switch r.kind {
 	case rowTask:
 		ui.Row(c).Gap(style.GapControls).AlignItems(ui.Baseline).Padding(style.GapLogEntries, style.PadPageX, 0, style.PadPageX).Children(func() {
@@ -190,15 +190,15 @@ func (l *Log) row(c *ui.Context, t *ui.Theme, r logRow) {
 			logTimes(c, t, tk.start, durationText(tk.took(c.Now())))
 		})
 	case rowStep:
-		s := tk.Steps[r.i]
-		style.RoleSmall.On(t, ui.Text(c, s.Text)).TextColor(levelColor(t, s.level, t.Text)).Padding(0, style.PadPageX, 0, style.PadLogText)
+		s := tk.steps[r.i]
+		style.RoleSmall.On(t, ui.Text(c, s.text)).TextColor(levelColor(t, s.level, t.Text)).Padding(0, style.PadPageX, 0, style.PadLogText)
 	case rowFold:
 		l.outputFold(c, t, tk)
 	case rowOutput:
 		style.RoleSmall.On(t, ui.Text(c, tk.output[r.i])).Font("monospace").TextColor(t.TextMuted).Padding(0, style.PadPageX, 0, style.PadLogText)
 	case rowNote:
 		ui.Row(c).Gap(style.GapControls).AlignItems(ui.Baseline).Padding(style.GapLogEntries, style.PadPageX, 0, style.PadLogText).Children(func() {
-			style.RoleSmall.On(t, ui.Text(c, e.note.Text)).TextColor(levelColor(t, e.note.level, t.Text)).Grow(1).Shrink(1)
+			style.RoleSmall.On(t, ui.Text(c, e.note.text)).TextColor(levelColor(t, e.note.level, t.Text)).Grow(1).Shrink(1)
 			logTimes(c, t, e.at, "")
 		})
 	}

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -99,7 +100,7 @@ func TestDeleteDownloads(t *testing.T) {
 	}
 	a.busy = true
 	a.deleteDownloads()
-	if a.log.Last() != nil {
+	if a.log.Text() != "" {
 		t.Fatal("Delete downloads started while another task ran")
 	}
 	a.busy, a.settings.cacheSize = false, 2
@@ -116,10 +117,8 @@ func TestDeleteDownloads(t *testing.T) {
 			t.Errorf("%s: kept %v, want %v", p, err == nil, want)
 		}
 	}
-	e := a.log.Last()
-	if e == nil || e.Task == nil || e.Task.Running() || e.Task.Failed || len(e.Task.Steps) != 1 ||
-		e.Task.Steps[0].Text != i18n.T("settings.cache.deleted", sizeText(2)) {
-		t.Errorf("the task does not tell what was freed: %+v", e)
+	if log := a.log.Text(); !strings.Contains(log, i18n.T("log.ok")) || !strings.Contains(log, "\n  "+i18n.T("settings.cache.deleted", sizeText(2))+"\n") {
+		t.Errorf("the task does not tell what was freed:\n%s", log)
 	}
 	if a.settings.cacheSize != -1 {
 		t.Error("the downloads are not counted again")
@@ -143,8 +142,8 @@ func TestDeleteDownloadsFails(t *testing.T) {
 	defer f.Close()
 	a.deleteDownloads()
 	m.run(t, func() bool { return !a.busy })
-	if e := a.log.Last(); e == nil || e.Task == nil || !e.Task.Failed || !a.logOpen {
-		t.Errorf("the failure is not shown: %+v", e)
+	if log := a.log.Text(); !strings.Contains(log, i18n.T("log.failed")) || !a.logOpen {
+		t.Errorf("the failure is not shown (log open %v):\n%s", a.logOpen, log)
 	}
 }
 
