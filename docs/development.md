@@ -1,7 +1,16 @@
 # Developing ANR FG Installer
 
-The app is a single Go program with a native UI drawn by [MyGo](https://mygo.run): the window is the main
-package at the repository root, and the logic is under `internal/` (`steam`, `detect`, `pkg`, `store`).
+The app is a single Go program with a native UI drawn by [MyGo](https://mygo.run). `main.go` only starts it.
+The window is under `gui/`, by feature:
+
+- `gui`: the app's state and pages, the window and the notification area icon;
+- `gui/i18n`: the texts in English, Simplified Chinese, Traditional Chinese and Japanese;
+- `gui/style`: the colors, icons, type and spacing scales, and the shared components;
+- `gui/activity`: the activity log and its panel;
+- `gui/compare`: the comparison page.
+
+The logic is under `internal/` (`steam`, `detect`, `pkg`, `record`, `store`, `paths`), and the files built into
+the executable are in `assets/`.
 
 ## Requirements
 
@@ -28,10 +37,10 @@ it also installs nr-record into a scratch folder and removes it; without one, th
 
 ## Rules
 
-The rules for changing this repository are in `AGENTS.md`, `UI.md` (the interface) and `internal/AGENTS.md`;
-reviews follow `REVIEW.md`; commands, numbers and gates are in `REQUIREMENTS.md`. Text sizes come from the type
-scale in `type.go`, and paddings and gaps from the spacing scale in `spacing.go`; the pre-commit tier fails on
-a size or a spacing set anywhere else.
+The rules for changing this repository are in `AGENTS.md`, `gui/AGENTS.md` (the interface) and
+`internal/AGENTS.md`; reviews follow `REVIEW.md`; commands, numbers and gates are in `REQUIREMENTS.md`. Text
+sizes come from the type scale in `gui/style/type.go`, and paddings and gaps from the spacing scale in
+`gui/style/spacing.go`; the pre-commit tier fails on a size or a spacing set anywhere else.
 
 ## Releasing
 

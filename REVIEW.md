@@ -1,7 +1,7 @@
 # REVIEW.md: reviewing a change (frontend and backend)
 
 Every agent that reviews a change in this repository follows this file. The rules the change must
-meet are in `AGENTS.md`, `UI.md`, `internal/AGENTS.md` and `REQUIREMENTS.md`; this file says
+meet are in `AGENTS.md`, `gui/AGENTS.md`, `internal/AGENTS.md` and `REQUIREMENTS.md`; this file says
 how to review against them and what a review report must contain. It does not repeat them.
 
 ## Rule priority
@@ -16,8 +16,8 @@ never blocks a fix of a higher goal.
 - Record three SHAs in the report: the target's base, the branch head, and their merge-base.
   Review the fixed `base...head` diff, not the two branch tips.
 - Read, in order:
-  1. the root `AGENTS.md`, `UI.md` when the diff touches the interface, the `AGENTS.md` of every
-     directory the diff touches, and `REQUIREMENTS.md`;
+  1. the root `AGENTS.md`, the `AGENTS.md` of every directory the diff touches, and
+     `REQUIREMENTS.md`;
   2. the plan or brief of this change;
   3. the owner's recorded rulings.
 - A behaviour the owner has ruled on is not a finding.
@@ -112,8 +112,8 @@ Behaviour being correct is not a reason to pass; it only means nothing regressed
 
 ## Checking against the rules
 
-Go through `UI.md` for interface files and `internal/AGENTS.md` for files under `internal/`, rule by
-rule. This section only says how to verify the rules a diff cannot show.
+Go through `gui/AGENTS.md` for files under `gui/` and `internal/AGENTS.md` for files under `internal/`,
+rule by rule. This section only says how to verify the rules a diff cannot show.
 
 - **Layout, type and loading.**
   - Open the screenshots yourself: the minimum and default window sizes, light and dark, real

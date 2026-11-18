@@ -1,0 +1,110 @@
+package gui
+
+import (
+	"context"
+	"strings"
+	"time"
+
+	"github.com/egoist/mygo"
+
+	"anr-installer/gui/activity"
+	"anr-installer/gui/i18n"
+	"anr-installer/internal/pkg"
+)
+
+// releaseCheckEvery is how often the app looks again for a new ANR FG release while it runs.
+const releaseCheckEvery = 6 * time.Hour
+
+// watchReleases looks for a new ANR FG release every releaseCheckEvery, quietly: a check that fails keeps the
+// releases loaded, sets no error and shows no spinner, and adds a warning to the activity log alone.
+func (a *app) watchReleases() {
+	go func() {
+		for range time.Tick(releaseCheckEvery) {
+			rels, err := pkg.Releases(context.Background())
+			a.win.Update(func() {
+				if err != nil {
+					a.note(activity.LevelWarning, i18n.T("notify.check.failed", err.Error()))
+					return
+				}
+				a.releasesFound(rels)
+			})
+		}
+	}()
+}
+
+// releasesFound keeps the releases a check found, reads the versions of their packages, and tells of a new one.
+// It clears the error of a check that failed before.
+func (a *app) releasesFound(rels []*pkg.Release) {
+	a.relErr = ""
+	a.setReleases(rels)
+	a.probe(rels)
+	a.notifyRelease()
+}
+
+// newerRelease reports whether the release tagged newest is newer than the one tagged notified, the newest
+// recorded before, by their build numbers; any release is newer than none. A release withdrawn upstream leaves
+// an older one the newest, which is not news.
+func newerRelease(newest, notified string) bool {
+	number := func(tag string) int { return pkg.Number(strings.TrimPrefix(tag, "FG-")) }
+	return newest != "" && (notified == "" || number(newest) > number(notified))
+}
+
+// shouldNotify reports whether a check that found newest as the newest release shows a notification: with the
+// setting on, for a release newer than the one recorded, and only while the window is out of sight, as in the
+// window autoNotes shows the release.
+func shouldNotify(on bool, newest, notified string, windowShown bool) bool {
+	return on && newerRelease(newest, notified) && !windowShown
+}
+
+// notifyRelease tells of a new ANR FG release with a system notification while the window is hidden or
+// minimized. The release is recorded as it is first found, notified of or not, so that it notifies once. It
+// waits for the games to be scanned, which the notification counts: scanning calls it again.
+func (a *app) notifyRelease() {
+	rel := a.rel
+	if rel == nil || !newerRelease(rel.Tag, a.saved.NotifiedRelease) || a.scanning() {
+		return
+	}
+	shown := a.win == nil || a.win.IsVisible() && !a.win.IsMinimized() // tests: no window
+	notify := shouldNotify(!a.saved.ReleaseNotifyOff, rel.Tag, a.saved.NotifiedRelease, shown)
+	a.saved.NotifiedRelease = rel.Tag
+	a.saveSettings()
+	if notify {
+		a.showReleaseNotice(rel)
+	}
+}
+
+// scanning reports whether the games are still being found or read.
+func (a *app) scanning() bool {
+	if a.loadingGames {
+		return true
+	}
+	for _, g := range a.games {
+		if g.Scanning {
+			return true
+		}
+	}
+	return false
+}
+
+// showReleaseNotice shows the notification of rel. A click brings the window forward, its list showing only the
+// games to upgrade when there are any.
+func (a *app) showReleaseNotice(rel *pkg.Release) {
+	body := i18n.T("notify.open")
+	if n := a.outdatedCount(); n > 0 {
+		body = i18n.T("notify.upgrade", n)
+	}
+	note := mygo.NewNotification(mygo.NotificationOptions{ID: "anr-release", Title: i18n.T("notify.title", rel.Version), Body: body})
+	note.OnClick(func() {
+		if a.outdatedCount() > 0 {
+			a.onlyOutdated, a.row = true, -1
+		}
+		a.showWindow()
+		a.win.Invalidate()
+	})
+	// Show waits for the system, which on some platforms asks the user first: off the main thread.
+	go func() {
+		if err := note.Show(); err != nil {
+			a.win.Update(func() { a.note(activity.LevelWarning, i18n.T("notify.failed", err.Error())) })
+		}
+	}()
+}
