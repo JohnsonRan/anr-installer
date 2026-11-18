@@ -38,7 +38,8 @@ it also installs nr-record into a scratch folder and removes it; without one, th
 
 The README screenshots are drawn by `gui/screenshots_test.go`, in English, Simplified Chinese and Japanese, from the
 Steam games on the computer that runs it, their pictures and the versions in its version cache; the release list,
-the log and the recordings are made up. It needs no network. Draw them again when a view they show changes.
+the log and the recordings are made up. It needs no network. Draw them again when a view they show changes. `-run TestCover` draws
+the repository's social preview, `docs/images/social-preview.png`, which is uploaded in the repository's settings.
 
 ## Rules
 
