@@ -75,6 +75,7 @@ func main() {
 			setLang(langOf(locale))
 			a.win.SetTitle(T("title"))
 			a.relabelTray()
+			a.relabelVersions()
 			a.win.Invalidate()
 		})
 		mygo.App.OnSecondInstance(func([]string, string) { a.showWindow() })

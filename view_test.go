@@ -96,6 +96,18 @@ func TestVersionsOffered(t *testing.T) {
 	}
 }
 
+// A language change names the versions again in it, and the version chosen, the newest, whose name changes,
+// stays chosen.
+func TestVersionLabelsFollowLanguage(t *testing.T) {
+	a := testApp(t)
+	t.Cleanup(func() { setLang("en") })
+	setLang("ja")
+	a.relabelVersions()
+	if a.versionLabels[0] != "V.B19 · 2026-11-17 (最新)" || a.target() == nil || a.target().Version != "V.B19" {
+		t.Errorf("labels %q, chosen %q", a.versionLabels, a.versionSel)
+	}
+}
+
 func TestPlans(t *testing.T) {
 	a := testApp(t)
 	delta := a.games[3].Scan // V.B18, full

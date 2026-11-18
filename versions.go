@@ -33,20 +33,40 @@ func (a *app) fetchRelease() {
 func (a *app) setReleases(rels []*pkg.Release) {
 	a.releases, a.rel = rels, rels[0]
 	a.rec.pkg = record.Find(rels)
-	a.versionRel, a.versionLabels = nil, nil
-	for i, r := range rels {
-		if pkg.Number(r.Version) < pkg.MinInstallable {
-			continue
+	a.versionRel = nil
+	for _, r := range rels {
+		if pkg.Number(r.Version) >= pkg.MinInstallable {
+			a.versionRel = append(a.versionRel, r)
 		}
-		label := r.Version + " · " + r.Published.Local().Format("2006-01-02")
-		if i == 0 {
-			label = T("version.latest", label)
-		}
-		a.versionRel = append(a.versionRel, r)
-		a.versionLabels = append(a.versionLabels, label)
 	}
+	a.versionLabels = a.labelVersions()
 	if a.target() == nil && len(a.versionLabels) > 0 {
 		a.versionSel = a.versionLabels[0]
+	}
+}
+
+// labelVersions names the versions offered, each with its date, the newest marked in the window's language.
+func (a *app) labelVersions() []string {
+	var labels []string
+	for _, r := range a.versionRel {
+		label := r.Version + " · " + r.Published.Local().Format("2006-01-02")
+		if r == a.rel {
+			label = T("version.latest", label)
+		}
+		labels = append(labels, label)
+	}
+	return labels
+}
+
+// relabelVersions names the versions offered again after the language changed, keeping the one chosen, which
+// versionSel holds by its name.
+func (a *app) relabelVersions() {
+	chosen := a.target()
+	a.versionLabels = a.labelVersions()
+	for i, r := range a.versionRel {
+		if r == chosen {
+			a.versionSel = a.versionLabels[i]
+		}
 	}
 }
 
