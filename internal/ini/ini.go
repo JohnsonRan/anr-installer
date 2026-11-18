@@ -25,11 +25,11 @@ type File struct {
 }
 
 // Parse reads the values of an INI file: "[Section]" lines, and "name=value" lines under them. Lines starting with
-// ";" or "#" are comments.
+// ";" or "#" are comments, and a byte order mark is skipped.
 func Parse(data []byte) *File {
 	f := &File{values: map[string]string{}}
 	section := ""
-	for _, line := range lines(data) {
+	for _, line := range lines(bytes.TrimPrefix(data, []byte("\ufeff"))) {
 		s := strings.TrimSpace(line.text)
 		switch {
 		case s == "" || s[0] == ';' || s[0] == '#':
@@ -54,6 +54,16 @@ func Parse(data []byte) *File {
 func (f *File) Get(k Key) (string, bool) {
 	v, ok := f.values[k.id()]
 	return v, ok
+}
+
+// First returns the value of the first key named name, in any section, and whether the file has one.
+func (f *File) First(name string) (string, bool) {
+	for _, k := range f.keys {
+		if strings.EqualFold(k.Name, name) {
+			return f.values[k.id()], true
+		}
+	}
+	return "", false
 }
 
 // Keys returns the file's keys in its order.
