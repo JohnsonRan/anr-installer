@@ -12,6 +12,8 @@ generation, picks the right package, and runs the package's own installer.
 > ANR FG itself to [apex-compute/ANR](https://github.com/apex-compute/ANR/issues), and problems with this
 > installer [here](https://github.com/JohnsonRan/anr-installer/issues).
 
+![The page of a game, with its ANR FG version, the upgrade to the newest release and its status](docs/images/game.en.png)
+
 ## Requirements
 
 - Windows 10 or 11 (x64)
@@ -56,6 +58,8 @@ bar checks at once. It installs only updates signed with the project's key. To b
 the installer copies it next to the game's `.exe` as `<name>.bak-<time>`: `OptiScaler.ini` before the full
 package replaces it, and `nr_fg.ini` before an uninstall or a downgrade removes it.
 
+![The activity log, with the steps of an install and an upgrade](docs/images/log.en.png)
+
 When a new ANR FG version comes out and one of your games has an older one, the installer shows the release
 notes once. **Update all** there upgrades those games one after another, each with the package it has. Games
 with anti-cheat are left out: upgrade each of them from its own page. The list marks the games to upgrade, and
@@ -73,6 +77,8 @@ the app looks for one at launch and every 6 hours. **Check for updates automatic
 update checks on or off. **Data folder** opens the folder of your settings. **Delete downloads** removes the
 downloaded ANR FG and nr-record packages, which download again when needed.
 
+![The settings](docs/images/settings.en.png)
+
 Closing or quitting while a task runs, such as an install, asks first: quitting can leave the task unfinished and
 a game's files half changed.
 
@@ -81,6 +87,8 @@ a game's files half changed.
 [nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation), from the same releases,
 records what a game gives its frame generation, so that ANR FG and DLSS-G can be compared on the same frames. A
 game's page shows **Record and compare** once ANR FG's full package is installed in it.
+
+![The "Record and compare" section of a game with recordings](docs/images/record.en.png)
 
 1. Click **Install nr-record**. Start the game and turn on DLSS frame generation. **F6** starts and stops a
    recording; **F9** records 8 frames.

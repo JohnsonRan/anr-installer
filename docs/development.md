@@ -28,12 +28,16 @@ scripts/check.sh --release            # before a release: also the real packages
 go tool mygo build                    # build/windows-amd64/ANR FG Installer.exe and its NSIS installer
 go tool mygo build -skip-installer    # the executable only
 go run ./tools/genicon                # render assets/logo.svg into the app icon, assets/icon.png
+go test -tags screenshots -run TestScreenshots ./gui   # redraw the README screenshots in docs/images
 ```
 
 The release tier installs, upgrades, uninstalls and downgrades real packages in scratch folders: set
 `ANR_PKG_DIR` to a folder holding the newest release's `anr-fg-*-full.zip` and `anr-fg-*-addon.zip`, and
 `ANR_OLD_PKG` to an older `anr-fg-*-full.zip`. With an `nr-record-*-windows.zip` in `ANR_PKG_DIR` as well,
 it also installs nr-record into a scratch folder and removes it; without one, that test is skipped.
+
+The README screenshots are drawn from made-up games in `gui/screenshots_test.go`, in English, Simplified Chinese
+and Japanese. Draw them again when a view they show changes.
 
 ## Rules
 

@@ -11,6 +11,8 @@ ANR FG 安装器用来在你的游戏中安装、升级、降级和卸载 [ANR F
 > [apex-compute/ANR](https://github.com/apex-compute/ANR/issues)，安装器的问题请反馈到
 > [这里](https://github.com/JohnsonRan/anr-installer/issues)。
 
+![游戏页面：已安装的 ANR FG 版本、升级到最新版本的按钮和游戏状态](docs/images/game.zh-CN.png)
+
 ## 系统要求
 
 - Windows 10 或 11 (x64)
@@ -50,6 +52,8 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 “卸载”会还原安装程序备份的文件。在某一步会丢失你的配置文件之前，安装器会先把它复制到游戏 `.exe` 所在文件夹，
 命名为 `<文件名>.bak-<时间>`：full 版替换 `OptiScaler.ini` 之前备份它，卸载或降级删除 `nr_fg.ini` 之前备份它。
 
+![活动日志：一次安装和一次升级的各个步骤](docs/images/log.zh-CN.png)
+
 ANR FG 发布新版本、而你有游戏装的是旧版本时，安装器会显示一次发行说明。选择其中的“全部更新”，会按顺序升级这些
 游戏，各自保持原来的安装包类型。带反作弊的游戏不会一并更新，请在各自的页面中单独升级。列表会标出可升级的游戏，
 列表上方的提示条可以只显示这些游戏。
@@ -63,6 +67,8 @@ ANR FG 发布新版本、而你有游戏装的是旧版本时，安装器会显�
 应用在启动时和之后每 6 小时检查一次。“自动检查更新”控制安装器自身是否自动检查更新。“数据文件夹”打开保存设置的文件夹。
 “删除下载内容”会删除已下载的 ANR FG 和 nr-record 安装包，需要时会重新下载。
 
+![设置](docs/images/settings.zh-CN.png)
+
 在安装等任务进行中关闭窗口或退出应用时，会先询问：退出可能让任务无法完成，游戏文件只更改了一半。
 
 ## 录制和对比
@@ -70,6 +76,8 @@ ANR FG 发布新版本、而你有游戏装的是旧版本时，安装器会显�
 [nr-record](https://github.com/apex-compute/ANR#record-and-compare-frame-generation) 和 ANR FG 在同一处发布，
 用来录制游戏交给帧生成的输入，这样就能用同样的帧对比 ANR FG 和 DLSS-G。游戏装好 ANR FG 的 full 版后，
 它的页面上会出现“录制和对比”。
+
+![有录制内容的游戏的“录制和对比”部分](docs/images/record.zh-CN.png)
 
 1. 选择“安装 nr-record”，然后启动游戏并开启 DLSS 帧生成。按 F6 开始或停止录制，按 F9 录制 8 帧。
 2. 回到安装器，选择“刷新”。这款游戏的每段录制内容都有“与 DLSS-G 对比”：安装器会分别通过已安装的 ANR FG
