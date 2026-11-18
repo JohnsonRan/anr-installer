@@ -103,7 +103,8 @@ func settingsCard(c *ui.Context, t *ui.Theme, icon *ui.SVG, end func(), text fun
 const segmentInset = Space1
 
 // Segmented is a segmented control of labels, as ui.Segmented, whose chosen segment is filled with the accent of
-// what is chosen, so that it stands out from the others in the dark theme.
+// what is chosen, so that it stands out from the others in the dark theme. To disable it, disable an element
+// around it: its segments are styled as they are built, before a Disabled called on it.
 func Segmented(c *ui.Context, t *ui.Theme, selected *int, labels ...string) ui.Element {
 	parts := ui.SegmentedBase(c, selected, len(labels))
 	track := parts.Track.AlignItems(ui.Stretch).Padding(segmentInset).Gap(segmentInset).Radius(CardRadius).
@@ -116,7 +117,7 @@ func Segmented(c *ui.Context, t *ui.Theme, selected *int, labels ...string) ui.E
 			case i == *selected:
 				s.Background(ApexRoyal.Alpha(0.3)).Border(1, ApexRoyal)
 				color = ApexInk
-			case s.Hovered():
+			case s.Hovered() && !s.IsDisabled():
 				s.Background(t.SurfaceHover)
 				color = t.Text
 			}

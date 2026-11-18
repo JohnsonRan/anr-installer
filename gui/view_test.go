@@ -363,3 +363,19 @@ func TestReleaseListFailed(t *testing.T) {
 		t.Errorf("the page offers a version it does not know: %q", tt.Texts())
 	}
 }
+
+// While a task runs, the advanced options' segmented controls take no clicks.
+func TestAdvancedOptionsDisabledWhileBusy(t *testing.T) {
+	a := testApp(t)
+	a.advanced, a.busy = true, true
+	tt := open(t, a, "Delta")
+	_ = tt.Click("addon")
+	if a.kind != kindAuto {
+		t.Errorf("a click while busy chose package kind %d", a.kind)
+	}
+	a.busy = false
+	tt.Frame()
+	if err := tt.Click("addon"); err != nil || a.kind != kindAddon {
+		t.Errorf("a click once idle should choose addon: kind %d, %v", a.kind, err)
+	}
+}

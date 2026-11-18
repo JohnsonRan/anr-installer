@@ -328,12 +328,16 @@ func (a *app) advancedCard(c *ui.Context, t *ui.Theme, g *game) {
 		ui.Column(c).Padding(style.PadCardY, style.PadCardX).PaddingStart(style.PadCardX + style.RowIcon + style.GapGroup).Gap(style.GapInCard).Children(func() {
 			ui.Row(c).Gap(style.GapLabelField).Children(func() {
 				ui.Text(c, i18n.T("package")).Width(style.LabelWidth).TextColor(t.TextMuted)
-				style.Segmented(c, t, &a.kind, i18n.T("kind.auto", r.Recommended()), "full", "addon").Label(i18n.T("package")).Disabled(a.busy)
+				ui.Row(c).Disabled(a.busy).Children(func() {
+					style.Segmented(c, t, &a.kind, i18n.T("kind.auto", r.Recommended()), "full", "addon").Label(i18n.T("package"))
+				})
 			})
 			style.RoleSmall.On(t, ui.Text(c, i18n.T("package.help"))).TextColor(t.TextMuted).PaddingStart(style.LabelWidth + style.GapLabelField)
 			ui.Row(c).Gap(style.GapLabelField).Children(func() {
 				ui.Text(c, i18n.T("source")).Width(style.LabelWidth).TextColor(t.TextMuted)
-				style.Segmented(c, t, &a.source, i18n.T("source.github0"), i18n.T("source.local")).Label(i18n.T("source")).Disabled(a.busy)
+				ui.Row(c).Disabled(a.busy).Children(func() {
+					style.Segmented(c, t, &a.source, i18n.T("source.github0"), i18n.T("source.local")).Label(i18n.T("source"))
+				})
 				if a.source == sourceLocal {
 					ui.Button(c, i18n.T("choose.zip")).Disabled(a.busy).OnClick(a.chooseZip)
 				}
