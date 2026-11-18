@@ -6,6 +6,8 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/ui"
+
+	"anr-installer/internal/paths"
 )
 
 // localeTags are the languages the language setting offers, as MyGo's locale tags: "" follows the system.
@@ -17,6 +19,7 @@ type settingsState struct {
 	locale string // the language chosen, as mygo.App.ChosenLocale reported it when the page opened
 	// The selects' choices, as their labels, kept across frames: a select writes its choice after the frame.
 	langSel, closeSel string
+	cacheSize         int64 // bytes of the downloaded packages, -1 while they are counted
 }
 
 // toggleSettings opens the settings page, or closes it.
@@ -30,6 +33,7 @@ func (a *app) toggleSettings() {
 		s.locale = mygo.App.ChosenLocale()
 	}
 	a.autoCheck = updater.AutomaticChecks()
+	a.measureCache(s)
 	a.settings = s
 }
 
@@ -89,6 +93,16 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 				if ui.Switch(c, &a.autoCheck).Label(T("settings.updates")).Disabled(!mygo.Updater.Enabled()).Changed() {
 					updater.SetAutomaticChecks(a.autoCheck)
 				}
+			})
+			settingsRow(c, t, iconFolder, T("settings.folder"), paths.Config(), func() {
+				ui.Button(c, T("open.folder")).OnClick(a.openDataFolder)
+			})
+			size := T("settings.cache.measuring")
+			if s.cacheSize >= 0 {
+				size = T("settings.cache.detail", sizeText(s.cacheSize))
+			}
+			settingsRow(c, t, iconDownload, T("settings.cache"), size, func() {
+				ui.Button(c, T("settings.cache.delete")).Disabled(a.busy || s.cacheSize <= 0).OnClick(a.deleteDownloads)
 			})
 		})
 	})

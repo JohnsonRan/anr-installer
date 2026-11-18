@@ -87,7 +87,7 @@ var ErrNoPackage = errors.New("no nr-record package: the releases aren't known a
 // downloads and checks p when the cache lacks it. With p nil, as when GitHub cannot be reached, it takes the
 // newest package downloaded before.
 func Unpack(ctx context.Context, p *Package, progress pkg.Progress) (string, error) {
-	downloads := filepath.Join(pkg.CacheDir(), "downloads")
+	downloads := pkg.DownloadsDir()
 	if p == nil {
 		names, _ := filepath.Glob(filepath.Join(downloads, assetPrefix+"*"+assetSuffix))
 		best, bestV := "", ""

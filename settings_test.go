@@ -5,6 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
+	"anr-installer/internal/paths"
 	"anr-installer/internal/store"
 )
 
@@ -41,6 +42,29 @@ func TestSettingsPage(t *testing.T) {
 	}
 	if a.settings != nil || !tt.HasText(T("status")) {
 		t.Errorf("Back should return to the game's page: %q", tt.Texts())
+	}
+}
+
+func TestSettingsStorage(t *testing.T) {
+	a := testApp(t)
+	tt := ui.NewTester(a.view, 1040, 760)
+	if err := tt.Click(T("settings.open")); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{T("settings.folder"), paths.Config(), T("open.folder"), T("settings.cache"), T("settings.cache.measuring"), T("settings.cache.delete")} {
+		if !tt.HasText(s) {
+			t.Errorf("missing %q in %q", s, tt.Texts())
+		}
+	}
+	a.settings.cacheSize = 2_345_000_000
+	tt.Frame()
+	if !tt.HasText(T("settings.cache.detail", "2.3 GB")) {
+		t.Errorf("the size of the downloads is not shown: %q", tt.Texts())
+	}
+	for n, want := range map[int64]string{0: "0.0 MB", 512_300_000: "512.3 MB", 1_000_000_000: "1.0 GB"} {
+		if got := sizeText(n); got != want {
+			t.Errorf("sizeText(%d) = %q, want %q", n, got, want)
+		}
 	}
 }
 
