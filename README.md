@@ -32,7 +32,7 @@ package's own installer.
 ## Install
 
 Requires Windows 10 or 11 (x64), the
-[Visual C++ 2015-2022 Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe), and a GPU that ANR
+[Visual C++ v14 Redistributable (x64)](https://aka.ms/vc14/vc_redist.x64.exe), and a GPU that ANR
 FG supports: NVIDIA RTX 20 and newer or GTX 16, AMD Radeon RX 5000 and newer, or Intel Arc.
 
 | Version | How |

@@ -31,7 +31,7 @@
 ## インストール
 
 Windows 10 または 11 (x64)、
-[Visual C++ 2015-2022 Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe)、ANR FG に対応した
+[Visual C++ v14 Redistributable (x64)](https://aka.ms/vc14/vc_redist.x64.exe)、ANR FG に対応した
 GPU (NVIDIA RTX 20 以降または GTX 16、AMD Radeon RX 5000 以降、Intel Arc) が必要です。
 
 | バージョン | 方法 |

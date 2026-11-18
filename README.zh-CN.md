@@ -27,7 +27,7 @@
 ## 安装
 
 需要 Windows 10 或 11 (x64)、
-[Visual C++ 2015-2022 Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe)，以及 ANR FG
+[Visual C++ v14 Redistributable (x64)](https://aka.ms/vc14/vc_redist.x64.exe)，以及 ANR FG
 支持的显卡：NVIDIA RTX 20 及更新或 GTX 16 系列、AMD Radeon RX 5000 及更新，或 Intel Arc。
 
 | 版本 | 方法 |
