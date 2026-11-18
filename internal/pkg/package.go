@@ -59,8 +59,8 @@ func Extract(zipPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dest := filepath.Join(CacheDir(), "packages", sum[:16])
-	done := filepath.Join(dest, ".extracted")
+	dest := filepath.Join(packagesDir(), sum[:16])
+	done := filepath.Join(dest, extractedMark)
 	if _, err := os.Stat(done); err != nil {
 		os.RemoveAll(dest)
 		if err := unzip(zipPath, dest); err != nil {

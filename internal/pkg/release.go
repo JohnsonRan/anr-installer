@@ -149,7 +149,7 @@ func DownloadAsset(ctx context.Context, rel *Release, name, sums string, progres
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(CacheDir(), "downloads")
+	dir := DownloadsDir()
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}

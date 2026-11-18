@@ -30,6 +30,11 @@ type Data struct {
 	SeenRelease string `json:"seen_release,omitempty"`
 	// CloseToTray makes the window's close button hide the window to the tray; off, it quits the app.
 	CloseToTray bool `json:"close_to_tray,omitempty"`
+	// NotifiedRelease is the tag of the newest ANR FG release a check has found, whether a notification told of
+	// it or not, so that a release notifies once.
+	NotifiedRelease string `json:"notified_release,omitempty"`
+	// ReleaseNotifyOff turns off the notification of a new ANR FG release, which is on by default.
+	ReleaseNotifyOff bool `json:"release_notify_off,omitempty"`
 }
 
 // Path is the file the data is kept in.

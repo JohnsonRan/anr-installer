@@ -3,28 +3,54 @@ package main
 import (
 	"fmt"
 	"strings"
+	"sync/atomic"
 )
 
-// lang is the language the window shows: "zh" or "en". It follows mygo.App.Locale, which the setting chooses.
-var lang = "en"
+// appLanguages are the languages the window is written in, as MyGo's locale tags, its own first.
+var appLanguages = []string{"en", "zh-Hans", "zh-Hant", "ja"}
 
-// langOf returns the window's language for a locale tag of MyGo's, such as "zh-Hans".
-func langOf(tag string) string {
-	if strings.HasPrefix(strings.ToLower(tag), "zh") {
-		return "zh"
+// lang is the language the window shows, one of appLanguages. It follows mygo.App.Locale, which the setting
+// chooses. Background work formats its texts with T too, so it is read and written atomically.
+var lang atomic.Pointer[string]
+
+func setLang(l string) { lang.Store(&l) }
+
+func currentLang() string {
+	if l := lang.Load(); l != nil {
+		return *l
 	}
 	return "en"
 }
 
-// T returns the text of key in the window's language, formatted with args.
+// langOf returns the language of appLanguages for a locale tag, such as MyGo's "zh-Hans" or a system's "zh-TW".
+func langOf(tag string) string {
+	t := strings.ToLower(tag)
+	switch {
+	case t == "zh-hant" || strings.HasPrefix(t, "zh-hant-") || t == "zh-tw" || t == "zh-hk" || t == "zh-mo":
+		return "zh-Hant"
+	case t == "zh" || strings.HasPrefix(t, "zh-"):
+		return "zh-Hans"
+	case t == "ja" || strings.HasPrefix(t, "ja-"):
+		return "ja"
+	}
+	return "en"
+}
+
+// T returns the text of key in the window's language, formatted with args. A text a translation lacks is said in
+// English; the tests keep every translation whole.
 func T(key string, args ...any) string {
 	m, ok := messages[key]
 	if !ok {
 		return key
 	}
 	s := m[0]
-	if lang == "zh" {
+	switch currentLang() {
+	case "zh-Hans":
 		s = m[1]
+	case "zh-Hant":
+		s = translated(messagesZhHant, key, s)
+	case "ja":
+		s = translated(messagesJa, key, s)
 	}
 	if len(args) > 0 {
 		return fmt.Sprintf(s, args...)
@@ -32,7 +58,15 @@ func T(key string, args ...any) string {
 	return s
 }
 
-// messages holds each text in English and Simplified Chinese.
+func translated(m map[string]string, key, english string) string {
+	if s, ok := m[key]; ok {
+		return s
+	}
+	return english
+}
+
+// messages holds each text in English and Simplified Chinese; i18n_zh_hant.go and i18n_ja.go hold the other
+// languages.
 var messages = map[string][2]string{
 	// The window.
 	"title":              {"ANR FG Installer", "ANR FG 安装器"},
@@ -43,8 +77,6 @@ var messages = map[string][2]string{
 	"about.portable":     {"Portable", "便携版"},
 	"about.updates":      {"Updates", "更新"},
 	"about.checkNow":     {"Check for updates", "检查更新"},
-	"about.auto":         {"Check for updates automatically", "自动检查更新"},
-	"about.autoHint":     {"When the app starts and once a day", "在启动时和每天检查一次"},
 	"about.lastCheck":    {"Last checked: %s", "上次检查时间: %s"},
 	"about.neverChecked": {"Not checked yet", "尚未检查"},
 	"about.available":    {"Version %s is available", "新版本 %s 可用"},
@@ -183,18 +215,33 @@ var messages = map[string][2]string{
 	"pick.folder.title": {"Choose the game folder", "选择游戏文件夹"},
 
 	// Activity.
-	"log":               {"Activity", "活动"},
-	"log.empty":         {"No activity yet.", "暂无活动。"},
-	"clear":             {"Clear", "清除"},
-	"downloading":       {"Downloading %s… %s", "正在下载 %s… %s"},
-	"running.install":   {"Installing %s (%s package)…", "正在安装 %s (%s 版)…"},
-	"running.uninstall": {"Uninstalling with the %s uninstaller (%s package)…", "正在使用 %s 的卸载程序卸载(%s 版)…"},
-	"backup.file":       {"Backed up %s to %s.", "已将 %s 备份到 %s。"},
-	"done.install":      {"ANR FG %s is installed in %s.", "已将 ANR FG %s 安装到 %s。"},
-	"done.uninstall":    {"ANR FG is uninstalled from %s.", "已从 %s 卸载 ANR FG。"},
-	"failed":            {"Couldn't complete: %s", "无法完成: %s"},
-	"warn.nrrecord":     {"Recording is now off for this game. To record again, install nr-record again under “Record and compare”.", "这款游戏的录制功能已关闭。要继续录制，请在“录制和对比”中重新安装 nr-record。"},
-	"probe.failed":      {"Couldn't read version information: %s", "无法读取版本信息: %s"},
+	"log":                  {"Activity", "活动"},
+	"log.empty":            {"No activity yet.", "暂无活动。"},
+	"clear":                {"Clear", "清除"},
+	"log.copy":             {"Copy log", "复制日志"},
+	"log.copied":           {"Copied", "已复制"},
+	"log.copy.failed":      {"Couldn't copy", "无法复制"},
+	"log.running":          {"Running", "正在运行"},
+	"log.ok":               {"Succeeded", "成功"},
+	"log.failed":           {"Failed", "失败"},
+	"log.output.show":      {"Show output (%d lines)", "显示输出(%d 行)"},
+	"log.output.show.one":  {"Show output (1 line)", "显示输出(1 行)"},
+	"log.output.show.last": {"Show output (last %d of %d lines)", "显示输出(共 %[2]d 行，保留最后 %[1]d 行)"},
+	"log.output.hide":      {"Hide output", "隐藏输出"},
+	"log.output.hide.last": {"Hide output (last %d of %d lines)", "隐藏输出(共 %[2]d 行，保留最后 %[1]d 行)"},
+	"log.output.kept":      {"Output: last %d of %d lines", "输出: 共 %[2]d 行，保留最后 %[1]d 行"},
+	"dur.s":                {"%d s", "%d 秒"},
+	"dur.min":              {"%d min %d s", "%d 分 %d 秒"},
+	"dur.h":                {"%d h %d min", "%d 小时 %d 分"},
+	"downloading":          {"Downloading %s… %s", "正在下载 %s… %s"},
+	"running.install":      {"Installing %s (%s package)…", "正在安装 %s (%s 版)…"},
+	"running.uninstall":    {"Uninstalling with the %s uninstaller (%s package)…", "正在使用 %s 的卸载程序卸载(%s 版)…"},
+	"backup.file":          {"Backed up %s to %s.", "已将 %s 备份到 %s。"},
+	"done.install":         {"ANR FG %s is installed in %s.", "已将 ANR FG %s 安装到 %s。"},
+	"done.uninstall":       {"ANR FG is uninstalled from %s.", "已从 %s 卸载 ANR FG。"},
+	"failed":               {"Couldn't complete: %s", "无法完成: %s"},
+	"warn.nrrecord":        {"Recording is now off for this game. To record again, install nr-record again under “Record and compare”.", "这款游戏的录制功能已关闭。要继续录制，请在“录制和对比”中重新安装 nr-record。"},
+	"probe.failed":         {"Couldn't read version information: %s", "无法读取版本信息: %s"},
 
 	// Anti-cheat.
 	"anticheat.short":    {"anti-cheat", "反作弊"},
@@ -248,6 +295,8 @@ var messages = map[string][2]string{
 	"rec.delete.title":      {"Delete this recording?", "要删除这段录制内容吗?"},
 	"rec.delete.detail":     {"The recording of %s (%s) and its comparison are deleted for good.", "%s 的录制内容(%s)及其对比结果将被永久删除。"},
 	"rec.delete.confirm":    {"Delete", "删除"},
+	"rec.delete.task":       {"Delete the recording of %s", "删除 %s 的录制内容"},
+	"rec.ffmpeg.task":       {"Install FFmpeg and FFprobe", "安装 FFmpeg 和 FFprobe"},
 	"rec.why.tools":         {"Comparing a recording needs FFmpeg and FFprobe.", "对比录制内容需要 FFmpeg 和 FFprobe。"},
 	"rec.why.anr":           {"Comparing a recording needs ANR FG installed in this game.", "对比录制内容需要在这款游戏中安装 ANR FG。"},
 	"rec.why.dlssg":         {"Comparing a recording needs the game's own nvngx_dlssg.dll, which wasn't found.", "对比录制内容需要游戏自带的 nvngx_dlssg.dll，但未检测到。"},
@@ -265,19 +314,47 @@ var messages = map[string][2]string{
 	"rec.done.compare":      {"Done: the comparison is in %s.", "完成: 对比结果已保存到 %s。"},
 
 	// Settings.
-	"settings.open":            {"Settings", "设置"},
-	"settings.language":        {"Language", "语言"},
-	"settings.language.detail": {"The language the app shows", "应用显示的语言"},
-	"settings.language.system": {"System default", "跟随系统"},
-	"settings.language.en":     {"English", "English"},
-	"settings.language.zh":     {"简体中文", "简体中文"},
-	"settings.close":           {"Close button", "关闭按钮"},
-	"settings.close.detail":    {"What closing the window does", "关闭窗口时执行的操作"},
-	"settings.close.quit":      {"Quit the app", "退出应用"},
-	"settings.close.tray":      {"Minimize to the tray", "最小化到托盘"},
-	"tray.show":                {"Show window", "显示窗口"},
-	"tray.quit":                {"Quit", "退出"},
-	"tray.failed":              {"Couldn't add the tray icon: %s. Closing the window quits the app.", "无法添加托盘图标: %s。关闭窗口将退出应用。"},
+	"settings.open":             {"Settings", "设置"},
+	"settings.group.general":    {"General", "常规"},
+	"settings.group.updates":    {"Updates", "更新"},
+	"settings.group.storage":    {"Storage", "存储"},
+	"settings.language":         {"Language", "语言"},
+	"settings.language.detail":  {"The language the app shows", "应用显示的语言"},
+	"settings.language.system":  {"System default", "跟随系统"},
+	"settings.language.en":      {"English", "English"},
+	"settings.language.zh-Hans": {"简体中文", "简体中文"},
+	"settings.language.zh-Hant": {"繁體中文", "繁體中文"},
+	"settings.language.ja":      {"日本語", "日本語"},
+	"settings.close":            {"Close button", "关闭按钮"},
+	"settings.close.detail":     {"What closing the window does", "关闭窗口时执行的操作"},
+	"settings.close.quit":       {"Quit the app", "退出应用"},
+	"settings.close.tray":       {"Minimize to the tray", "最小化到托盘"},
+	"settings.login":            {"Start with Windows", "随 Windows 启动"},
+	"settings.login.detail":     {"Starts in the background when you sign in", "登录时在后台启动"},
+	"settings.login.failed":     {"Couldn't change whether the app starts with Windows: %s", "无法更改是否随 Windows 启动: %s"},
+	"settings.notify":           {"Notify me about new ANR FG versions", "ANR FG 有新版本时通知我"},
+	"settings.notify.detail":    {"When the app runs in the background", "应用在后台运行时"},
+	"settings.updates":          {"Check for updates automatically", "自动检查更新"},
+	"settings.updates.detail":   {"When the app starts and once a day", "在启动时和每天检查一次"},
+	"settings.folder":           {"Data folder", "数据文件夹"},
+	"settings.cache":            {"Downloaded packages", "已下载的安装包"},
+	"settings.cache.detail":     {"%s of ANR FG and nr-record packages", "ANR FG 和 nr-record 安装包，共 %s"},
+	"settings.cache.measuring":  {"Calculating…", "正在计算…"},
+	"settings.cache.delete":     {"Delete downloads", "删除下载内容"},
+	"settings.cache.deleted":    {"Deleted %s of downloaded packages.", "已删除下载的安装包，共 %s。"},
+	"settings.cache.failed":     {"Couldn't delete the downloaded packages: %s", "无法删除下载的安装包: %s"},
+	"tray.show":                 {"Show window", "显示窗口"},
+	"tray.quit":                 {"Quit", "退出"},
+	"tray.failed":               {"Couldn't add the tray icon: %s. Closing the window quits the app.", "无法添加托盘图标: %s。关闭窗口将退出应用。"},
+	"notify.title":              {"ANR FG %s is available", "ANR FG %s 已发布"},
+	"notify.upgrade":            {"%d of your games can be upgraded.", "你有 %d 款游戏可以升级。"},
+	"notify.open":               {"Open the installer to see what's new.", "打开安装器查看更新内容。"},
+	"notify.failed":             {"Couldn't show the notification of the new ANR FG version: %s", "无法显示 ANR FG 新版本的通知: %s"},
+	"notify.check.failed":       {"Couldn't check GitHub for a new ANR FG version: %s", "无法在 GitHub 上检查 ANR FG 新版本: %s"},
+	"quit.title":                {"Quit while a task is running?", "要在任务进行中退出吗?"},
+	"quit.detail":               {"What the installer does itself stops at once, and a program it started, such as a package's installer, may stop partway or go on unseen. A game's files may be left half changed.", "安装器自身的操作会立即停止，它启动的程序(例如安装包的安装程序)可能中途停止，也可能在后台继续运行。游戏文件可能只更改了一半。"},
+	"quit.keep":                 {"Keep running", "继续运行"},
+	"quit.anyway":               {"Quit anyway", "仍然退出"},
 
 	// The comparison page.
 	"cmp.title":         {"%s and %s", "%s 和 %s"},

@@ -40,7 +40,7 @@ func (a *app) syncTray() {
 	case a.saved.CloseToTray && a.tray == nil:
 		tray, err := mygo.NewTray(mygo.TrayOptions{ID: "main", Icon: iconPNG, ToolTip: T("title")})
 		if err != nil {
-			a.logf("%s", T("tray.failed", err.Error()))
+			a.note(levelError, T("tray.failed", err.Error()))
 			return
 		}
 		tray.OnClick(a.showWindow)

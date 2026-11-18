@@ -3,9 +3,33 @@
 ## Unreleased
 
 - Adds a settings page, from the gear button in the title bar. The language follows the system by default, or
-  is English or Simplified Chinese; the update window follows it too. The close button quits the app by
+  is English, Simplified Chinese, Traditional Chinese or Japanese; the update window follows it too. The close button quits the app by
   default, or hides the window to the notification area, whose icon brings it back.
 - Starting the app again while it runs brings its window forward instead of opening a second one.
+- The first window fits the display: 1280 × 900 where there is room, else 90% of the display's work area, so
+  its title bar stays on screen on a small laptop display. Later launches keep the size the user left it at.
+- MyGo's files (the language chosen, the window's size and place, the update preference) move to
+  `%APPDATA%\anr-installer` with `games.json`, and the portable version keeps them in its own folder. The
+  window's size and the update preference start from their defaults once; `%APPDATA%\ANR FG Installer` can be
+  deleted.
+- The automatic checks for a new version of the installer are turned on or off in Settings. The About dialog
+  keeps the update status and **Check for updates**.
+- Closing or quitting while an install, an uninstall, a replay or another task runs asks first, as quitting can
+  leave the task unfinished and a game's files half changed. The end of a Windows session is never held up.
+- Settings shows the data folder, and the size of the downloaded ANR FG and nr-record packages. **Delete
+  downloads** removes them; they download again when needed. Comparisons and the list of package versions stay.
+- While the window is hidden or minimized, a Windows notification tells of a new ANR FG version, once a release.
+  The app looks for one at launch and every 6 hours. It can be turned off in Settings.
+- **Start with Windows** in Settings starts the app when the user signs in: hidden in the notification area when
+  the close button minimizes to the tray, else minimized. Uninstalling the installed version removes its entry;
+  the entry of a portable copy stays.
+- The activity log lists each install, uninstall, upgrade, replay, export and deletion as a task, with its start
+  time, its duration and whether it succeeded or failed, and its steps under it. What the programs printed is
+  folded under each task, and a task that fails unfolds it. **Copy log** copies the whole log as text. A failed
+  background check for a new ANR FG version is logged as a warning.
+- Deleting a recording no longer leaves the window busy without deleting it.
+- In a narrow window, a game's buttons, a page's actions, an info bar's button and a card's controls go under
+  their text instead of cutting it off, and the filter of the game list shows its labels whole in every language.
 
 ## 0.2.0
 

@@ -34,7 +34,7 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 
 The portable version, `anr-fg-installer-<version>-windows-amd64-portable.zip`, needs no install: extract its
 `ANR FG Installer` folder to a place you can write to and run `ANR FG Installer.exe`. It keeps its settings and
-downloads in that folder, except the language chosen in Settings.
+downloads in that folder.
 
 The app and its installer are not code-signed, so Windows SmartScreen may warn before the first run: choose
 **More info**, then **Run anyway**.
@@ -61,10 +61,20 @@ notes once. **Update all** there upgrades those games one after another, each wi
 with anti-cheat are left out: upgrade each of them from its own page. The list marks the games to upgrade, and
 the bar above it shows only those.
 
-The gear button in the title bar opens **Settings**. **Language** follows the system by default, or shows English
-or Simplified Chinese. **Close button** quits the app by default, or hides the window to the notification area,
+The gear button in the title bar opens **Settings**. **Language** follows the system by default, or shows English,
+Simplified Chinese, Traditional Chinese or Japanese. **Close button** quits the app by default, or hides the window to the notification area,
 where the app's icon brings it back and its menu quits. Starting the app again while it runs brings its window
-forward.
+forward. **Start with Windows** starts the app when you sign in: hidden in the notification area when the close
+button minimizes to the tray, else minimized. Uninstalling the installed version removes its entry; the entry of a
+portable copy stays. The portable version registers the path it runs from: after you
+move its folder, the setting shows off until you turn it on again. **Notify me about new ANR FG versions**, on by
+default, shows a Windows notification once for each new ANR FG release while the window is hidden or minimized;
+the app looks for one at launch and every 6 hours. **Check for updates automatically** turns the installer's own
+update checks on or off. **Data folder** opens the folder of your settings. **Delete downloads** removes the
+downloaded ANR FG and nr-record packages, which download again when needed.
+
+Closing or quitting while a task runs, such as an install, asks first: quitting can leave the task unfinished and
+a game's files half changed.
 
 ## Record and compare
 

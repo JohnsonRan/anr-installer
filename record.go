@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -40,7 +39,7 @@ func (a *app) refreshRecord() {
 		for _, r := range recs {
 			compared[r.Name] = (&record.Comparison{Recording: r}).Done()
 		}
-		a.win.Update(func() { a.rec.tools, a.rec.recordings, a.rec.compared = tools, recs, compared })
+		a.update(func() { a.rec.tools, a.rec.recordings, a.rec.compared = tools, recs, compared })
 	}()
 }
 
@@ -65,13 +64,9 @@ func (a *app) recordSection(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
 	recs := a.recordingsOf(g)
 	idle := !a.busy && !g.Scanning
-	// A row's description is one line; what the user has to read or do is said in an info bar, which wraps.
-	ui.Column(c).Gap(gapCardRows).Children(func() {
-		ui.Row(c).Gap(gapControls).Children(func() {
-			roleBodyStrong.on(t, ui.Text(c, T("rec.title"))).PaddingY(space1).Grow(1)
-			ui.Button(c, T("rec.refresh")).Tooltip(T("rec.refresh.tip")).OnClick(a.refreshRecord)
-		})
-
+	// A row describes what it is; what the user has to read or do is said in an info bar.
+	refresh := func() { ui.Button(c, T("rec.refresh")).Tooltip(T("rec.refresh.tip")).OnClick(a.refreshRecord) }
+	section(c, t, T("rec.title"), refresh, func() {
 		installed := g.Recorder
 		switch {
 		case installed && r.NRRecord:
@@ -163,37 +158,26 @@ func (a *app) compareBlocked(g *game) string {
 	return ""
 }
 
-// recordWork runs work in the background as the one step in progress, with its lines in the activity log, and
-// rescans g after it. work gets say, which logs a line and shows it as the status, and tools, which returns
-// the unpacked nr-record package, downloading it when the cache lacks it.
-func (a *app) recordWork(g *game, work func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error) {
+// recordWork runs work in the background as the task in progress, named title in the activity log, and rescans g
+// after it. work gets r, which writes the task's steps and output, and tools, which returns the unpacked
+// nr-record package, downloading it when the cache lacks it. The log opens once a step has something to say.
+func (a *app) recordWork(g *game, title string, work func(ctx context.Context, r *reporter, tools func() (string, error)) error) {
 	if a.busy {
 		return
 	}
 	a.busy, a.progress = true, -1
 	p, listed := a.rec.pkg, a.rel != nil
 	update := func(fn func()) { a.win.Update(fn) }
-	name, said := g.Name, false
-	say := func(format string, args ...any) {
-		line := fmt.Sprintf(format, args...)
-		update(func() {
-			if !said { // the log opens, under the game's name, once a step has something to say
-				said, a.logOpen = true, true
-				a.logLines = append(a.logLines, "── "+name)
-			}
-			a.status = line
-			a.logLines = append(a.logLines, line)
-		})
-	}
+	r := &reporter{a: a, tk: a.begin(title)}
 	go func() {
 		ctx := context.Background()
-		err := work(ctx, say, func() (string, error) {
+		err := work(ctx, r, func() (string, error) {
 			dir, err := record.Unpack(ctx, p, func(done, total int64) {
 				update(func() {
 					if total > 0 {
 						a.progress = float64(done) / float64(total)
 					}
-					a.status = T("downloading", p.Asset(), fmt.Sprintf("%.1f / %.1f MB", float64(done)/1e6, float64(total)/1e6))
+					a.status = T("downloading", p.Asset(), sizeText(done)+" / "+sizeText(total))
 				})
 			})
 			update(func() { a.progress = -1 })
@@ -207,51 +191,43 @@ func (a *app) recordWork(g *game, work func(ctx context.Context, say func(string
 		})
 		update(func() {
 			a.busy, a.progress = false, -2
-			if err != nil {
-				a.status = T("failed", err.Error())
-				a.logLines = append(a.logLines, a.status)
-			}
+			a.end(r.tk, failure(err))
 			a.rescan(g)
 			a.refreshRecord()
 		})
 	}()
 }
 
-// logLine adds a line a program printed to the activity log, from off the main thread.
-func (a *app) logLine(line string) {
-	a.win.Update(func() { a.logLines = append(a.logLines, "  "+line) })
-}
-
 // recordInstall runs the nr-record package's installer or uninstaller for g. The package's own scripts do the
 // work, as with ANR FG: they keep and restore OptiScaler.ini.
 func (a *app) recordInstall(g *game, action pkg.Action) {
 	gameDir := g.Scan.ExeDir
-	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
+	a.recordWork(g, gameTask(g, T("rec."+string(action))), func(ctx context.Context, r *reporter, tools func() (string, error)) error {
 		dir, err := tools()
 		if err != nil {
 			return err
 		}
-		say("%s", T("rec.running."+string(action)))
-		if err := pkg.Run(ctx, dir, action, gameDir, a.logLine); err != nil {
+		r.say("%s", T("rec.running."+string(action)))
+		if err := pkg.Run(ctx, dir, action, gameDir, r.out); err != nil {
 			return err
 		}
-		say("%s", T("rec.done."+string(action), gameDir))
+		r.say("%s", T("rec.done."+string(action), gameDir))
 		return nil
 	})
 }
 
-// installFFmpeg installs FFmpeg and FFprobe with Scoop.
+// installFFmpeg installs FFmpeg and FFprobe with Scoop, for every game.
 func (a *app) installFFmpeg(g *game) {
 	scoop := a.rec.tools.Scoop
-	a.recordWork(g, func(ctx context.Context, say func(string, ...any), _ func() (string, error)) error {
-		say("%s", T("rec.scoop.running"))
-		if err := record.InstallFFmpeg(ctx, scoop, a.logLine); err != nil {
+	a.recordWork(g, T("rec.ffmpeg.task"), func(ctx context.Context, r *reporter, _ func() (string, error)) error {
+		r.say("%s", T("rec.scoop.running"))
+		if err := record.InstallFFmpeg(ctx, scoop, r.out); err != nil {
 			return err
 		}
 		if !record.FindTools().Ready() {
 			return errors.New(T("rec.scoop.missing"))
 		}
-		say("%s", T("rec.scoop.done"))
+		r.say("%s", T("rec.scoop.done"))
 		return nil
 	})
 }
@@ -267,7 +243,7 @@ func (a *app) compare(g *game, rec *record.Recording, secs int) {
 		}
 		cmp.Frames = int(float64(secs)*fps + 0.5)
 	}
-	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
+	a.recordWork(g, gameTask(g, T("rec.compare")), func(ctx context.Context, r *reporter, tools func() (string, error)) error {
 		dir, err := tools()
 		if err != nil {
 			return err
@@ -276,15 +252,15 @@ func (a *app) compare(g *game, rec *record.Recording, secs int) {
 		side := ""
 		step := func(label string) {
 			side = label
-			say("%s", T("rec.replaying", label))
+			r.say("%s", T("rec.replaying", label))
 		}
-		if err := cmp.Make(ctx, step, a.logLine); err != nil {
+		if err := cmp.Make(ctx, step, r.out); err != nil {
 			if side == cmp.B.Label {
-				say("%s", T("rec.hint.dlssg"))
+				r.warn(T("rec.hint.dlssg"))
 			}
 			return err
 		}
-		say("%s", T("rec.done.compare", cmp.Out()))
+		r.say("%s", T("rec.done.compare", cmp.Out()))
 		a.win.Update(func() { a.openCompare(g, rec) })
 		return nil
 	})
@@ -293,7 +269,7 @@ func (a *app) compare(g *game, rec *record.Recording, secs int) {
 // openViewer opens nr-record's viewer with args.
 func (a *app) openViewer(g *game, args ...string) {
 	t := a.rec.tools
-	a.recordWork(g, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
+	a.recordWork(g, gameTask(g, T("rec.browse")), func(ctx context.Context, _ *reporter, tools func() (string, error)) error {
 		dir, err := tools()
 		if err != nil {
 			return err

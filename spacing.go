@@ -12,12 +12,14 @@ const (
 )
 
 const (
-	padPage     = space4          // around a page's content, and the title bar's ends
-	padPageX    = space6 + space2 // at the sides of a game's page
-	padPanel    = space3          // around the list of games
+	padPage     = space4          // around a page's content and the list of games, and the title bar's ends
+	padPageX    = space6 + space2 // at the sides of a page, and of the activity log under it
 	gapSection  = space4          // between the sections of a page
 	gapCards    = space3          // between cards side by side
 	gapCardRows = space1          // between the cards of one group, as Windows 11's Settings stacks them
+	// Above and below a group's heading: with it, a heading is taller than a button beside it, so that headings
+	// with and without one take the same room.
+	padHeadingY = space2
 
 	padCardY  = space3 // inside a card, a callout or a header, above and below
 	padCardX  = space4 // inside a card, a callout or a header, at the sides
@@ -32,6 +34,9 @@ const (
 
 	gapLabelField = space3 // between a field's label and the field
 	padEmpty      = space6 // around an empty state
+
+	gapLogEntries = space2                           // between the entries of the activity log
+	padLogText    = padPageX + logMark + gapControls // where a task's title, steps and output start, past its mark
 )
 
 // Sizes that are not spacing but that spacing lines up with.
@@ -50,6 +55,7 @@ const (
 	cardRadius        = 8
 	notesWidth        = 600 // the release notes dialog
 	notesHeight       = 420
+	confirmWidth      = 440 // a dialog that asks before going on
 	titleLogo         = 24
 	titleIcon         = 16 // the settings button's icon in the title bar
 	captionIcon       = 10 // the window buttons' icons, as Windows draws them
@@ -57,4 +63,10 @@ const (
 	navPillH          = 16
 	dividerLine       = 2  // the divider between the two pictures of a comparison
 	dividerHandle     = 16 // the grip on it
+	logMark           = 16 // a task's state in the activity log: a spinner, a check or a cross
+	logTimeW          = 40 // the activity log's column of start times, "15:04"
+	logTookW          = 80 // and of durations, "59 min 59 s" or "23 小时 59 分"
+	// The open activity panel: about 10 lines of steps and output, or 8 with two tasks' headers. At the minimum
+	// window size, 760 × 520, it and its bar leave the page about 240 DIP, its header and first card.
+	activityHeight = 180
 )

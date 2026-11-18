@@ -24,8 +24,7 @@ func (a *app) fetchRelease() {
 				a.relErr = err.Error()
 				return
 			}
-			a.setReleases(rels)
-			a.probe(rels)
+			a.releasesFound(rels)
 		})
 	}()
 }
@@ -34,20 +33,40 @@ func (a *app) fetchRelease() {
 func (a *app) setReleases(rels []*pkg.Release) {
 	a.releases, a.rel = rels, rels[0]
 	a.rec.pkg = record.Find(rels)
-	a.versionRel, a.versionLabels = nil, nil
-	for i, r := range rels {
-		if pkg.Number(r.Version) < pkg.MinInstallable {
-			continue
+	a.versionRel = nil
+	for _, r := range rels {
+		if pkg.Number(r.Version) >= pkg.MinInstallable {
+			a.versionRel = append(a.versionRel, r)
 		}
-		label := r.Version + " · " + r.Published.Local().Format("2006-01-02")
-		if i == 0 {
-			label = T("version.latest", label)
-		}
-		a.versionRel = append(a.versionRel, r)
-		a.versionLabels = append(a.versionLabels, label)
 	}
+	a.versionLabels = a.labelVersions()
 	if a.target() == nil && len(a.versionLabels) > 0 {
 		a.versionSel = a.versionLabels[0]
+	}
+}
+
+// labelVersions names the versions offered, each with its date, the newest marked in the window's language.
+func (a *app) labelVersions() []string {
+	var labels []string
+	for _, r := range a.versionRel {
+		label := r.Version + " · " + r.Published.Local().Format("2006-01-02")
+		if r == a.rel {
+			label = T("version.latest", label)
+		}
+		labels = append(labels, label)
+	}
+	return labels
+}
+
+// relabelVersions names the versions offered again after the language changed, keeping the one chosen, which
+// versionSel holds by its name.
+func (a *app) relabelVersions() {
+	chosen := a.target()
+	a.versionLabels = a.labelVersions()
+	for i, r := range a.versionRel {
+		if r == chosen {
+			a.versionSel = a.versionLabels[i]
+		}
 	}
 }
 
@@ -61,7 +80,7 @@ func (a *app) probe(rels []*pkg.Release) {
 		a.win.Update(func() {
 			a.probing = false
 			if err != nil {
-				a.logf("%s", T("probe.failed", err.Error()))
+				a.note(levelWarning, T("probe.failed", err.Error()))
 			}
 		})
 	}()
@@ -229,11 +248,11 @@ func (a *app) install(g *game, k detect.Kind) {
 		steps = append(steps, a.uninstallStep(g.Scan.Installed))
 	}
 	steps = append(steps, a.installStep(k))
-	a.run(g, steps)
+	a.run(g, a.planLabel(p), steps)
 }
 
 func (a *app) uninstall(g *game) {
-	a.run(g, []step{a.uninstallStep(g.Scan.Installed)})
+	a.run(g, T("uninstall"), []step{a.uninstallStep(g.Scan.Installed)})
 }
 
 // backups copies what the steps would lose: OptiScaler.ini, which the full package replaces or its uninstaller
@@ -266,26 +285,21 @@ func backups(r *detect.Result, steps []step, say func(string, ...any)) error {
 	return nil
 }
 
-// run runs the steps for g in the background, one after the other, stopping at the first failure.
-func (a *app) run(g *game, steps []step) {
+// run runs the steps for g in the background, one after the other, stopping at the first failure, as the task
+// named action in the log.
+func (a *app) run(g *game, action string, steps []step) {
 	if a.busy || g.Scan == nil || len(steps) == 0 {
 		return
 	}
 	a.busy, a.progress, a.logOpen = true, -1, true
 	scan := g.Scan
 	gameDir := scan.ExeDir
-	a.logf("── %s", g.Name)
-	a.logf("%s", gameDir)
-
+	r := &reporter{a: a, tk: a.begin(gameTask(g, action)), opened: true}
 	update := func(fn func()) { a.win.Update(fn) }
-	say := func(format string, args ...any) {
-		line := fmt.Sprintf(format, args...)
-		update(func() { a.status = line; a.logLines = append(a.logLines, line) })
-	}
 	go func() {
 		err := func() error {
 			ctx := context.Background()
-			if err := backups(scan, steps, say); err != nil {
+			if err := backups(scan, steps, r.say); err != nil {
 				return err
 			}
 			var installed string
@@ -299,14 +313,14 @@ func (a *app) run(g *game, steps []step) {
 							if total > 0 {
 								a.progress = float64(done) / float64(total)
 							}
-							a.status = T("downloading", name, fmt.Sprintf("%.1f / %.1f MB", float64(done)/1e6, float64(total)/1e6))
+							a.status = T("downloading", name, sizeText(done)+" / "+sizeText(total))
 						})
 					})
 					if err != nil {
 						return err
 					}
 					zipPath = p
-					say("%s ✓ SHA-256", name)
+					r.say("%s ✓ SHA-256", name)
 				}
 				update(func() { a.progress = -1 })
 				info, err := pkg.ReadInfo(zipPath)
@@ -321,10 +335,8 @@ func (a *app) run(g *game, steps []step) {
 				if err != nil {
 					return err
 				}
-				say("%s", T("running."+string(s.action), info.Version, s.kind))
-				if err := pkg.Run(ctx, dir, s.action, gameDir, func(line string) {
-					update(func() { a.logLines = append(a.logLines, "  "+line) })
-				}); err != nil {
+				r.say("%s", T("running."+string(s.action), info.Version, s.kind))
+				if err := pkg.Run(ctx, dir, s.action, gameDir, r.out); err != nil {
 					return err
 				}
 				if s.action == pkg.Install {
@@ -332,29 +344,22 @@ func (a *app) run(g *game, steps []step) {
 				}
 			}
 			if installed != "" {
-				say("%s", T("done.install", installed, gameDir))
+				r.say("%s", T("done.install", installed, gameDir))
 				if scan.NRRecord {
-					say("%s", T("warn.nrrecord"))
+					r.warn(T("warn.nrrecord"))
 				}
 			} else {
-				say("%s", T("done.uninstall", gameDir))
+				r.say("%s", T("done.uninstall", gameDir))
 			}
 			return nil
 		}()
 		update(func() {
 			a.busy, a.progress = false, -2
-			if err != nil {
-				a.status = T("failed", err.Error())
-				a.logLines = append(a.logLines, a.status)
-			}
+			a.end(r.tk, failure(err))
 			a.rescan(g)
 			a.next()
 		})
 	}()
-}
-
-func (a *app) logf(format string, args ...any) {
-	a.logLines = append(a.logLines, fmt.Sprintf(format, args...))
 }
 
 // outdated returns the newest version when the version of ANR FG installed in r is known and older than it.
@@ -405,7 +410,7 @@ func (a *app) upgradeAll() {
 	if len(games) == 0 || a.busy {
 		return
 	}
-	a.logf("%s", T("queue.start", len(games), a.rel.Version))
+	a.note(levelInfo, T("queue.start", len(games), a.rel.Version))
 	a.queue = games
 	a.next()
 }
@@ -418,7 +423,7 @@ func (a *app) next() {
 		if _, ok := a.outdated(g.Scan); !ok || a.rel == nil {
 			continue
 		}
-		a.run(g, []step{{pkg.Install, g.Scan.Installed, a.rel, ""}})
+		a.run(g, T("upgrade", a.rel.Version), []step{{pkg.Install, g.Scan.Installed, a.rel, ""}})
 	}
 }
 
@@ -431,8 +436,6 @@ func (a *app) autoNotes() {
 		return
 	}
 	a.saved.SeenRelease = a.rel.Tag
-	if err := a.saved.Save(); err != nil {
-		a.logf("%s", T("save.failed", err.Error()))
-	}
+	a.saveSettings()
 	a.showNotes(a.rel)
 }

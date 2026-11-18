@@ -18,7 +18,7 @@ func testApp(t *testing.T) *app {
 	t.Setenv("APPDATA", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	lang = "en"
+	setLang("en")
 	a := newApp()
 	day := time.Date(2026, 11, 17, 12, 0, 0, 0, time.Local)
 	var rels []*pkg.Release
@@ -43,7 +43,7 @@ func TestViewFiltersAndSelects(t *testing.T) {
 	if tt.HasText("Beta") {
 		t.Error("Beta has no DLSS-G and should be hidden under Supported")
 	}
-	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("ANR B18 → B19 · upgrade available") {
+	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("ANR B18 → B19 · upgrade available") {
 		t.Fatalf("texts %q", tt.Texts())
 	}
 	if g := a.selected(); g == nil || g.Name != "Alpha" {
@@ -93,6 +93,18 @@ func TestVersionsOffered(t *testing.T) {
 	}
 	if a.target().Version != "V.B19" {
 		t.Errorf("default target %s", a.target().Version)
+	}
+}
+
+// A language change names the versions again in it, and the version chosen, the newest, whose name changes,
+// stays chosen.
+func TestVersionLabelsFollowLanguage(t *testing.T) {
+	a := testApp(t)
+	t.Cleanup(func() { setLang("en") })
+	setLang("ja")
+	a.relabelVersions()
+	if a.versionLabels[0] != "V.B19 · 2026-11-17 (最新)" || a.target() == nil || a.target().Version != "V.B19" {
+		t.Errorf("labels %q, chosen %q", a.versionLabels, a.versionSel)
 	}
 }
 
@@ -191,7 +203,7 @@ func TestManualGames(t *testing.T) {
 	if err := tt.Click("Mine"); err != nil {
 		t.Fatal(err)
 	}
-	if !tt.HasText("Added manually") || !tt.HasText("Supports DLSS frame generation · added manually") {
+	if !tt.HasText("Added manually") || !tt.HasText("Supports DLSS frame generation · added manually") {
 		t.Errorf("texts %q", tt.Texts())
 	}
 	if err := tt.Click("Remove from list"); err != nil {
@@ -222,8 +234,14 @@ func TestAntiCheatWarning(t *testing.T) {
 	if !tt.HasText(T("anticheat.found", "EA Javelin Anticheat")) {
 		t.Errorf("no anti-cheat warning: %q", tt.Texts())
 	}
-	if !tt.HasText("Supports DLSS frame generation · anti-cheat") {
+	status := "Supports DLSS frame generation · anti-cheat"
+	if !tt.HasText(status) {
 		t.Errorf("the list does not mark the game: %q", tt.Texts())
+	}
+	// Too long for the list's width, the status wraps under the name rather than cutting "anti-cheat" off.
+	name, _ := tt.Find("Alpha")
+	if box, ok := tt.Find(status); !ok || box.H <= name.H {
+		t.Errorf("the status is cut off: %v high, its name %v", box.H, name.H)
 	}
 	if err := tt.Click("Gamma"); err != nil {
 		t.Fatal(err)
@@ -241,10 +259,13 @@ func TestAboutDialog(t *testing.T) {
 	}
 	a.openAbout()
 	tt.Frame()
-	for _, s := range []string{T("about.updates"), T("about.cantUpdate"), T("about.auto"), T("about.changelog"), T("about.license"), T("about.notice")} {
+	for _, s := range []string{T("about.updates"), T("about.cantUpdate"), T("about.checkNow"), T("about.changelog"), T("about.license"), T("about.notice")} {
 		if !tt.HasText(s) {
 			t.Errorf("missing %q in %q", s, tt.Texts())
 		}
+	}
+	if tt.HasText(T("settings.updates")) {
+		t.Error("the automatic checks belong to the settings page")
 	}
 	if err := tt.Click(T("about.close")); err != nil {
 		t.Fatal(err)
@@ -260,7 +281,7 @@ func TestUpdateReminders(t *testing.T) {
 	if !tt.HasText(T("updates.count", 1, "V.B19")) {
 		t.Fatalf("no updates bar: %q", tt.Texts())
 	}
-	if !tt.HasText("ANR B18 → B19 · upgrade available") {
+	if !tt.HasText("ANR B18 → B19 · upgrade available") {
 		t.Errorf("the row does not mark the upgrade: %q", tt.Texts())
 	}
 	if err := tt.Click(T("updates.count", 1, "V.B19")); err != nil {

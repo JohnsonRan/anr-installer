@@ -13,17 +13,17 @@ import (
 func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Recording, blocked bool) {
 	title := rec.Time.Format("2006-01-02 15:04:05")
 	if !rec.FrameGeneration() {
-		settingsRow(c, t, iconFrames, title, T("rec.item.upscaler"), func() { valueText(c, T("rec.item.cli"), t.TextMuted) })
+		valueRow(c, t, iconFrames, title, T("rec.item.upscaler"), func() { valueText(c, T("rec.item.cli"), t.TextMuted) })
 		return
 	}
-	detail := T("rec.item", rec.Width, rec.Height, rec.Frames, fmt.Sprintf("%.1f GB", float64(rec.Bytes)/1e9))
+	detail := T("rec.item", rec.Width, rec.Height, rec.Frames, sizeText(rec.Bytes))
 	if rec.Seconds > 0 {
 		detail = T("rec.item.seconds", seconds(rec.Seconds)) + " · " + detail
 	}
 	if rec.Dropped > 0 {
 		detail += T("rec.item.dropped", rec.Dropped)
 	}
-	settingsRow(c, t, iconFrames, title, detail, func() {
+	valueRow(c, t, iconFrames, title, detail, func() {
 		// The button compares the start of the recording, or opens the comparison made; its menu replays a
 		// longer part, and deletes the recording.
 		label := T("rec.compare")
@@ -53,7 +53,7 @@ func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Reco
 			}
 			m.Separator()
 			if m.Item(T("rec.delete")).Disabled(a.busy).Chosen() {
-				a.deleteRecording(rec)
+				a.deleteRecording(g, rec)
 			}
 		}, ui.PopoverMenuButtonOptions{At: ui.AnchorBottomEnd, Self: ui.AnchorTopEnd})
 	})
@@ -74,15 +74,16 @@ func seconds(s float64) string {
 	return fmt.Sprintf("%.0f", s)
 }
 
-// deleteRecording deletes rec and its comparison, after the user confirms: a recording cannot be made again.
-func (a *app) deleteRecording(rec *record.Recording) {
+// deleteRecording deletes rec, made in g, and its comparison, after the user confirms: a recording cannot be made
+// again.
+func (a *app) deleteRecording(g *game, rec *record.Recording) {
 	go func() {
 		res, err := mygo.Dialog.Message(mygo.MessageOptions{
 			Parent:             a.win,
 			Type:               mygo.MessageWarning,
 			Title:              T("rec.delete.title"),
 			Message:            T("rec.delete.title"),
-			Detail:             T("rec.delete.detail", rec.Time.Format("2006-01-02 15:04:05"), fmt.Sprintf("%.1f GB", float64(rec.Bytes)/1e9)),
+			Detail:             T("rec.delete.detail", rec.Time.Format("2006-01-02 15:04:05"), sizeText(rec.Bytes)),
 			Buttons:            []string{T("anticheat.cancel"), T("rec.delete.confirm")},
 			DefaultButton:      0,
 			CancelButton:       0,
@@ -91,24 +92,27 @@ func (a *app) deleteRecording(rec *record.Recording) {
 		if err != nil || res.Button != 1 {
 			return
 		}
-		// Deleting tens of GB takes a while: it is the one step in progress meanwhile, as an install is.
-		started := false
-		a.win.Update(func() {
-			if started = !a.busy; started {
-				a.busy, a.progress, a.status = true, -1, T("rec.deleting")
-			}
-		})
-		if !started {
+		a.removeRecording(g, rec)
+	}()
+}
+
+// removeRecording deletes rec, made in g, and its comparison, as the task in progress: deleting tens of GB takes
+// a while. It is called off the main thread, where whether another task runs is not known, so the deletion
+// starts from the main thread, where a.update runs later.
+func (a *app) removeRecording(g *game, rec *record.Recording) {
+	a.update(func() {
+		if a.busy {
 			return
 		}
-		err = rec.Remove()
-		a.win.Update(func() {
-			a.busy, a.progress, a.status = false, -2, ""
-			if err != nil {
-				a.status, a.logOpen = T("failed", err.Error()), true
-				a.logLines = append(a.logLines, a.status)
-			}
-			a.refreshRecord()
-		})
-	}()
+		a.busy, a.progress, a.status = true, -1, T("rec.deleting")
+		tk := a.begin(gameTask(g, T("rec.delete.task", rec.Time.Format("2006-01-02 15:04:05"))))
+		go func() {
+			err := rec.Remove()
+			a.update(func() {
+				a.busy, a.progress = false, -2
+				a.end(tk, failure(err))
+				a.refreshRecord()
+			})
+		}()
+	})
 }

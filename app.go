@@ -35,8 +35,13 @@ type game struct {
 
 // steamLanguage is the language Steam names its localized pictures by, for the window's language.
 func steamLanguage() string {
-	if lang == "zh" {
+	switch currentLang() {
+	case "zh-Hans":
 		return "schinese"
+	case "zh-Hant":
+		return "tchinese"
+	case "ja":
+		return "japanese"
 	}
 	return "english"
 }
@@ -84,6 +89,8 @@ const (
 // win.Update.
 type app struct {
 	win *mygo.Window
+	// update is win.Update, which the tests of the deletions replace: they run the results on their goroutine.
+	update func(func())
 
 	games        []*game
 	loadingGames bool
@@ -97,7 +104,7 @@ type app struct {
 	notesRel     *pkg.Release     // the release whose notes the dialog shows, or nil
 	md           markdown.Options // how the notes are drawn
 	queue        []*game          // games waiting to be upgraded by "Update all"
-	autoCheck    bool             // the About dialog's copy of the updater's automatic checks
+	autoCheck    bool             // the settings page's copy of the updater's automatic checks
 	list         ui.ListState
 	row          int // the row chosen in the filtered list, -1 none
 	visible      []int
@@ -127,10 +134,9 @@ type app struct {
 	providers map[string]string
 
 	busy     bool
-	progress float64 // -1 unknown, 0..1, or -2 none
-	status   string
-	logLines []string
-	logList  ui.ListState
+	progress float64     // -1 unknown, 0..1, or -2 none
+	status   string      // what the task in progress does now
+	log      activityLog // the tasks and notes the activity panel shows
 
 	rec recState      // nr-record: its package, the tools it needs and the recordings
 	cmp *compareState // the comparison page, shown in place of a game's page; nil: none
@@ -138,6 +144,9 @@ type app struct {
 	settings *settingsState // the settings page, shown in place of the others; nil: none
 	tray     *mygo.Tray     // the notification area icon, while closing the window hides it; nil: none
 	quitting bool           // a quit is under way, which closes the window whatever the setting
+	quitAsk  bool           // the dialog asking whether to quit while a task runs is open
+	// quitForced lets the next quit through without asking: the user answered "Quit anyway".
+	quitForced bool
 }
 
 func newApp() *app {
@@ -149,7 +158,6 @@ func newApp() *app {
 		return i
 	}
 	a.list.Selected = &a.row
-	a.logList.FollowEnd = true
 	a.saved = store.Load()
 	for _, s := range a.saved.Games {
 		a.games = append(a.games, &game{Name: s.Name, Dir: s.Dir, ExeDir: s.ExeDir, Manual: true, Named: s.Named})
@@ -165,6 +173,7 @@ func newApp() *app {
 func (a *app) start() {
 	a.scanSteam()
 	a.fetchRelease()
+	a.watchReleases()
 	a.refreshRecord()
 }
 
@@ -195,6 +204,7 @@ func (a *app) scanSteam() {
 			}
 			a.games = games
 			a.scanAll()
+			a.notifyRelease() // with no game to scan, nothing else calls it
 		})
 	}()
 }

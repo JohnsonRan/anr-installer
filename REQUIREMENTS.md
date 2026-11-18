@@ -47,10 +47,10 @@ meanwhile.
 | --- | --- | --- | --- |
 | Type scale (role: size / line height) | title 1.6× / 1.2, heading 1.15× / 1.25, body 1× / the theme's, small 0.86× / 1.35, caption 0.79× / 1.3, of the theme's FontSize (22, 16, 14, 12 and 11 DIP at 14) | a setting, not measured | `type.go`; `scripts/check.sh --fast` fails on a size or weight set elsewhere |
 | Spacing scale (section, card, inside card, label to field) | steps of 4, 8, 12, 16 and 24 DIP; between sections 16, between cards 12, inside a card 12 / 16 with 8 between its lines, label to field 12 | a setting, not measured | `spacing.go`; `scripts/check.sh --fast` fails on a number in a padding, gap or margin |
-| Window size (minimum; default) | 760 × 520 DIP; 1040 × 760 DIP | a setting, not measured | `main.go`, WindowOptions |
+| Window size (minimum; default) | 760 × 520 DIP; 1280 × 900 DIP, or 90% of the primary display's work area where that is smaller | a setting, not measured | `main.go`, `defaultSize` and its test |
 | Scan of every game in the Steam libraries | 1 s | 0.62 s for 17 games in 3 libraries (2026-11-18, dev PC, CPU load 0%) | review |
-| Slowest test package | 0.3 s | 0.24 s, the main package (2026-11-18, dev PC, CPU load 0%) | review of `go test -v` |
-| Release executable size | 20 MB | 16.5 MB with the update window, 13.9 MB before it (2026-11-18, windows/amd64) | review |
+| Slowest test package | 0.6 s | 0.47 s, the main package, with the settings, tray and activity log tests (2026-11-18, dev PC, CPU load 1–4%) | review of `go test -v` |
+| Release executable size | 20 MB | 18.0 MB with the settings and four languages, 16.5 MB before them (2026-11-18, windows/amd64) | review |
 | Source file size, p90 of this repository (pass bar) | 330 lines | 329 lines over 30 Go files (2026-11-18) | review |
 | Wait timeout before a stuck step is recorded and left | 30 min | a setting, not measured | agent |
 | Context handoff limit (share of the model's window) | 60% | a setting, not measured | orchestrator |
