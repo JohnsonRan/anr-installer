@@ -126,33 +126,40 @@ func (a *app) gameRow(c *ui.Context, t *ui.Theme, g *game, selected bool) {
 			if selected {
 				color = apexMuted
 			}
-			roleSmall.on(t, ui.Text(c, status)).TextColor(color).MaxLines(1).Ellipsis("…").Tooltip(status)
+			// The status wraps, so that what ends it, as "anti-cheat", shows. Three lines hold the longest: a game
+			// added by hand without frame generation, with anti-cheat, in Japanese.
+			roleSmall.on(t, ui.Text(c, status)).TextColor(color).MaxLines(3).Ellipsis("…").Tooltip(status)
 		})
 	})
 }
 
-// rowStatus is the line under a game's name: what is installed, else whether ANR FG can work in it.
+// rowSep joins the parts of a game's status. Its first space does not break, so that a wrapped status ends a line
+// with the dot rather than starts one with it.
+const rowSep = " · "
+
+// rowStatus is the line under a game's name: what is installed, else whether ANR FG can work in it. The versions
+// are joined by spaces that do not break, so that a wrapped status keeps "ANR B18 → B19" on one line.
 func (a *app) rowStatus(t *ui.Theme, g *game) (string, ui.Color) {
 	r := g.Scan
 	suffix := ""
 	if g.Manual {
-		suffix = " · " + T("manual")
+		suffix = rowSep + T("manual")
 	}
 	if r != nil && len(r.AntiCheat) > 0 {
-		suffix += " · " + T("anticheat.short")
+		suffix += rowSep + T("anticheat.short")
 	}
 	switch {
 	case g.Scanning || r == nil:
 		return T("scanning"), t.TextMuted
 	case r.Installed != detect.KindNone:
-		v := "ANR FG"
+		v := "ANR FG"
 		if iv := a.versionOf(r); iv != "" {
-			v = "ANR " + strings.TrimPrefix(iv, "V.")
+			v = "ANR " + strings.TrimPrefix(iv, "V.")
 		}
 		if latest, ok := a.outdated(r); ok {
-			return v + " → " + strings.TrimPrefix(latest, "V.") + " · " + T("row.upgrade") + suffix, t.Warning
+			return v + " → " + strings.TrimPrefix(latest, "V.") + rowSep + T("row.upgrade") + suffix, t.Warning
 		}
-		return v + " · " + string(r.Installed) + suffix, apexPeriwinkle
+		return v + rowSep + string(r.Installed) + suffix, apexPeriwinkle
 	case r.Supported():
 		return T("row.supported") + suffix, t.Success
 	}

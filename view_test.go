@@ -43,7 +43,7 @@ func TestViewFiltersAndSelects(t *testing.T) {
 	if tt.HasText("Beta") {
 		t.Error("Beta has no DLSS-G and should be hidden under Supported")
 	}
-	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("ANR B18 → B19 · upgrade available") {
+	if !tt.HasText("Alpha") || !tt.HasText("Gamma") || !tt.HasText("ANR B18 → B19 · upgrade available") {
 		t.Fatalf("texts %q", tt.Texts())
 	}
 	if g := a.selected(); g == nil || g.Name != "Alpha" {
@@ -203,7 +203,7 @@ func TestManualGames(t *testing.T) {
 	if err := tt.Click("Mine"); err != nil {
 		t.Fatal(err)
 	}
-	if !tt.HasText("Added manually") || !tt.HasText("Supports DLSS frame generation · added manually") {
+	if !tt.HasText("Added manually") || !tt.HasText("Supports DLSS frame generation · added manually") {
 		t.Errorf("texts %q", tt.Texts())
 	}
 	if err := tt.Click("Remove from list"); err != nil {
@@ -234,8 +234,14 @@ func TestAntiCheatWarning(t *testing.T) {
 	if !tt.HasText(T("anticheat.found", "EA Javelin Anticheat")) {
 		t.Errorf("no anti-cheat warning: %q", tt.Texts())
 	}
-	if !tt.HasText("Supports DLSS frame generation · anti-cheat") {
+	status := "Supports DLSS frame generation · anti-cheat"
+	if !tt.HasText(status) {
 		t.Errorf("the list does not mark the game: %q", tt.Texts())
+	}
+	// Too long for the list's width, the status wraps under the name rather than cutting "anti-cheat" off.
+	name, _ := tt.Find("Alpha")
+	if box, ok := tt.Find(status); !ok || box.H <= name.H {
+		t.Errorf("the status is cut off: %v high, its name %v", box.H, name.H)
 	}
 	if err := tt.Click("Gamma"); err != nil {
 		t.Fatal(err)
@@ -275,7 +281,7 @@ func TestUpdateReminders(t *testing.T) {
 	if !tt.HasText(T("updates.count", 1, "V.B19")) {
 		t.Fatalf("no updates bar: %q", tt.Texts())
 	}
-	if !tt.HasText("ANR B18 → B19 · upgrade available") {
+	if !tt.HasText("ANR B18 → B19 · upgrade available") {
 		t.Errorf("the row does not mark the upgrade: %q", tt.Texts())
 	}
 	if err := tt.Click(T("updates.count", 1, "V.B19")); err != nil {
