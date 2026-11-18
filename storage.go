@@ -55,7 +55,7 @@ func (a *app) deleteDownloads() {
 	tk := a.begin(T("settings.cache.delete"))
 	go func() {
 		freed, err := pkg.RemoveDownloads()
-		a.win.Update(func() {
+		a.update(func() {
 			a.busy, a.progress = false, -2
 			fail := ""
 			if err != nil {

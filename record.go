@@ -39,7 +39,7 @@ func (a *app) refreshRecord() {
 		for _, r := range recs {
 			compared[r.Name] = (&record.Comparison{Recording: r}).Done()
 		}
-		a.win.Update(func() { a.rec.tools, a.rec.recordings, a.rec.compared = tools, recs, compared })
+		a.update(func() { a.rec.tools, a.rec.recordings, a.rec.compared = tools, recs, compared })
 	}()
 }
 

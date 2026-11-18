@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -53,6 +54,48 @@ func TestRemoveDownloads(t *testing.T) {
 	dir, err := Extract(zipPath)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "install.ps1")); err != nil {
+		t.Errorf("the package was not unpacked again: %v", err)
+	}
+}
+
+// A package with a file in use, as when its viewer runs, is deleted in part: the failure is reported, and the
+// package loses its mark, so that it is unpacked again.
+func TestRemoveDownloadsInUse(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("only Windows keeps a file in use from being deleted")
+	}
+	t.Setenv("LOCALAPPDATA", t.TempDir())
+	zipPath := filepath.Join(DownloadsDir(), "nr-record-1.10-windows.zip")
+	files := map[string]string{"tools/viewer.exe": "viewer", "install.ps1": "# install"}
+	writeZip(t, zipPath, files)
+	zipped, _ := os.ReadFile(zipPath)
+	dir, err := Extract(zipPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(filepath.Join(dir, "tools", "viewer.exe"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = RemoveDownloads()
+	f.Close()
+	if err == nil {
+		t.Error("deleting a package in use reported no failure")
+	}
+	if _, err := os.Stat(filepath.Join(dir, extractedMark)); !os.IsNotExist(err) {
+		t.Errorf("the package in use kept its mark: %v", err)
+	}
+	// The same zip downloaded again unpacks into the same folder.
+	if err := os.MkdirAll(DownloadsDir(), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(zipPath, zipped, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if again, err := Extract(zipPath); err != nil || again != dir {
+		t.Fatalf("unpacked into %s, not %s: %v", again, dir, err)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "install.ps1")); err != nil {
 		t.Errorf("the package was not unpacked again: %v", err)

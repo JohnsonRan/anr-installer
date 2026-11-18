@@ -72,6 +72,7 @@ func main() {
 			Hidden:            hidden,
 			Content:           ui.View(a.view),
 		})
+		a.update = a.win.Update
 		mygo.App.OnLocaleChanged(func(locale string) {
 			setLang(langOf(locale))
 			a.win.SetTitle(T("title"))

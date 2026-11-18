@@ -1,11 +1,15 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
 
 	"anr-installer/internal/paths"
+	"anr-installer/internal/pkg"
 	"anr-installer/internal/store"
 )
 
@@ -73,6 +77,73 @@ func TestSettingsStorage(t *testing.T) {
 		if got := sizeText(n); got != want {
 			t.Errorf("sizeText(%d) = %q, want %q", n, got, want)
 		}
+	}
+}
+
+// Delete downloads removes downloads\ and packages\, keeps versions.json and the comparisons, counts the
+// downloads again, and waits for a task that runs.
+func TestDeleteDownloads(t *testing.T) {
+	a := testApp(t)
+	m := onMainThread(a)
+	a.toggleSettings()
+	cache := pkg.CacheDir()
+	files := map[string]bool{ // kept
+		filepath.Join(cache, "downloads", "anr-fg-V.B19-full.zip"):          false,
+		filepath.Join(cache, "packages", "0123456789abcdef", "install.ps1"): false,
+		filepath.Join(cache, "versions.json"):                               true,
+		filepath.Join(cache, "compare", "20261117-210405-delta", "anr.mp4"): true,
+	}
+	for p := range files {
+		writeFile(t, p, "x")
+	}
+	a.busy = true
+	a.deleteDownloads()
+	if len(a.log.entries) != 0 {
+		t.Fatal("Delete downloads started while another task ran")
+	}
+	a.busy, a.settings.cacheSize = false, 2
+	a.deleteDownloads()
+	if !a.busy {
+		t.Error("Delete downloads is not the task in progress")
+	}
+	m.run(t, func() bool { return !a.busy })
+	for _, dir := range []string{"downloads", "packages"} {
+		files[filepath.Join(cache, dir)] = false
+	}
+	for p, want := range files {
+		if _, err := os.Stat(p); (err == nil) != want {
+			t.Errorf("%s: kept %v, want %v", p, err == nil, want)
+		}
+	}
+	e := a.log.last()
+	if e == nil || e.task == nil || e.task.running() || e.task.failed || len(e.task.steps) != 1 ||
+		e.task.steps[0].text != T("settings.cache.deleted", sizeText(2)) {
+		t.Errorf("the task does not tell what was freed: %+v", e)
+	}
+	if a.settings.cacheSize != -1 {
+		t.Error("the downloads are not counted again")
+	}
+}
+
+// Delete downloads that fails, as on a package in use, ends its task failed, which opens the log.
+func TestDeleteDownloadsFails(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("only Windows keeps a file in use from being deleted")
+	}
+	a := testApp(t)
+	m := onMainThread(a)
+	a.toggleSettings()
+	zip := filepath.Join(pkg.DownloadsDir(), "anr-fg-V.B19-full.zip")
+	writeFile(t, zip, "x")
+	f, err := os.Open(zip)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	a.deleteDownloads()
+	m.run(t, func() bool { return !a.busy })
+	if e := a.log.last(); e == nil || e.task == nil || !e.task.failed || !a.logOpen {
+		t.Errorf("the failure is not shown: %+v", e)
 	}
 }
 

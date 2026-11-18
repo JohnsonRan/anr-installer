@@ -89,6 +89,8 @@ const (
 // win.Update.
 type app struct {
 	win *mygo.Window
+	// update is win.Update, which the tests of the deletions replace: they run the results on their goroutine.
+	update func(func())
 
 	games        []*game
 	loadingGames bool

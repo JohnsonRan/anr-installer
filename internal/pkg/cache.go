@@ -36,17 +36,10 @@ func DownloadsSize() int64 {
 // RemoveDownloads deletes the downloaded and unpacked packages, and returns how many bytes it freed. Install,
 // uninstall and nr-record download and unpack a package again when it is missing. The rest of the cache stays:
 // versions.json, which would take reading every package again, and compare/, which holds the user's
-// comparisons. A package's mark goes first, so that one only partly deleted, as when its viewer still runs, is
-// unpacked again rather than taken for whole.
+// comparisons. os.RemoveAll deletes all it can before it reports a failure, a package's mark among it, so that
+// a package only partly deleted, as when its viewer still runs, is unpacked again rather than taken for whole.
 func RemoveDownloads() (int64, error) {
 	before := DownloadsSize()
-	var errs []error
-	marks, _ := filepath.Glob(filepath.Join(packagesDir(), "*", extractedMark))
-	for _, m := range marks {
-		if err := os.Remove(m); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	errs = append(errs, os.RemoveAll(packagesDir()), os.RemoveAll(DownloadsDir()))
-	return before - DownloadsSize(), errors.Join(errs...)
+	err := errors.Join(os.RemoveAll(packagesDir()), os.RemoveAll(DownloadsDir()))
+	return before - DownloadsSize(), err
 }
