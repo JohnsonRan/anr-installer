@@ -3,10 +3,14 @@
 // checks it, and runs the package's own installer.
 package main
 
-import "log"
+import (
+	"log"
+
+	"anr-installer/gui"
+)
 
 func main() {
-	if err := run(); err != nil {
+	if err := gui.Run(); err != nil {
 		log.Fatal(err)
 	}
 }
