@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -38,11 +39,19 @@ func (a *app) releasesFound(rels []*pkg.Release) {
 	a.notifyRelease()
 }
 
+// newerRelease reports whether the release tagged newest is newer than the one tagged notified, the newest
+// recorded before, by their build numbers; any release is newer than none. A release withdrawn upstream leaves
+// an older one the newest, which is not news.
+func newerRelease(newest, notified string) bool {
+	number := func(tag string) int { return pkg.Number(strings.TrimPrefix(tag, "FG-")) }
+	return newest != "" && (notified == "" || number(newest) > number(notified))
+}
+
 // shouldNotify reports whether a check that found newest as the newest release shows a notification: with the
-// setting on, for a release not notified before, and only while the window is out of sight, as in the window
-// autoNotes shows the release.
+// setting on, for a release newer than the one recorded, and only while the window is out of sight, as in the
+// window autoNotes shows the release.
 func shouldNotify(on bool, newest, notified string, windowShown bool) bool {
-	return on && newest != "" && newest != notified && !windowShown
+	return on && newerRelease(newest, notified) && !windowShown
 }
 
 // notifyRelease tells of a new ANR FG release with a system notification while the window is hidden or
@@ -50,7 +59,7 @@ func shouldNotify(on bool, newest, notified string, windowShown bool) bool {
 // waits for the games to be scanned, which the notification counts: scanning calls it again.
 func (a *app) notifyRelease() {
 	rel := a.rel
-	if rel == nil || rel.Tag == a.saved.NotifiedRelease || a.scanning() {
+	if rel == nil || !newerRelease(rel.Tag, a.saved.NotifiedRelease) || a.scanning() {
 		return
 	}
 	shown := a.win == nil || a.win.IsVisible() && !a.win.IsMinimized() // tests: no window

@@ -18,6 +18,7 @@ func TestShouldNotify(t *testing.T) {
 		{true, "FG-V.B20", "", false, true},           // the first check after an upgrade from a version without it
 		{false, "FG-V.B20", "FG-V.B19", false, false}, // the setting off
 		{true, "FG-V.B20", "FG-V.B20", false, false},  // notified before
+		{true, "FG-V.B19", "FG-V.B20", false, false},  // B20 withdrawn: B19 is the newest again
 		{true, "FG-V.B20", "FG-V.B19", true, false},   // the window shows it: autoNotes does
 		{true, "", "", false, false},                  // no release found
 	} {
@@ -39,6 +40,12 @@ func TestNotifyReleaseRecordsOnce(t *testing.T) {
 	a.notifyRelease()
 	if a.saved.NotifiedRelease != "FG-V.B19" || store.Load().NotifiedRelease != "FG-V.B19" {
 		t.Errorf("the release was not recorded: %q", a.saved.NotifiedRelease)
+	}
+	// B20, recorded, was withdrawn: B19, the newest again, is not recorded over it.
+	a.saved.NotifiedRelease = "FG-V.B20"
+	a.notifyRelease()
+	if a.saved.NotifiedRelease != "FG-V.B20" {
+		t.Errorf("an older release was recorded over a newer one: %q", a.saved.NotifiedRelease)
 	}
 }
 
