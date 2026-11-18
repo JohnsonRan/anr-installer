@@ -149,7 +149,6 @@ func TestDeleteDownloadsFails(t *testing.T) {
 
 func TestSettingsOverComparison(t *testing.T) {
 	a, s := comparePageApp(t)
-	s.mode = cmpStills // the test has no videos to show
 	tt := ui.NewTester(a.view, 1040, 900)
 	if err := tt.Click(T("settings.open")); err != nil {
 		t.Fatal(err)
@@ -239,7 +238,6 @@ func TestQuitDialog(t *testing.T) {
 // Escape answers a dialog over a comparison or the settings, and leaves the page beneath open.
 func TestEscapeAnswersTheDialogFirst(t *testing.T) {
 	a, s := comparePageApp(t)
-	s.mode = cmpStills // the test has no videos to show
 	tt := ui.NewTester(a.view, 1040, 900)
 	a.aboutOpen = true
 	tt.Frame()

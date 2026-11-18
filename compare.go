@@ -31,8 +31,9 @@ var cmpRates = []float64{0.25, 0.5, 1}
 // compareState is the comparison page: a recording replayed through two frame generation DLLs, as two videos
 // played on one clock and, for a frame chosen in them, as lossless stills.
 type compareState struct {
-	game *game
-	cmp  *record.Comparison
+	cmp    *record.Comparison
+	update func(func()) // runs a function on the main thread
+	closed bool         // the page was left: work that ends after drops its result
 
 	a, b   *ui.VideoPlayer // nil when the videos could not be opened
 	err    string
@@ -53,21 +54,33 @@ type compareState struct {
 	stillErr string // why the stills could not be shown, or ""
 }
 
-// comparison describes rec replayed through the ANR FG installed in g and through g's DLSS-G.
-func (a *app) comparison(g *game, rec *record.Recording) *record.Comparison {
-	return &record.Comparison{Recording: rec, A: record.ANR(g.Scan.ANRDll), B: record.DLSSG(dlssgDLL(g.Scan)), FFmpeg: a.rec.tools.FFmpeg}
+// compareActions is what the comparison page does through the app.
+type compareActions struct {
+	subject string               // the game's name, which the line under the title starts with
+	busy    bool                 // a task runs, so none can start
+	blocked func() string        // why the stills cannot be made now, or ""
+	back    func()               // leaves the page
+	viewer  func(args ...string) // opens nr-record's viewer with args
+	export  func()               // makes the stills of the frame shown
 }
 
-// openCompare shows the comparison of rec in the window. The videos open paused at their start.
-func (a *app) openCompare(g *game, rec *record.Recording) {
-	a.closeCompare()
-	s := &compareState{game: g, cmp: a.comparison(g, rec), divider: 50, rate: len(cmpRates) - 1, fps: 60}
-	if r, err := s.cmp.Replay(); err == nil {
+// newCompare is the comparison of cmp without its videos, which openCompare adds: it shows the stills only.
+// update runs a function on the main thread.
+func newCompare(cmp *record.Comparison, update func(func())) *compareState {
+	s := &compareState{cmp: cmp, update: update, mode: cmpStills, divider: 50, rate: len(cmpRates) - 1, fps: 60}
+	if r, err := cmp.Replay(); err == nil {
 		s.replay = r
 		if r.FPS > 0 {
 			s.fps = r.FPS
 		}
 	}
+	return s
+}
+
+// openCompare is the comparison of cmp with its two videos, opened paused at their start.
+func openCompare(cmp *record.Comparison, update func(func())) *compareState {
+	s := newCompare(cmp, update)
+	s.mode = cmpVideo
 	pathA, pathB := s.cmp.Videos()
 	var err error
 	if s.a, err = video.Open(pathA); err == nil {
@@ -80,24 +93,17 @@ func (a *app) openCompare(g *game, rec *record.Recording) {
 		s.a.Pause()
 		s.b.Pause()
 	}
-	a.cmp = s
+	return s
 }
 
+// close stops the videos as the page is left.
 func (s *compareState) close() {
+	s.closed = true
 	for _, p := range []*ui.VideoPlayer{s.a, s.b} {
 		if p != nil {
 			p.Close()
 		}
 	}
-}
-
-// closeCompare leaves the comparison page.
-func (a *app) closeCompare() {
-	if a.cmp == nil {
-		return
-	}
-	a.cmp.close()
-	a.cmp = nil
 }
 
 // duration is the length of the shorter video, in seconds.
@@ -177,10 +183,9 @@ func clock(sec float64) string {
 	return fmt.Sprintf("%02d:%02d.%03d", int(d.Minutes()), int(d.Seconds())%60, d.Milliseconds()%1000)
 }
 
-// comparePage is the page of a comparison, in place of a game's page: a title row with the way back, what
-// to show and how, the picture, and the controls of the videos or the stills under it.
-func (a *app) comparePage(c *ui.Context, t *ui.Theme) {
-	s := a.cmp
+// page is the page of the comparison, in place of a game's page: a title row with the way back, what to show
+// and how, the picture, and the controls of the videos or the stills under it.
+func (s *compareState) page(c *ui.Context, t *ui.Theme, act compareActions) {
 	if s.a != nil && s.err == "" {
 		for _, p := range []*ui.VideoPlayer{s.a, s.b} {
 			if err := p.Err(); err != nil {
@@ -194,33 +199,33 @@ func (a *app) comparePage(c *ui.Context, t *ui.Theme) {
 	c.OnWindowShortcut(0, ui.KeySpace, s.toggle)
 	c.OnWindowShortcut(0, ui.KeyLeft, func() { s.step(-1) })
 	c.OnWindowShortcut(0, ui.KeyRight, func() { s.step(1) })
-	c.OnWindowShortcut(0, ui.KeyEscape, a.closeCompare)
+	c.OnWindowShortcut(0, ui.KeyEscape, act.back)
 	ui.Column(c).Padding(padPage, padPageX).Gap(gapSection).Children(func() {
-		line := s.game.Name + " · " + s.cmp.Recording.Time.Format("2006-01-02 15:04:05")
-		pageHeader(c, t, a.closeCompare, T("cmp.title", s.cmp.A.Label, s.cmp.B.Label), line, func() {
-			ui.Button(c, T("cmp.viewer")).Disabled(a.busy).OnClick(func() {
-				a.openViewer(s.game, "--compare", "--project", s.cmp.Project())
-			})
+		line := act.subject + " · " + s.cmp.Recording.Time.Format("2006-01-02 15:04:05")
+		pageHeader(c, t, act.back, T("cmp.title", s.cmp.A.Label, s.cmp.B.Label), line, func() {
+			ui.Button(c, T("cmp.viewer")).Disabled(act.busy).OnClick(func() { act.viewer("--compare", "--project", s.cmp.Project()) })
 		})
 		if s.err != "" {
 			infoBar(c, t, t.Danger, iconWarning, T("cmp.error", s.err), nil)
 			return
 		}
 		ui.Row(c).Gap(gapGroup).Wrap().Children(func() {
-			ui.Segmented(c, &s.mode, T("cmp.video"), T("cmp.stills")).Label(T("cmp.mode"))
+			if s.a != nil { // a comparison without videos shows the stills only
+				ui.Segmented(c, &s.mode, T("cmp.video"), T("cmp.stills")).Label(T("cmp.mode"))
+			}
 			ui.Column(c).Grow(1)
 			ui.Segmented(c, &s.layout, T("cmp.divider"), T("cmp.side"), s.cmp.A.Label, s.cmp.B.Label).Label(T("cmp.layout"))
 		})
 		if s.mode == cmpVideo {
-			a.compareVideos(c, t, s)
+			s.videos(c, t)
 		} else {
-			a.compareStills(c, t, s)
+			s.stillsView(c, t, act)
 		}
 	})
 }
 
-// compareVideos is the two videos and their transport.
-func (a *app) compareVideos(c *ui.Context, t *ui.Theme, s *compareState) {
+// videos is the two videos and their transport.
+func (s *compareState) videos(c *ui.Context, t *ui.Theme) {
 	w, h := s.a.Size()
 	if !s.a.Ready() || !s.b.Ready() || h == 0 {
 		w, h = 16, 9 // until the first pictures come: the room of a picture, with nothing moving after
