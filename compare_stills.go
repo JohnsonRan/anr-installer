@@ -46,7 +46,8 @@ func (a *app) compareStills(c *ui.Context, t *ui.Theme, s *compareState) {
 		ui.Button(c, T("cmp.still.prev")).Disabled(s.still == 0 || s.loading).OnClick(func() { a.showStill(s, s.still-1) })
 		ui.Button(c, T("cmp.still.next")).Disabled(s.still >= len(s.stills)-1 || s.loading).OnClick(func() { a.showStill(s, s.still+1) })
 		name := s.stills[s.still].Name
-		roleSmall.on(t, ui.Text(c, T("cmp.still.name", s.still+1, len(s.stills), name))).TextColor(t.TextMuted).Grow(1).Shrink(1)
+		label := T("cmp.still.name", s.still+1, len(s.stills), name)
+		roleSmall.on(t, ui.Text(c, label)).TextColor(t.TextMuted).MaxLines(1).TruncateMiddle().Tooltip(label).Grow(1).Shrink(1)
 		ui.Button(c, T("open.folder")).OnClick(func() { mygo.Shell.ShowItemInFolder(s.stills[s.still].A) })
 	})
 }

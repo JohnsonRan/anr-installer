@@ -10,12 +10,13 @@ import (
 	"anr-installer/internal/pkg"
 )
 
-// sizeText says a size in bytes in MB, or in GB from 1 GB.
+// sizeText says a size in bytes in MB, or in GB from 1 GB. A no-break space joins the number to its unit, so
+// that a line of text that wraps never parts them.
 func sizeText(n int64) string {
 	if n >= 1e9 {
-		return fmt.Sprintf("%.1f GB", float64(n)/1e9)
+		return fmt.Sprintf("%.1f GB", float64(n)/1e9)
 	}
-	return fmt.Sprintf("%.1f MB", float64(n)/1e6)
+	return fmt.Sprintf("%.1f MB", float64(n)/1e6)
 }
 
 // openDataFolder opens the folder of games.json, which holds nothing until a setting is first saved.

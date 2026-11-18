@@ -22,7 +22,7 @@ func (a *app) view(c *ui.Context) {
 		a.titleBar(c, t)
 		ui.Divider(c)
 		ui.Row(c).Grow(1).AlignItems(ui.Stretch).Children(func() {
-			ui.Column(c).Width(300).Padding(padPanel).Gap(gapControls).Children(func() { a.sidebar(c, t) })
+			ui.Column(c).Width(300).Padding(padPage).Gap(gapControls).Children(func() { a.sidebar(c, t) })
 			ui.Divider(c).Vertical()
 			ui.Column(c).Grow(1).Shrink(1).Children(func() {
 				g := a.selected()
@@ -58,7 +58,8 @@ func (a *app) view(c *ui.Context) {
 
 func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 	ui.SearchField(c, &a.query).Label(T("search")).Placeholder(T("search"))
-	ui.Segmented(c, &a.show, T("show.all"), T("show.supported"), T("show.installed")).FillEqually().Label(T("show"))
+	// As wide as its labels: shared equally, the list's width cuts the longest, "Supported" or "インストール済み".
+	ui.Segmented(c, &a.show, T("show.all"), T("show.supported"), T("show.installed")).AlignSelf(ui.Start).Label(T("show"))
 	a.updatesBar(c, t)
 	a.filter()
 	// The chosen game shows as a lighter row with a bar beside it, as the navigation of Windows 11's Settings.
@@ -75,7 +76,7 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 				case a.noSteam && len(a.games) == 0:
 					msg = T("no.steam")
 				}
-				roleSmall.on(t, ui.Text(c, msg)).TextColor(t.TextMuted).Padding(padPanel).TextAlign(ui.Center)
+				roleSmall.on(t, ui.Text(c, msg)).TextColor(t.TextMuted).Padding(padPage).TextAlign(ui.Center)
 			}
 		})
 	})
@@ -88,8 +89,8 @@ func (a *app) sidebar(c *ui.Context, t *ui.Theme) {
 			installed++
 		}
 	}
-	roleSmall.on(t, ui.Text(c, T("games.count", len(a.games), supported, installed))).TextColor(t.TextMuted).PaddingX(space1)
-	roleSmall.on(t, ui.Text(c, T("unofficial"))).TextColor(t.TextMuted).PaddingX(space1).Tooltip(T("unofficial.tip"))
+	roleSmall.on(t, ui.Text(c, T("games.count", len(a.games), supported, installed))).TextColor(t.TextMuted)
+	roleSmall.on(t, ui.Text(c, T("unofficial"))).TextColor(t.TextMuted).Tooltip(T("unofficial.tip"))
 	ui.Row(c).Gap(gapControls).Children(func() {
 		ui.Button(c, T("add.game")).Grow(1).Tooltip(T("add.game.tip")).OnClick(a.addFolder)
 		ui.Button(c, T("refresh")).Disabled(a.loadingGames || a.busy).Tooltip(T("refresh.tip")).OnClick(a.scanSteam)
@@ -114,18 +115,18 @@ func (a *app) gameRow(c *ui.Context, t *ui.Theme, g *game, selected bool) {
 		})
 	}
 	row.Children(func() {
-		pill := ui.Column(c).Size(navPillW, navPillH).Radius(navPillW)
+		// The bar sits at the row's edge, out of the flow, so that the icons line up with the update bar's.
 		if selected {
-			pill.Background(apexRoyal)
+			ui.Column(c).Absolute().Left(0).TopPercent(50).TranslatePercent(0, -50).Size(navPillW, navPillH).Radius(navPillW).Background(apexRoyal)
 		}
 		gameIcon(c, t, g, 36)
 		ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
-			roleBodyStrong.on(t, ui.Text(c, g.Name)).TextColor(text).MaxLines(1).Ellipsis("…")
+			roleBodyStrong.on(t, ui.Text(c, g.Name)).TextColor(text).MaxLines(1).Ellipsis("…").Tooltip(g.Name)
 			status, color := a.rowStatus(t, g)
 			if selected {
 				color = apexMuted
 			}
-			roleSmall.on(t, ui.Text(c, status)).TextColor(color).MaxLines(1).Ellipsis("…")
+			roleSmall.on(t, ui.Text(c, status)).TextColor(color).MaxLines(1).Ellipsis("…").Tooltip(status)
 		})
 	})
 }
@@ -200,14 +201,16 @@ func (a *app) updatesBar(c *ui.Context, t *ui.Theme) {
 	if a.rel != nil {
 		latest = a.rel.Version
 	}
-	bar := ui.ButtonBase(c.Key("updates")).Padding(padRowY, padRowX).Gap(gapControls).Radius(cardRadius).
+	bar := ui.ButtonBase(c.Key("updates")).Padding(padRowY, padRowX).Radius(cardRadius).
 		Background(t.Warning.Alpha(0.10)).Border(1, t.Warning.Alpha(0.30)).Label(T("updates.count", n, latest))
 	if bar.Hovered() {
 		bar.Background(t.Warning.Alpha(0.16))
 	}
-	bar.OnClick(func() { a.onlyOutdated = !a.onlyOutdated; a.row = -1 }).Children(func() {
+	bar.OnClick(func() { a.onlyOutdated = !a.onlyOutdated; a.row = -1 })
+	callout(c, bar, func() {
 		ui.Icon(c, iconUpdate).Size(rowIcon, rowIcon).TextColor(t.Warning)
-		roleSmall.on(t, ui.Text(c, T("updates.count", n, latest))).Grow(1).Shrink(1)
+		roleSmall.on(t, ui.Text(c, T("updates.count", n, latest)))
+	}, func() {
 		action := T("updates.show")
 		if a.onlyOutdated {
 			action = T("updates.all")

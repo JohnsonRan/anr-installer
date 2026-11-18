@@ -315,6 +315,9 @@ var messages = map[string][2]string{
 
 	// Settings.
 	"settings.open":             {"Settings", "设置"},
+	"settings.group.general":    {"General", "常规"},
+	"settings.group.updates":    {"Updates", "更新"},
+	"settings.group.storage":    {"Storage", "存储"},
 	"settings.language":         {"Language", "语言"},
 	"settings.language.detail":  {"The language the app shows", "应用显示的语言"},
 	"settings.language.system":  {"System default", "跟随系统"},

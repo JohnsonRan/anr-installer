@@ -57,11 +57,12 @@ func TestSettingsReleaseNotify(t *testing.T) {
 	}
 }
 
-// clickSwitch clicks the switch at the end of the settings row of title and detail. Its label is the title's
-// text, which Click finds first.
+// clickSwitch clicks the switch at the end of the settings row of title and detail, where the card's padding
+// leaves it at the page's end. Its label is the title's text, which Click finds first.
 func clickSwitch(tt *ui.Tester, title, detail string) {
 	r, _ := tt.Find(title)
 	d, _ := tt.Find(detail)
-	tt.ClickAt(r.X+r.W+gapGroup+space1, (r.Y+d.Y+d.H)/2)
+	end := float32(tt.Image().Bounds().Dx()) - padPageX - padCardX
+	tt.ClickAt(end-space4, (r.Y+d.Y+d.H)/2)
 	tt.Frame()
 }

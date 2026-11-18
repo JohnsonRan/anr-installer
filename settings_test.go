@@ -58,10 +58,10 @@ func TestSettingsStorage(t *testing.T) {
 	}
 	a.settings.cacheSize = 2_345_000_000
 	tt.Frame()
-	if !tt.HasText(T("settings.cache.detail", "2.3 GB")) {
+	if !tt.HasText(T("settings.cache.detail", "2.3 GB")) {
 		t.Errorf("the size of the downloads is not shown: %q", tt.Texts())
 	}
-	for n, want := range map[int64]string{0: "0.0 MB", 512_300_000: "512.3 MB", 1_000_000_000: "1.0 GB"} {
+	for n, want := range map[int64]string{0: "0.0 MB", 512_300_000: "512.3 MB", 1_000_000_000: "1.0 GB"} {
 		if got := sizeText(n); got != want {
 			t.Errorf("sizeText(%d) = %q, want %q", n, got, want)
 		}

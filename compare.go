@@ -196,13 +196,8 @@ func (a *app) comparePage(c *ui.Context, t *ui.Theme) {
 	c.OnWindowShortcut(0, ui.KeyRight, func() { s.step(1) })
 	c.OnWindowShortcut(0, ui.KeyEscape, a.closeCompare)
 	ui.Column(c).Padding(padPage, padPageX).Gap(gapSection).Children(func() {
-		ui.Row(c).Gap(gapGroup).Children(func() {
-			ui.Button(c, T("back")).OnClick(a.closeCompare)
-			ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
-				roleHeading.on(t, ui.Text(c, T("cmp.title", s.cmp.A.Label, s.cmp.B.Label))).MaxLines(1).Ellipsis("…")
-				line := s.game.Name + " · " + s.cmp.Recording.Time.Format("2006-01-02 15:04:05")
-				roleSmall.on(t, ui.Text(c, line)).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…")
-			})
+		line := s.game.Name + " · " + s.cmp.Recording.Time.Format("2006-01-02 15:04:05")
+		pageHeader(c, t, a.closeCompare, T("cmp.title", s.cmp.A.Label, s.cmp.B.Label), line, func() {
 			ui.Button(c, T("cmp.viewer")).Disabled(a.busy).OnClick(func() {
 				a.openViewer(s.game, "--compare", "--project", s.cmp.Project())
 			})
@@ -240,7 +235,8 @@ func (a *app) compareVideos(c *ui.Context, t *ui.Theme, s *compareState) {
 	if ui.Slider(c, &pos, 0, max(s.duration(), 1/s.fps)).Label(T("cmp.time")).Changed() {
 		s.seek(pos)
 	}
-	ui.Row(c).Gap(gapControls).Children(func() {
+	// The speed goes to the row's end, and onto a line of its own where the window is too narrow for it.
+	ui.Row(c).Wrap().AlignItems(ui.Center).Gap(gapControls).Children(func() {
 		label := T("cmp.play")
 		if s.playing {
 			label = T("cmp.pause")
@@ -248,12 +244,12 @@ func (a *app) compareVideos(c *ui.Context, t *ui.Theme, s *compareState) {
 		ui.PrimaryButton(c, label).OnClick(s.toggle)
 		ui.Button(c, T("cmp.prev")).OnClick(func() { s.step(-1) })
 		ui.Button(c, T("cmp.next")).OnClick(func() { s.step(1) })
-		roleSmall.on(t, ui.Text(c, clock(s.pos)+" / "+clock(s.duration()))).TextColor(t.TextMuted).MaxLines(1).Grow(1)
+		roleSmall.on(t, ui.Text(c, clock(s.pos)+" / "+clock(s.duration()))).TextColor(t.TextMuted).NoWrap()
 		labels := make([]string, len(cmpRates))
 		for i, r := range cmpRates {
 			labels[i] = fmt.Sprintf("%g×", r)
 		}
-		if ui.Segmented(c, &s.rate, labels...).Label(T("cmp.rate")).Changed() {
+		if ui.Segmented(c, &s.rate, labels...).MarginStart(ui.Auto).Label(T("cmp.rate")).Changed() {
 			s.a.SetRate(cmpRates[s.rate])
 			s.b.SetRate(cmpRates[s.rate])
 		}

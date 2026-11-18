@@ -13,7 +13,7 @@ import (
 func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Recording, blocked bool) {
 	title := rec.Time.Format("2006-01-02 15:04:05")
 	if !rec.FrameGeneration() {
-		settingsRow(c, t, iconFrames, title, T("rec.item.upscaler"), func() { valueText(c, T("rec.item.cli"), t.TextMuted) })
+		valueRow(c, t, iconFrames, title, T("rec.item.upscaler"), func() { valueText(c, T("rec.item.cli"), t.TextMuted) })
 		return
 	}
 	detail := T("rec.item", rec.Width, rec.Height, rec.Frames, fmt.Sprintf("%.1f GB", float64(rec.Bytes)/1e9))
@@ -23,7 +23,7 @@ func (a *app) recordingRow(c *ui.Context, t *ui.Theme, g *game, rec *record.Reco
 	if rec.Dropped > 0 {
 		detail += T("rec.item.dropped", rec.Dropped)
 	}
-	settingsRow(c, t, iconFrames, title, detail, func() {
+	valueRow(c, t, iconFrames, title, detail, func() {
 		// The button compares the start of the recording, or opens the comparison made; its menu replays a
 		// longer part, and deletes the recording.
 		label := T("rec.compare")

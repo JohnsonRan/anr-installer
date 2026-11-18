@@ -26,12 +26,44 @@ func (a *app) detail(c *ui.Context, t *ui.Theme, g *game) {
 			return
 		}
 		a.notices(c, t, g)
-		ui.Column(c).Gap(gapCardRows).Children(func() {
-			roleBodyStrong.on(t, ui.Text(c, T("status"))).PaddingY(space1)
-			a.statusCards(c, t, g)
-		})
+		section(c, t, T("status"), nil, func() { a.statusCards(c, t, g) })
 		a.recordSection(c, t, g)
 		a.advancedCard(c, t, g)
+	})
+}
+
+// section is a group of cards under its heading, as Windows 11's Settings has them, with the group's actions at
+// the heading's end.
+func section(c *ui.Context, t *ui.Theme, title string, actions func(), cards func()) {
+	ui.Column(c).Gap(gapCardRows).Children(func() {
+		ui.Row(c).Gap(gapControls).Children(func() {
+			roleBodyStrong.on(t, ui.Text(c, title)).PaddingY(padHeadingY).Grow(1).Shrink(1)
+			if actions != nil {
+				actions()
+			}
+		})
+		cards()
+	})
+}
+
+// pageHeader is the title row of a page shown in place of a game's, as the settings or a comparison: the way back,
+// the page's title over a line about it, if any, and the page's actions at its end. The title lines up with the
+// button by its text, so that it sits in one place on every page; where the window is too narrow for the actions
+// beside the title, they go under it.
+func pageHeader(c *ui.Context, t *ui.Theme, back func(), title, line string, actions func()) {
+	ui.Row(c).Wrap().Justify(ui.SpaceBetween).AlignItems(ui.Baseline).GapX(gapGroup).GapY(gapInCard).Children(func() {
+		ui.Row(c).Gap(gapGroup).AlignItems(ui.Baseline).Shrink(1).Children(func() {
+			ui.Button(c, T("back")).OnClick(back)
+			ui.Column(c).Shrink(1).Gap(gapLines).Children(func() {
+				roleHeading.on(t, ui.Text(c, title)).MaxLines(1).Ellipsis("…").Tooltip(title)
+				if line != "" {
+					roleSmall.on(t, ui.Text(c, line)).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Tooltip(line)
+				}
+			})
+		})
+		if actions != nil {
+			ui.Row(c).Gap(gapControls).Children(actions)
+		}
 	})
 }
 
@@ -43,17 +75,21 @@ func (a *app) header(c *ui.Context, t *ui.Theme, g *game) {
 		a.heroHeader(c, t, g)
 		return
 	}
-	ui.Row(c).Gap(gapGroup).Children(func() {
-		gameIcon(c, t, g, headerIcon)
-		ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
-			if g.Manual {
-				if roleTitle.on(t, ui.EditableText(c.Key("name"), &g.Name)).Tooltip(T("rename.tip")).Changed() {
-					a.renamed(g)
+	// The actions go under the game where the window is too narrow for them beside it.
+	ui.Row(c).Wrap().Justify(ui.SpaceBetween).AlignItems(ui.Center).GapX(gapGroup).GapY(gapInCard).Children(func() {
+		ui.Row(c).Gap(gapGroup).Shrink(1).Children(func() {
+			gameIcon(c, t, g, headerIcon)
+			ui.Column(c).Shrink(1).Gap(gapLines).Children(func() {
+				if g.Manual {
+					if roleTitle.on(t, ui.EditableText(c.Key("name"), &g.Name)).Tooltip(T("rename.tip")).Changed() {
+						a.renamed(g)
+					}
+				} else {
+					roleTitle.on(t, ui.Text(c, g.Name)).MaxLines(1).Ellipsis("…").Tooltip(g.Name)
 				}
-			} else {
-				roleTitle.on(t, ui.Text(c, g.Name)).MaxLines(1).Ellipsis("…")
-			}
-			roleSmall.on(t, ui.Text(c, a.headerLine(g))).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…")
+				line := a.headerLine(g)
+				roleSmall.on(t, ui.Text(c, line)).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Tooltip(line)
+			})
 		})
 		a.actions(c, t, g)
 	})
@@ -63,17 +99,19 @@ func (a *app) header(c *ui.Context, t *ui.Theme, g *game) {
 // (else the name), the state line and the actions sit.
 func (a *app) heroHeader(c *ui.Context, t *ui.Theme, g *game) {
 	white := ui.RGB(255, 255, 255)
-	ui.Column(c).FillWidth().Height(heroHeight).Radius(cardRadius).Clip().Border(1, apexLine).Justify(ui.End).Children(func() {
+	// The card grows past its height where the actions go under the game, in a narrow window.
+	ui.Column(c).FillWidth().MinHeight(heroHeight).Radius(cardRadius).Clip().Border(1, apexLine).Justify(ui.End).Children(func() {
 		ui.Image(c, g.Hero).Absolute().Top(0).Left(0).Right(0).Bottom(0).Fit(ui.Cover).ObjectPosition(0.5, 0.3)
-		ui.Row(c).FillWidth().ZIndex(1).Padding(heroFade, padCardX, padCardY, padCardX).Gap(gapGroup).AlignItems(ui.End).
-			Gradient(apexBG.Alpha(0), apexBG.Alpha(0.92), 180).Children(func() {
-			ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
+		ui.Row(c).FillWidth().ZIndex(1).Padding(heroFade, padCardX, padCardY, padCardX).Wrap().Justify(ui.SpaceBetween).AlignItems(ui.End).
+			GapX(gapGroup).GapY(gapInCard).Gradient(apexBG.Alpha(0), apexBG.Alpha(0.92), 180).Children(func() {
+			ui.Column(c).Shrink(1).Gap(gapLines).Children(func() {
 				if g.Logo != nil {
 					ui.Image(c, g.Logo).Size(heroLogoW, heroLogoH).Fit(ui.Contain).ObjectPosition(0, 1).Label(g.Name)
 				} else {
-					roleTitle.on(t, ui.Text(c, g.Name)).TextColor(white).MaxLines(1).Ellipsis("…")
+					roleTitle.on(t, ui.Text(c, g.Name)).TextColor(white).MaxLines(1).Ellipsis("…").Tooltip(g.Name)
 				}
-				roleSmall.on(t, ui.Text(c, a.headerLine(g))).TextColor(white.Alpha(0.8)).MaxLines(1).Ellipsis("…")
+				line := a.headerLine(g)
+				roleSmall.on(t, ui.Text(c, line)).TextColor(white.Alpha(0.8)).MaxLines(1).Ellipsis("…").Tooltip(line)
 			})
 			a.actions(c, t, g)
 		})
@@ -99,8 +137,8 @@ func (a *app) headerLine(g *game) string {
 // actions are the header's buttons, or the progress of the step that runs.
 func (a *app) actions(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
-	// The buttons wrap onto a second line where the window is too narrow for them beside the game's name.
-	ui.Row(c).Gap(gapControls).Wrap().Justify(ui.End).Shrink(1).Children(func() {
+	// Under the game, in a narrow window, the buttons wrap onto more lines where one is too narrow for them.
+	ui.Row(c).Gap(gapControls).Wrap().Shrink(1).Children(func() {
 		if a.busy {
 			ui.Spinner(c).Label(T("busy"))
 			if a.progress >= 0 {
@@ -175,51 +213,74 @@ func (a *app) why(g *game, k detect.Kind) string {
 func (a *app) notices(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
 	k := a.chosenKind(g)
+	// The bars are gathered first: with none, the page has no group for them, whose gaps would double the room
+	// between the header and the cards.
+	var bars []func()
+	bar := func(color ui.Color, icon *ui.SVG, s string, controls func()) {
+		bars = append(bars, func() { infoBar(c, t, color, icon, s, controls) })
+	}
+	if why := a.why(g, k); why != "" && !g.Scanning && !a.busy {
+		var retry func()
+		if a.relErr != "" {
+			retry = func() { ui.Button(c, T("retry")).OnClick(a.fetchRelease) }
+		}
+		bar(t.Danger, iconWarning, why, retry)
+	}
+	if latest, ok := a.outdated(r); ok {
+		bar(t.Warning, iconUpdate, T("update.available", latest, a.versionOf(r)), func() {
+			ui.Button(c, T("notes.whatsnew")).OnClick(func() { a.showNotes(a.rel) })
+		})
+	}
+	if len(r.AntiCheat) > 0 {
+		bar(t.Warning, iconWarning, T("anticheat.found", strings.Join(r.AntiCheat, ", ")), nil)
+	}
+	if !r.Supported() && r.Installed == detect.KindNone {
+		bar(t.Warning, iconWarning, T("dlssg.no"), nil)
+	}
+	switch plan := a.plan(r); {
+	case plan.uninstallsFirst():
+		latest := ""
+		if a.rel != nil {
+			latest = a.rel.Version
+		}
+		bar(apexRoyal, iconInfo, T("note.downgrade", latest, a.targetVersion()), nil)
+	case r.Installed == detect.KindFull && k == detect.KindFull && r.OptiINI:
+		bar(apexRoyal, iconInfo, T("note.ini.reset"), nil)
+	}
+	if r.NRRecord {
+		bar(apexRoyal, iconInfo, T("note.nrrecord"), nil)
+	}
+	if runtime.GOOS != "windows" {
+		bar(apexRoyal, iconInfo, T("note.proton"), nil)
+	}
+	if len(bars) == 0 {
+		return
+	}
 	ui.Column(c).Gap(gapCardRows).Children(func() {
-		if why := a.why(g, k); why != "" && !g.Scanning && !a.busy {
-			infoBar(c, t, t.Danger, iconWarning, why, func() {
-				if a.relErr != "" {
-					ui.Button(c, T("retry")).OnClick(a.fetchRelease)
-				}
-			})
-		}
-		if latest, ok := a.outdated(r); ok {
-			infoBar(c, t, t.Warning, iconUpdate, T("update.available", latest, a.versionOf(r)), func() {
-				ui.Button(c, T("notes.whatsnew")).OnClick(func() { a.showNotes(a.rel) })
-			})
-		}
-		if len(r.AntiCheat) > 0 {
-			infoBar(c, t, t.Warning, iconWarning, T("anticheat.found", strings.Join(r.AntiCheat, ", ")), nil)
-		}
-		if !r.Supported() && r.Installed == detect.KindNone {
-			infoBar(c, t, t.Warning, iconWarning, T("dlssg.no"), nil)
-		}
-		switch plan := a.plan(r); {
-		case plan.uninstallsFirst():
-			latest := ""
-			if a.rel != nil {
-				latest = a.rel.Version
-			}
-			infoBar(c, t, apexRoyal, iconInfo, T("note.downgrade", latest, a.targetVersion()), nil)
-		case r.Installed == detect.KindFull && k == detect.KindFull && r.OptiINI:
-			infoBar(c, t, apexRoyal, iconInfo, T("note.ini.reset"), nil)
-		}
-		if r.NRRecord {
-			infoBar(c, t, apexRoyal, iconInfo, T("note.nrrecord"), nil)
-		}
-		if runtime.GOOS != "windows" {
-			infoBar(c, t, apexRoyal, iconInfo, T("note.proton"), nil)
+		for _, b := range bars {
+			b()
 		}
 	})
 }
 
 // infoBar is a tinted bar with an icon in its color, a message, and controls at its end.
 func infoBar(c *ui.Context, t *ui.Theme, color ui.Color, icon *ui.SVG, s string, controls func()) {
-	ui.Row(c).Gap(gapGroup).Padding(padCardY, padCardX).Radius(cardRadius).Background(color.Alpha(0.10)).Border(1, color.Alpha(0.30)).AlignItems(ui.Start).Children(func() {
+	box := ui.Row(c).Padding(padCardY, padCardX).Radius(cardRadius).Background(color.Alpha(0.10)).Border(1, color.Alpha(0.30))
+	callout(c, box, func() {
 		ui.Icon(c, icon).Size(rowIcon, rowIcon).TextColor(color)
-		ui.Text(c, s).Grow(1).Shrink(1)
-		if controls != nil {
-			ui.Row(c).Gap(gapControls).Children(controls)
+		ui.Text(c, s)
+	}, controls)
+}
+
+// callout lays out box, an info bar, as Windows 11's InfoBar: its icon, message and actions on one line, centered
+// on it, with the actions at its end, where they fit; else the actions on a line of their own under the message.
+// message draws the icon, rowIcon wide, and the message, whose lines start beside the icon.
+func callout(c *ui.Context, box ui.Element, message func(), actions func()) {
+	// A wrapped line has one child, which Justify(SpaceBetween) puts at its start.
+	box.Wrap().Justify(ui.SpaceBetween).AlignItems(ui.Center).GapX(gapGroup).GapY(gapInCard).Children(func() {
+		ui.Row(c).Gap(gapGroup).AlignItems(ui.Start).Shrink(1).Children(message)
+		if actions != nil {
+			ui.Row(c).Gap(gapControls).PaddingStart(rowIcon + gapGroup).Children(actions)
 		}
 	})
 }
@@ -244,7 +305,7 @@ func (a *app) statusCards(c *ui.Context, t *ui.Theme, g *game) {
 		if r.Streamline {
 			where = "Streamline · " + where
 		}
-		settingsRow(c, t, iconFrames, T("dlss.title"), where, func() { statusValue(c, T("dlss.found"), t.Success) })
+		valueRow(c, t, iconFrames, T("dlss.title"), where, func() { statusValue(c, T("dlss.found"), t.Success) })
 	} else {
 		settingsRow(c, t, iconFrames, T("dlss.title"), T("dlss.none.detail"), func() { statusValue(c, T("dlss.none"), t.Warning) })
 	}
@@ -267,7 +328,7 @@ func (a *app) statusCards(c *ui.Context, t *ui.Theme, g *game) {
 		settingsRow(c, t, iconLayers, "OptiScaler", detail, func() { valueText(c, T("opti.none"), t.TextMuted) })
 	}
 
-	settingsRow(c, t, iconFolder, T("exe.folder"), r.ExeDir, func() {
+	valueRow(c, t, iconFolder, T("exe.folder"), r.ExeDir, func() {
 		ui.Button(c, T("change")).Disabled(a.busy || g.Scanning).OnClick(func() { a.changeExeDir(g) })
 		if g.ExeDir != "" {
 			ui.Button(c, T("auto.exe")).Disabled(a.busy || g.Scanning).Tooltip(T("auto.exe.tip")).OnClick(func() { a.resetExeDir(g) })
@@ -283,20 +344,38 @@ func (a *app) statusCards(c *ui.Context, t *ui.Theme, g *game) {
 }
 
 // settingsRow is a card of Windows 11's Settings: an icon, a title over its description, and what goes at its
-// end, a value or controls.
+// end, a value or controls. The title and the description wrap.
 func settingsRow(c *ui.Context, t *ui.Theme, icon *ui.SVG, title, description string, end func()) {
+	settingsCard(c, t, icon, end, func() {
+		ui.Text(c, title)
+		if description != "" {
+			roleSmall.on(t, ui.Text(c, description)).TextColor(t.TextMuted)
+		}
+	})
+}
+
+// valueRow is a settingsRow whose description is a value, as a path, or whose title is, as a date: each stays on
+// one line, a value cut in its middle where the row is too narrow, and shows in full on hover.
+func valueRow(c *ui.Context, t *ui.Theme, icon *ui.SVG, title, value string, end func()) {
+	settingsCard(c, t, icon, end, func() {
+		ui.Text(c, title).MaxLines(1).Ellipsis("…").Tooltip(title)
+		roleSmall.on(t, ui.Text(c, value)).TextColor(t.TextMuted).MaxLines(1).TruncateMiddle().Tooltip(value)
+	})
+}
+
+// settingsCard lays a card out as Windows 11's settings cards: what goes at its end goes under its text, past the
+// icon, where the card is too narrow for both on one line.
+func settingsCard(c *ui.Context, t *ui.Theme, icon *ui.SVG, end func(), text func()) {
 	ui.Row(c).Gap(gapGroup).Padding(padCardY, padCardX).MinHeight(settingsRowHeight).Radius(cardRadius).
 		Background(apexSurface).Border(1, apexLine).Children(func() {
 		ui.Icon(c, icon).Size(rowIcon, rowIcon).TextColor(t.TextMuted)
-		ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
-			ui.Text(c, title).MaxLines(1)
-			if description != "" {
-				roleSmall.on(t, ui.Text(c, description)).TextColor(t.TextMuted).MaxLines(1).TruncateMiddle().Tooltip(description)
+		// A wrapped line has one child, which Justify(SpaceBetween) puts at its start.
+		ui.Row(c).Grow(1).Shrink(1).Wrap().Justify(ui.SpaceBetween).AlignItems(ui.Center).GapX(gapGroup).GapY(gapInCard).Children(func() {
+			ui.Column(c).Shrink(1).Gap(gapLines).Children(text)
+			if end != nil {
+				ui.Row(c).Gap(gapControls).Children(end)
 			}
 		})
-		if end != nil {
-			ui.Row(c).Gap(gapControls).Children(end)
-		}
 	})
 }
 

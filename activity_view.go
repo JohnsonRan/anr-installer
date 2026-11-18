@@ -60,7 +60,7 @@ func (l *activityLog) layout() []logRow {
 func (a *app) activity(c *ui.Context, t *ui.Theme) {
 	ui.Divider(c)
 	ui.Column(c).Background(t.Text.Alpha(0.025)).Children(func() {
-		head := ui.Row(c.Key("activity")).Padding(padRowY, padPage).Gap(gapControls).AlignItems(ui.Center).Cursor(ui.CursorPointer).Label(T("log"))
+		head := ui.Row(c.Key("activity")).Padding(padRowY, padPageX).Gap(gapControls).AlignItems(ui.Center).Cursor(ui.CursorPointer).Label(T("log"))
 		if head.Clicked() {
 			a.logOpen = !a.logOpen
 		}
@@ -69,7 +69,8 @@ func (a *app) activity(c *ui.Context, t *ui.Theme) {
 			if a.logOpen {
 				arrow = "▾"
 			}
-			ui.Text(c, arrow).TextColor(t.TextMuted)
+			// In the column of the tasks' marks, so that the bar's label starts where their titles do.
+			ui.Text(c, arrow).TextColor(t.TextMuted).Width(logMark).TextAlign(ui.Center)
 			roleBodyStrong.on(t, ui.Text(c, T("log")))
 			a.activitySummary(c, t)
 			if a.logOpen && len(a.log.entries) > 0 {
@@ -165,7 +166,7 @@ func (a *app) activityPanel(c *ui.Context, t *ui.Theme) {
 	list := ui.List(c, &l.list, len(rows), func(i int) { a.logRow(c, t, rows[i]) })
 	list.Height(activityHeight).PaddingY(space1).Selectable().Children(func() {
 		if len(rows) == 0 {
-			roleSmall.on(t, ui.Text(c, T("log.empty"))).TextColor(t.TextMuted).Padding(padRowY, padPage)
+			roleSmall.on(t, ui.Text(c, T("log.empty"))).TextColor(t.TextMuted).Padding(padRowY, padPageX, padRowY, padLogText)
 		}
 	})
 }
@@ -175,20 +176,20 @@ func (a *app) logRow(c *ui.Context, t *ui.Theme, r logRow) {
 	tk := e.task
 	switch r.kind {
 	case rowTask:
-		ui.Row(c).Gap(gapControls).AlignItems(ui.Baseline).Padding(gapLogEntries, padPage, 0, padPage).Children(func() {
+		ui.Row(c).Gap(gapControls).AlignItems(ui.Baseline).Padding(gapLogEntries, padPageX, 0, padPageX).Children(func() {
 			taskMark(c, t, tk).AlignSelf(ui.Center)
 			roleBodyStrong.on(t, ui.Text(c, tk.title)).MaxLines(1).Ellipsis("…").Tooltip(tk.title).Grow(1).Shrink(1)
 			logTimes(c, t, tk.start, durationText(tk.took(c.Now())))
 		})
 	case rowStep:
 		s := tk.steps[r.i]
-		roleSmall.on(t, ui.Text(c, s.text)).TextColor(levelColor(t, s.level, t.Text)).Padding(0, padPage, 0, padLogText)
+		roleSmall.on(t, ui.Text(c, s.text)).TextColor(levelColor(t, s.level, t.Text)).Padding(0, padPageX, 0, padLogText)
 	case rowFold:
 		a.outputFold(c, t, tk)
 	case rowOutput:
-		roleSmall.on(t, ui.Text(c, tk.output[r.i])).Font("monospace").TextColor(t.TextMuted).Padding(0, padPage, 0, padLogText)
+		roleSmall.on(t, ui.Text(c, tk.output[r.i])).Font("monospace").TextColor(t.TextMuted).Padding(0, padPageX, 0, padLogText)
 	case rowNote:
-		ui.Row(c).Gap(gapControls).AlignItems(ui.Baseline).Padding(gapLogEntries, padPage, 0, padLogText).Children(func() {
+		ui.Row(c).Gap(gapControls).AlignItems(ui.Baseline).Padding(gapLogEntries, padPageX, 0, padLogText).Children(func() {
 			roleSmall.on(t, ui.Text(c, e.note.text)).TextColor(levelColor(t, e.note.level, t.Text)).Grow(1).Shrink(1)
 			logTimes(c, t, e.at, "")
 		})
@@ -218,7 +219,7 @@ func (a *app) outputFold(c *ui.Context, t *ui.Theme, tk *task) {
 	case n == 1:
 		label = T("log.output.show.one")
 	}
-	ui.Row(c).Padding(0, padPage, 0, padLogText).Children(func() {
+	ui.Row(c).Padding(0, padPageX, 0, padLogText).Children(func() {
 		b := ui.ButtonBase(c).Gap(gapLines).Label(label)
 		color := t.TextMuted
 		if b.Hovered() {

@@ -246,6 +246,9 @@ var messagesJa = map[string]string{
 
 	// Settings.
 	"settings.open":             "設定",
+	"settings.group.general":    "全般",
+	"settings.group.updates":    "更新",
+	"settings.group.storage":    "ストレージ",
 	"settings.language":         "言語",
 	"settings.language.detail":  "アプリに表示する言語",
 	"settings.language.system":  "システムの既定",

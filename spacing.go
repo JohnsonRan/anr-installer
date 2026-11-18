@@ -12,12 +12,14 @@ const (
 )
 
 const (
-	padPage     = space4          // around a page's content, and the title bar's ends
-	padPageX    = space6 + space2 // at the sides of a game's page
-	padPanel    = space3          // around the list of games
+	padPage     = space4          // around a page's content and the list of games, and the title bar's ends
+	padPageX    = space6 + space2 // at the sides of a page, and of the activity log under it
 	gapSection  = space4          // between the sections of a page
 	gapCards    = space3          // between cards side by side
 	gapCardRows = space1          // between the cards of one group, as Windows 11's Settings stacks them
+	// Above and below a group's heading: with it, a heading is taller than a button beside it, so that headings
+	// with and without one take the same room.
+	padHeadingY = space2
 
 	padCardY  = space3 // inside a card, a callout or a header, above and below
 	padCardX  = space4 // inside a card, a callout or a header, at the sides
@@ -33,8 +35,8 @@ const (
 	gapLabelField = space3 // between a field's label and the field
 	padEmpty      = space6 // around an empty state
 
-	gapLogEntries = space2                          // between the entries of the activity log
-	padLogText    = padPage + logMark + gapControls // where a task's title, steps and output start, past its mark
+	gapLogEntries = space2                           // between the entries of the activity log
+	padLogText    = padPageX + logMark + gapControls // where a task's title, steps and output start, past its mark
 )
 
 // Sizes that are not spacing but that spacing lines up with.

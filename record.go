@@ -65,13 +65,9 @@ func (a *app) recordSection(c *ui.Context, t *ui.Theme, g *game) {
 	r := g.Scan
 	recs := a.recordingsOf(g)
 	idle := !a.busy && !g.Scanning
-	// A row's description is one line; what the user has to read or do is said in an info bar, which wraps.
-	ui.Column(c).Gap(gapCardRows).Children(func() {
-		ui.Row(c).Gap(gapControls).Children(func() {
-			roleBodyStrong.on(t, ui.Text(c, T("rec.title"))).PaddingY(space1).Grow(1)
-			ui.Button(c, T("rec.refresh")).Tooltip(T("rec.refresh.tip")).OnClick(a.refreshRecord)
-		})
-
+	// A row describes what it is; what the user has to read or do is said in an info bar.
+	refresh := func() { ui.Button(c, T("rec.refresh")).Tooltip(T("rec.refresh.tip")).OnClick(a.refreshRecord) }
+	section(c, t, T("rec.title"), refresh, func() {
 		installed := g.Recorder
 		switch {
 		case installed && r.NRRecord:

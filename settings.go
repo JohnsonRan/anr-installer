@@ -91,11 +91,8 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 	s := a.settings
 	c.OnWindowShortcut(0, ui.KeyEscape, a.closeSettings)
 	ui.Column(c).Padding(padPage, padPageX).Gap(gapSection).Children(func() {
-		ui.Row(c).Gap(gapGroup).Children(func() {
-			ui.Button(c, T("back")).OnClick(a.closeSettings)
-			roleHeading.on(t, ui.Text(c, T("settings.open"))).MaxLines(1).Grow(1).Shrink(1)
-		})
-		ui.Column(c).Gap(gapCardRows).Children(func() {
+		pageHeader(c, t, a.closeSettings, T("settings.open"), "", nil)
+		section(c, t, T("settings.group.general"), nil, func() {
 			settingsRow(c, t, iconGlobe, T("settings.language"), T("settings.language.detail"), func() {
 				labels := []string{T("settings.language.system")}
 				for _, tag := range appLanguages {
@@ -118,18 +115,22 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 					a.setOpenAtLogin(s)
 				}
 			})
+		})
+		section(c, t, T("settings.group.updates"), nil, func() {
+			settingsRow(c, t, iconUpdate, T("settings.updates"), T("settings.updates.detail"), func() {
+				if ui.Switch(c, &a.autoCheck).Label(T("settings.updates")).Disabled(!mygo.Updater.Enabled()).Changed() {
+					updater.SetAutomaticChecks(a.autoCheck)
+				}
+			})
 			settingsRow(c, t, iconBell, T("settings.notify"), T("settings.notify.detail"), func() {
 				if ui.Switch(c, &s.notify).Label(T("settings.notify")).Changed() {
 					a.saved.ReleaseNotifyOff = !s.notify
 					a.saveSettings()
 				}
 			})
-			settingsRow(c, t, iconUpdate, T("settings.updates"), T("settings.updates.detail"), func() {
-				if ui.Switch(c, &a.autoCheck).Label(T("settings.updates")).Disabled(!mygo.Updater.Enabled()).Changed() {
-					updater.SetAutomaticChecks(a.autoCheck)
-				}
-			})
-			settingsRow(c, t, iconFolder, T("settings.folder"), paths.Config(), func() {
+		})
+		section(c, t, T("settings.group.storage"), nil, func() {
+			valueRow(c, t, iconFolder, T("settings.folder"), paths.Config(), func() {
 				ui.Button(c, T("open.folder")).OnClick(a.openDataFolder)
 			})
 			size := T("settings.cache.measuring")

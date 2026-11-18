@@ -246,6 +246,9 @@ var messagesZhHant = map[string]string{
 
 	// Settings.
 	"settings.open":             "設定",
+	"settings.group.general":    "一般",
+	"settings.group.updates":    "更新",
+	"settings.group.storage":    "儲存體",
 	"settings.language":         "語言",
 	"settings.language.detail":  "應用程式顯示的語言",
 	"settings.language.system":  "使用系統設定",

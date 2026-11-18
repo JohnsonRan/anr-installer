@@ -27,6 +27,8 @@
   folded under each task, and a task that fails unfolds it. **Copy log** copies the whole log as text. A failed
   background check for a new ANR FG version is logged as a warning.
 - Deleting a recording no longer leaves the window busy without deleting it.
+- In a narrow window, a game's buttons, a page's actions, an info bar's button and a card's controls go under
+  their text instead of cutting it off, and the filter of the game list shows its labels whole in every language.
 
 ## 0.2.0
 
