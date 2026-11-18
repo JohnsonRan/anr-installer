@@ -1,5 +1,5 @@
-// Package store keeps what the user told the installer: the game folders added by hand, and the .exe folders
-// chosen in place of the ones found.
+// Package store keeps what the user told the installer: the game folders added by hand, the .exe folders
+// chosen in place of the ones found, and the app's settings.
 package store
 
 import (
@@ -28,6 +28,8 @@ type Data struct {
 	// SeenRelease is the tag of the newest ANR FG release whose notes the window has opened by itself, so that it
 	// opens them once a release.
 	SeenRelease string `json:"seen_release,omitempty"`
+	// CloseToTray makes the window's close button hide the window to the tray; off, it quits the app.
+	CloseToTray bool `json:"close_to_tray,omitempty"`
 }
 
 // Path is the file the data is kept in.

@@ -134,6 +134,10 @@ type app struct {
 
 	rec recState      // nr-record: its package, the tools it needs and the recordings
 	cmp *compareState // the comparison page, shown in place of a game's page; nil: none
+
+	settings *settingsState // the settings page, shown in place of the others; nil: none
+	tray     *mygo.Tray     // the notification area icon, while closing the window hides it; nil: none
+	quitting bool           // a quit is under way, which closes the window whatever the setting
 }
 
 func newApp() *app {

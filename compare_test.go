@@ -71,7 +71,7 @@ func TestComparePageShowsStillsAndGoesBack(t *testing.T) {
 		tt.Frame()
 	}
 
-	if err := tt.Click(T("cmp.back")); err != nil {
+	if err := tt.Click(T("back")); err != nil {
 		t.Fatal(err)
 	}
 	if a.cmp != nil || !tt.HasText(T("rec.title")) {

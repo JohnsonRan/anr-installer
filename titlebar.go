@@ -34,8 +34,8 @@ func mustSVG(data []byte) *ui.SVG {
 const titleBarHeight = 52
 
 // titleBar draws the window's title bar in place of the system's: the logo, the title, the app's version, which
-// opens the About dialog, and the window buttons. Its empty parts drag the window, and a double click maximizes
-// it. The ANR FG releases and their errors are on the game page, by the install button.
+// opens the About dialog, the settings button and the window buttons. Its empty parts drag the window, and a
+// double click maximizes it. The ANR FG releases and their errors are on the game page, by the install button.
 func (a *app) titleBar(c *ui.Context, t *ui.Theme) {
 	bar := c.TitleBar() // zero while the view draws the buttons, as here
 	ui.Row(c).Height(titleBarHeight).Padding(0, bar.Right, 0, bar.Left+padPage).Gap(gapGroup).DragWindow().Children(func() {
@@ -47,24 +47,26 @@ func (a *app) titleBar(c *ui.Context, t *ui.Theme) {
 		if v := mygo.App.Version(); v != "" {
 			a.versionButton(c, t, "v"+v)
 		}
-		if a.win == nil { // tests: no window to drive
-			return
-		}
 		ui.Row(c).AlignSelf(ui.Stretch).Margin(0, 0, 0, space1).Children(func() {
-			a.windowButton(c, t, iconMin, "minimize", false, a.win.Minimize)
-			if a.win.IsMaximized() {
-				a.windowButton(c, t, iconRestore, "restore", false, a.win.Unmaximize).MaximizeButton()
-			} else {
-				a.windowButton(c, t, iconMax, "maximize", false, a.win.Maximize).MaximizeButton()
+			a.windowButton(c, t, iconGear, titleIcon, "settings.open", false, a.toggleSettings)
+			if a.win == nil { // tests: no window to drive
+				return
 			}
-			a.windowButton(c, t, iconClose, "close", true, a.win.Close)
+			a.windowButton(c, t, iconMin, captionIcon, "win.minimize", false, a.win.Minimize)
+			if a.win.IsMaximized() {
+				a.windowButton(c, t, iconRestore, captionIcon, "win.restore", false, a.win.Unmaximize).MaximizeButton()
+			} else {
+				a.windowButton(c, t, iconMax, captionIcon, "win.maximize", false, a.win.Maximize).MaximizeButton()
+			}
+			a.windowButton(c, t, iconClose, captionIcon, "win.close", true, a.win.Close)
 		})
 	})
 }
 
 // windowButton is a caption button as Windows 11 draws them: flat, 46 DIPs wide, the close button red on hover.
-func (a *app) windowButton(c *ui.Context, t *ui.Theme, icon *ui.SVG, key string, danger bool, action func()) ui.Element {
-	b := ui.ButtonBase(c.Key(key)).Width(46).AlignSelf(ui.Stretch).Center().Label(T("win." + key)).Tooltip(T("win." + key))
+// key is the text of its label and tooltip.
+func (a *app) windowButton(c *ui.Context, t *ui.Theme, icon *ui.SVG, size float32, key string, danger bool, action func()) ui.Element {
+	b := ui.ButtonBase(c.Key(key)).Width(46).AlignSelf(ui.Stretch).Center().Label(T(key)).Tooltip(T(key))
 	fg := t.Text
 	switch {
 	case danger && b.Pressed():
@@ -79,7 +81,7 @@ func (a *app) windowButton(c *ui.Context, t *ui.Theme, icon *ui.SVG, key string,
 		b.Background(t.Text.Alpha(0.07))
 	}
 	b.OnClick(action).Children(func() {
-		ui.Icon(c, icon).Size(10, 10).TextColor(fg)
+		ui.Icon(c, icon).Size(size, size).TextColor(fg)
 	})
 	return b
 }

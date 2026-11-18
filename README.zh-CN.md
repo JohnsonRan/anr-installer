@@ -31,7 +31,7 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 ```
 
 便携版 `anr-fg-installer-<版本>-windows-amd64-portable.zip` 无需安装：把其中的 `ANR FG Installer` 文件夹解压到可写入的位置，
-运行 `ANR FG Installer.exe` 即可。它会把设置和下载的文件保存在这个文件夹里。
+运行 `ANR FG Installer.exe` 即可。它会把设置和下载的文件保存在这个文件夹里，但“设置”中选择的语言除外。
 
 程序和安装程序都没有代码签名，首次运行时 Windows SmartScreen 可能会发出警告：选择“更多信息”，再选择“仍要运行”。
 
@@ -53,6 +53,10 @@ irm https://github.com/JohnsonRan/anr-installer/releases/latest/download/install
 ANR FG 发布新版本、而你有游戏装的是旧版本时，安装器会显示一次发行说明。选择其中的“全部更新”，会按顺序升级这些
 游戏，各自保持原来的安装包类型。带反作弊的游戏不会一并更新，请在各自的页面中单独升级。列表会标出可升级的游戏，
 列表上方的提示条可以只显示这些游戏。
+
+选择标题栏上的齿轮按钮可以打开“设置”。“语言”默认跟随系统，也可以选择 English 或简体中文。“关闭按钮”默认退出应用，
+也可以改为把窗口最小化到托盘：点击托盘图标可以重新打开窗口，图标的菜单可以退出应用。应用已在运行时再次启动它，
+会切换到已打开的窗口。
 
 ## 录制和对比
 

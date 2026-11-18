@@ -29,7 +29,16 @@ func (a *app) view(c *ui.Context) {
 				if a.cmp != nil && a.cmp.game != g {
 					a.closeCompare() // another game was chosen
 				}
-				if a.cmp != nil {
+				if s := a.settings; s != nil && s.game != g {
+					if s.game == nil {
+						s.game = g // the first game found, chosen by itself: not the user's choice
+					} else {
+						a.closeSettings() // another game was chosen
+					}
+				}
+				if a.settings != nil {
+					ui.Scroll(c.Key(a.settings)).Grow(1).Children(func() { a.settingsPage(c, t) })
+				} else if a.cmp != nil {
 					ui.Scroll(c.Key(a.cmp)).Grow(1).Children(func() { a.comparePage(c, t) })
 				} else if g == nil {
 					a.empty(c, t)

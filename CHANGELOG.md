@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Adds a settings page, from the gear button in the title bar. The language follows the system by default, or
+  is English or Simplified Chinese; the update window follows it too. The close button quits the app by
+  default, or hides the window to the notification area, whose icon brings it back.
+- Starting the app again while it runs brings its window forward instead of opening a second one.
+
 ## 0.2.0
 
 - Records and compares frame generation with nr-record: installs it into a game, lists the recordings, and
