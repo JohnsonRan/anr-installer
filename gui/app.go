@@ -73,7 +73,7 @@ func (a *app) pictures(g *game, r *detect.Result) {
 		bm, _ := ui.DecodeBitmap(b)
 		return bm
 	}
-	a.win.Update(func() { g.Icon, g.Hero, g.Logo = decode(icon), decode(hero), decode(logo) })
+	a.update(func() { g.Icon, g.Hero, g.Logo = decode(icon), decode(hero), decode(logo) })
 }
 
 const (
@@ -246,7 +246,7 @@ func (a *app) rescan(g *game) {
 	dir, exeDir, manual := g.Dir, g.ExeDir, g.Manual
 	go func() {
 		r, name := scanGame(dir, exeDir, manual)
-		a.win.Update(func() { a.scanned(g, r, name) })
+		a.update(func() { a.scanned(g, r, name) })
 		a.pictures(g, r)
 	}()
 }

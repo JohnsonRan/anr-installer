@@ -315,7 +315,7 @@ func (a *app) run(g *game, action string, steps []step, batch bool) {
 	installedVersion := a.versionOf(scan) // the version the user's OptiScaler.ini came with, or ""
 	base := a.releaseOf(installedVersion)
 	r := &reporter{a: a, tk: a.begin(gameTask(g, action)), opened: true}
-	update := func(fn func()) { a.win.Update(fn) }
+	update := a.update
 	go func() {
 		err := func() error {
 			ctx := context.Background()

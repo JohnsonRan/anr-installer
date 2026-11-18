@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -201,5 +202,77 @@ func TestBackupsHandOverOptiScalerINI(t *testing.T) {
 	}
 	if opti, _ := backups(r, []step{{action: pkg.Uninstall, kind: detect.KindFull}}, say); opti != nil {
 		t.Error("an uninstall installs no new file to merge into")
+	}
+}
+
+// TestRealKeepSettings upgrades a scratch game from the older package to the newest with the real packages
+// (release tier: ANR_PKG_DIR and ANR_OLD_PKG), with a setting the user changed in between, and checks that the
+// upgrade keeps it.
+func TestRealKeepSettings(t *testing.T) {
+	dir, oldZip := os.Getenv("ANR_PKG_DIR"), os.Getenv("ANR_OLD_PKG")
+	if dir == "" || oldZip == "" || runtime.GOOS != "windows" {
+		t.Skip("ANR_PKG_DIR or ANR_OLD_PKG not set")
+	}
+	full, _ := filepath.Glob(filepath.Join(dir, "anr-fg-*-full.zip"))
+	if len(full) != 1 {
+		t.Fatalf("packages in %s: %v", dir, full)
+	}
+	a := testApp(t)
+	m := onMainThread(a)
+	oldInfo, err := pkg.ReadInfo(oldZip)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The older release, whose package the download cache holds: the base of the merge.
+	name := filepath.Base(oldZip)
+	data, err := os.ReadFile(oldZip)
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.MkdirAll(pkg.DownloadsDir(), 0o755)
+	if err := os.WriteFile(filepath.Join(pkg.DownloadsDir(), name), data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if rel := a.releaseOf(oldInfo.Version); rel != nil {
+		rel.Assets = map[string]pkg.Asset{name: {Name: name}}
+	} else {
+		a.releases = append(a.releases, &pkg.Release{Tag: "FG-" + oldInfo.Version, Version: oldInfo.Version, Assets: map[string]pkg.Asset{name: {Name: name}}})
+	}
+	a.providers[oldInfo.ProviderSHA256] = oldInfo.Version
+
+	folder := t.TempDir()
+	os.WriteFile(filepath.Join(folder, "game.exe"), []byte("MZ dxgi.dll"), 0o644)
+	os.WriteFile(filepath.Join(folder, "nvngx_dlssg.dll"), []byte("x"), 0o644)
+	oldDir, err := pkg.Extract(oldZip)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := pkg.Run(context.Background(), oldDir, pkg.Install, folder, func(string) {}); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(folder, "OptiScaler.ini")
+	ini, err := os.ReadFile(path)
+	if err != nil || !strings.Contains(string(ini), "\nShortcutKey=auto") {
+		t.Fatalf("the older package's OptiScaler.ini has no ShortcutKey=auto: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(strings.Replace(string(ini), "\nShortcutKey=auto", "\nShortcutKey=0x2D", 1)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	g := &game{Name: "Scratch", Dir: folder, Scan: detect.Scan(folder, "")}
+	a.games = []*game{g}
+	a.run(g, "upgrade", []step{{pkg.Install, detect.KindFull, nil, full[0]}}, false)
+	m.runFor(t, time.Minute, func() bool {
+		if a.merge != nil {
+			t.Fatalf("the upgrade asks about %+v:\n%s", a.merge.result, a.log.Text())
+		}
+		return !a.busy
+	})
+	got, _ := os.ReadFile(path)
+	if !strings.Contains(string(got), "\nShortcutKey=0x2D") || !strings.Contains(string(got), "\nFGNvngxReplacement=Apex Neural Rendering FG") {
+		t.Errorf("the upgrade should keep ShortcutKey and load ANR FG:\n%s", a.log.Text())
+	}
+	if !strings.Contains(a.log.Text(), i18n.T("merge.log.kept", "ShortcutKey")) || a.merge != nil {
+		t.Errorf("the log should say what was kept, without asking:\n%s", a.log.Text())
 	}
 }

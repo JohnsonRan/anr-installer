@@ -66,7 +66,7 @@ if [ -z "${ANR_PKG_DIR:-}" ] || [ -z "${ANR_OLD_PKG:-}" ]; then
 fi
 # Only the summary lines are shown, but the gate takes the tests' own status: a pipe into grep would hide a
 # failure.
-real=$(CGO_ENABLED=0 go test -count=1 -run 'Real' -v ./internal/pkg ./internal/record 2>&1) && status=0 || status=$?
+real=$(CGO_ENABLED=0 go test -count=1 -run 'Real' -v ./internal/pkg ./internal/record ./gui 2>&1) && status=0 || status=$?
 printf '%s\n' "$real" | grep -E '^(--- |ok|FAIL|PASS)' || true
 if [ "$status" -ne 0 ]; then
 	printf '%s\n' "$real" >&2
