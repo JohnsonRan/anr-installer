@@ -13,6 +13,27 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
+// The window's sizes in DIPs: the minimum, and the size its pages are laid out for, which it opens at the first
+// time when the display has room; later launches restore the size the user left it at.
+const (
+	minWidth, minHeight       = 760, 520
+	preferWidth, preferHeight = 1280, 900
+	workAreaShare             = 0.9 // of the display's work area the first window may take
+)
+
+// defaultSize is the window's size at its first launch on a display whose work area is work: the size the pages
+// are laid out for, made smaller to leave room around it on the display, never below the minimum. MyGo centres a
+// new window without fitting it to the display, which put the title bar out of reach on a small one.
+func defaultSize(work mygo.Rectangle) (width, height int) {
+	fit := func(prefer, room, least int) int {
+		if room <= 0 { // no display reported
+			return prefer
+		}
+		return max(min(prefer, int(float64(room)*workAreaShare)), least)
+	}
+	return fit(preferWidth, work.Width, minWidth), fit(preferHeight, work.Height, minHeight)
+}
+
 func main() {
 	// A second launch brings the running window forward (OnSecondInstance) and exits.
 	if !mygo.App.RequestSingleInstanceLock() {
@@ -29,12 +50,13 @@ func main() {
 		// Started as the user signs in, the window stays out of sight: hidden behind the tray icon when there is
 		// one (below), else minimized.
 		atLogin := mygo.App.WasOpenedAtLogin()
+		width, height := defaultSize(mygo.Screen.PrimaryDisplay().WorkArea)
 		a.win = mygo.NewWindow(mygo.WindowOptions{
 			Title:             T("title"),
-			Width:             1040,
-			Height:            760,
-			MinWidth:          760,
-			MinHeight:         520,
+			Width:             width,
+			Height:            height,
+			MinWidth:          minWidth,
+			MinHeight:         minHeight,
 			StateKey:          "main",
 			TitleBarStyle:     mygo.TitleBarHidden,
 			HideWindowButtons: true,
