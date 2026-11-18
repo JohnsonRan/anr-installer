@@ -236,6 +236,28 @@ func TestQuitDialog(t *testing.T) {
 	}
 }
 
+// Escape answers a dialog over a comparison or the settings, and leaves the page beneath open.
+func TestEscapeAnswersTheDialogFirst(t *testing.T) {
+	a, s := comparePageApp(t)
+	s.mode = cmpStills // the test has no videos to show
+	tt := ui.NewTester(a.view, 1040, 900)
+	a.aboutOpen = true
+	tt.Frame()
+	tt.Key(0, ui.KeyEscape)
+	if a.aboutOpen || a.cmp != s {
+		t.Errorf("Escape over the comparison: About open %v, comparison open %v", a.aboutOpen, a.cmp == s)
+	}
+	if err := tt.Click(T("settings.open")); err != nil {
+		t.Fatal(err)
+	}
+	a.quitAsk = true
+	tt.Frame()
+	tt.Key(0, ui.KeyEscape)
+	if a.quitAsk || a.settings == nil {
+		t.Errorf("Escape over the settings: question open %v, settings open %v", a.quitAsk, a.settings != nil)
+	}
+}
+
 func TestCloseHides(t *testing.T) {
 	for _, c := range []struct {
 		toTray, hasTray, quitting, want bool
