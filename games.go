@@ -33,6 +33,7 @@ func (a *app) scanned(g *game, r *detect.Result, name string) {
 		g.Name = name
 		a.persist()
 	}
+	a.notifyRelease()
 }
 
 // persist saves the games added by hand and the .exe folders chosen for Steam games.

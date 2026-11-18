@@ -19,6 +19,7 @@ type settingsState struct {
 	locale string // the language chosen, as mygo.App.ChosenLocale reported it when the page opened
 	// The selects' choices, as their labels, kept across frames: a select writes its choice after the frame.
 	langSel, closeSel string
+	notify            bool  // the release notification switch, which writes it between frames
 	cacheSize         int64 // bytes of the downloaded packages, -1 while they are counted
 }
 
@@ -28,7 +29,7 @@ func (a *app) toggleSettings() {
 		a.closeSettings()
 		return
 	}
-	s := &settingsState{game: a.selected()}
+	s := &settingsState{game: a.selected(), notify: !a.saved.ReleaseNotifyOff}
 	if a.win != nil { // tests: no MyGo app runs
 		s.locale = mygo.App.ChosenLocale()
 	}
@@ -59,10 +60,18 @@ func (a *app) chooseLocale(tag string) {
 	}
 }
 
+// saveSettings keeps the settings in a.saved. Unlike persist, it leaves the games kept as they are: before the
+// Steam libraries are read, persist would forget the .exe folders chosen for Steam games.
+func (a *app) saveSettings() {
+	if err := a.saved.Save(); err != nil {
+		a.logf("%s", T("save.failed", err.Error()))
+	}
+}
+
 // setCloseToTray keeps what the close button does, and adds or removes the tray icon to match.
 func (a *app) setCloseToTray(on bool) {
 	a.saved.CloseToTray = on
-	a.persist()
+	a.saveSettings()
 	a.syncTray()
 }
 
@@ -88,6 +97,12 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 					cur = 1
 				}
 				choose(c.Key("close"), &s.closeSel, labels, cur, T("settings.close"), func(i int) { a.setCloseToTray(i == 1) })
+			})
+			settingsRow(c, t, iconBell, T("settings.notify"), T("settings.notify.detail"), func() {
+				if ui.Switch(c, &s.notify).Label(T("settings.notify")).Changed() {
+					a.saved.ReleaseNotifyOff = !s.notify
+					a.saveSettings()
+				}
 			})
 			settingsRow(c, t, iconUpdate, T("settings.updates"), T("settings.updates.detail"), func() {
 				if ui.Switch(c, &a.autoCheck).Label(T("settings.updates")).Disabled(!mygo.Updater.Enabled()).Changed() {

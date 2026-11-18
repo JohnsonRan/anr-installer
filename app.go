@@ -168,6 +168,7 @@ func newApp() *app {
 func (a *app) start() {
 	a.scanSteam()
 	a.fetchRelease()
+	a.watchReleases()
 	a.refreshRecord()
 }
 
@@ -198,6 +199,7 @@ func (a *app) scanSteam() {
 			}
 			a.games = games
 			a.scanAll()
+			a.notifyRelease() // with no game to scan, nothing else calls it
 		})
 	}()
 }

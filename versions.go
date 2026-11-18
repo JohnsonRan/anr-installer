@@ -24,8 +24,7 @@ func (a *app) fetchRelease() {
 				a.relErr = err.Error()
 				return
 			}
-			a.setReleases(rels)
-			a.probe(rels)
+			a.releasesFound(rels)
 		})
 	}()
 }
@@ -431,8 +430,6 @@ func (a *app) autoNotes() {
 		return
 	}
 	a.saved.SeenRelease = a.rel.Tag
-	if err := a.saved.Save(); err != nil {
-		a.logf("%s", T("save.failed", err.Error()))
-	}
+	a.saveSettings()
 	a.showNotes(a.rel)
 }
