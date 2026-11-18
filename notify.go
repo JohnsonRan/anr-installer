@@ -13,13 +13,18 @@ import (
 const releaseCheckEvery = 6 * time.Hour
 
 // watchReleases looks for a new ANR FG release every releaseCheckEvery, quietly: a check that fails keeps the
-// releases loaded, sets no error and shows no spinner.
+// releases loaded, sets no error and shows no spinner, and adds a warning to the activity log alone.
 func (a *app) watchReleases() {
 	go func() {
 		for range time.Tick(releaseCheckEvery) {
-			if rels, err := pkg.Releases(context.Background()); err == nil {
-				a.win.Update(func() { a.releasesFound(rels) })
-			}
+			rels, err := pkg.Releases(context.Background())
+			a.win.Update(func() {
+				if err != nil {
+					a.note(levelWarning, T("notify.check.failed", err.Error()))
+					return
+				}
+				a.releasesFound(rels)
+			})
 		}
 	}()
 }
@@ -88,7 +93,7 @@ func (a *app) showReleaseNotice(rel *pkg.Release) {
 	// Show waits for the system, which on some platforms asks the user first: off the main thread.
 	go func() {
 		if err := note.Show(); err != nil {
-			a.win.Update(func() { a.logf("%s", T("notify.failed", err.Error())) })
+			a.win.Update(func() { a.note(levelWarning, T("notify.failed", err.Error())) })
 		}
 	}()
 }

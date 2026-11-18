@@ -49,7 +49,7 @@ func (a *app) persist() {
 	}
 	a.saved.Games, a.saved.ExeDirs = games, exeDirs
 	if err := a.saved.Save(); err != nil {
-		a.logf("%s", T("save.failed", err.Error()))
+		a.note(levelError, T("save.failed", err.Error()))
 	}
 }
 
@@ -65,7 +65,7 @@ func (a *app) removeGame(g *game) {
 	a.games = slices.Delete(a.games, i, i+1)
 	a.row = -1
 	a.persist()
-	a.logf("%s", T("removed", g.Name, g.Dir))
+	a.note(levelInfo, T("removed", g.Name, g.Dir))
 }
 
 // renamed records a name the user gave a game added by hand.
@@ -108,7 +108,7 @@ func (a *app) confirmInstall(g *game, k detect.Kind) {
 			return
 		}
 		a.win.Update(func() {
-			a.logf("%s", T("anticheat.accepted", names))
+			a.note(levelWarning, T("anticheat.accepted", names))
 			a.install(g, k)
 		})
 	}()
@@ -125,7 +125,7 @@ func (a *app) play(g *game) {
 	cmd.Dir = filepath.Dir(g.Scan.Exe)
 	if err := cmd.Start(); err != nil {
 		a.logOpen = true
-		a.logf("%s", T("failed", err.Error()))
+		a.note(levelError, T("failed", err.Error()))
 		return
 	}
 	cmd.Process.Release()

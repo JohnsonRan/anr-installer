@@ -189,50 +189,6 @@ func (a *app) empty(c *ui.Context, t *ui.Theme) {
 	})
 }
 
-// --- activity ---
-
-// activity is the log, folded to its last line until opened; it opens as a run starts.
-func (a *app) activity(c *ui.Context, t *ui.Theme) {
-	ui.Divider(c)
-	ui.Column(c).Background(t.Text.Alpha(0.025)).Children(func() {
-		head := ui.Row(c.Key("activity")).Padding(padRowY, padPage).Gap(gapControls).Cursor(ui.CursorPointer).Label(T("log"))
-		if head.Clicked() {
-			a.logOpen = !a.logOpen
-		}
-		head.Children(func() {
-			arrow := "▸"
-			if a.logOpen {
-				arrow = "▾"
-			}
-			ui.Text(c, arrow).TextColor(t.TextMuted)
-			roleBodyStrong.on(t, ui.Text(c, T("log")))
-			last := a.status
-			if last == "" && len(a.logLines) > 0 {
-				last = a.logLines[len(a.logLines)-1]
-			}
-			roleSmall.on(t, ui.Text(c, strings.TrimSpace(last))).TextColor(t.TextMuted).MaxLines(1).Ellipsis("…").Grow(1).Shrink(1)
-			switch {
-			case a.busy && a.progress >= 0:
-				ui.Progress(c, a.progress).Width(160).Label(a.status)
-			case a.busy:
-				ui.Spinner(c).Label(T("busy"))
-			}
-			if a.logOpen && len(a.logLines) > 0 && !a.busy {
-				ui.Button(c, T("clear")).OnClick(func() { a.logLines, a.status = nil, "" })
-			}
-		})
-		if a.logOpen {
-			ui.List(c, &a.logList, len(a.logLines), func(i int) {
-				roleSmall.on(t, ui.Text(c, a.logLines[i])).Font("monospace").Selectable().Padding(0, padPage)
-			}).Height(180).PaddingY(space1).Children(func() {
-				if len(a.logLines) == 0 {
-					roleSmall.on(t, ui.Text(c, T("log.empty"))).TextColor(t.TextMuted).Padding(padRowY, padPage)
-				}
-			})
-		}
-	})
-}
-
 // updatesBar tells how many games run an older ANR FG than the newest release, and shows them alone, or all
 // games again, when clicked.
 func (a *app) updatesBar(c *ui.Context, t *ui.Theme) {

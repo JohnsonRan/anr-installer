@@ -59,17 +59,17 @@ func (a *app) exportStills(s *compareState) {
 	shown, cmp := s.frame(), *s.cmp
 	real := shown.Real
 	s.stillErr = ""
-	a.recordWork(s.game, func(ctx context.Context, say func(string, ...any), tools func() (string, error)) error {
+	a.recordWork(s.game, gameTask(s.game, T("cmp.still.make", real)), func(ctx context.Context, r *reporter, tools func() (string, error)) error {
 		dir, err := tools()
 		if err != nil {
 			return err
 		}
 		cmp.Tools = dir
-		stills, err := cmp.Stills(ctx, real, func(label string) { say("%s", T("cmp.still.running", label)) }, a.logLine)
+		stills, err := cmp.Stills(ctx, real, func(label string) { r.say("%s", T("cmp.still.running", label)) }, r.out)
 		if err != nil {
 			return err
 		}
-		say("%s", T("cmp.still.done", len(stills), filepath.Dir(stills[0].A)))
+		r.say("%s", T("cmp.still.done", len(stills), filepath.Dir(stills[0].A)))
 		a.win.Update(func() {
 			if a.cmp != s {
 				return // the page was left meanwhile

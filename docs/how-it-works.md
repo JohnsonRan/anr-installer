@@ -104,7 +104,8 @@ every package again, and so do the comparisons.
 ## Running in the background
 
 - **New releases**: the release list is read at launch and every 6 hours after. A check every 6 hours that fails
-  keeps the list already read and shows no error. When a check finds a newest release other than
+  keeps the list already read and adds a warning to the activity log, but shows no error on a game's page and no
+  spinner. When a check finds a newest release other than
   `notified_release`, a Windows notification tells of it while the window is hidden or minimized, unless
   `release_notify_off` is set; the release is recorded either way, once the games are scanned. In the window, its notes open instead (`seen_release`). Notifications are notification-area
   balloons, which Windows 10 and later show as toasts.

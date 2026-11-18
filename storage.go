@@ -26,7 +26,7 @@ func (a *app) openDataFolder() {
 		err = mygo.Shell.OpenPath(dir)
 	}
 	if err != nil {
-		a.logf("%s", T("failed", err.Error()))
+		a.note(levelError, T("failed", err.Error()))
 	}
 }
 
@@ -51,15 +51,18 @@ func (a *app) deleteDownloads() {
 	}
 	a.busy, a.progress = true, -1
 	s := a.settings
+	tk := a.begin(T("settings.cache.delete"))
 	go func() {
 		freed, err := pkg.RemoveDownloads()
 		a.win.Update(func() {
 			a.busy, a.progress = false, -2
-			a.status = T("settings.cache.deleted", sizeText(freed))
+			fail := ""
 			if err != nil {
-				a.status = T("settings.cache.failed", err.Error())
+				fail = T("settings.cache.failed", err.Error())
+			} else {
+				tk.step(levelInfo, T("settings.cache.deleted", sizeText(freed)))
 			}
-			a.logf("%s", a.status)
+			a.end(tk, fail)
 			a.measureCache(s)
 		})
 	}()

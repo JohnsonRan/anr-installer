@@ -60,7 +60,7 @@ func (a *app) probe(rels []*pkg.Release) {
 		a.win.Update(func() {
 			a.probing = false
 			if err != nil {
-				a.logf("%s", T("probe.failed", err.Error()))
+				a.note(levelWarning, T("probe.failed", err.Error()))
 			}
 		})
 	}()
@@ -228,11 +228,11 @@ func (a *app) install(g *game, k detect.Kind) {
 		steps = append(steps, a.uninstallStep(g.Scan.Installed))
 	}
 	steps = append(steps, a.installStep(k))
-	a.run(g, steps)
+	a.run(g, a.planLabel(p), steps)
 }
 
 func (a *app) uninstall(g *game) {
-	a.run(g, []step{a.uninstallStep(g.Scan.Installed)})
+	a.run(g, T("uninstall"), []step{a.uninstallStep(g.Scan.Installed)})
 }
 
 // backups copies what the steps would lose: OptiScaler.ini, which the full package replaces or its uninstaller
@@ -265,26 +265,21 @@ func backups(r *detect.Result, steps []step, say func(string, ...any)) error {
 	return nil
 }
 
-// run runs the steps for g in the background, one after the other, stopping at the first failure.
-func (a *app) run(g *game, steps []step) {
+// run runs the steps for g in the background, one after the other, stopping at the first failure, as the task
+// named action in the log.
+func (a *app) run(g *game, action string, steps []step) {
 	if a.busy || g.Scan == nil || len(steps) == 0 {
 		return
 	}
 	a.busy, a.progress, a.logOpen = true, -1, true
 	scan := g.Scan
 	gameDir := scan.ExeDir
-	a.logf("── %s", g.Name)
-	a.logf("%s", gameDir)
-
+	r := &reporter{a: a, tk: a.begin(gameTask(g, action)), opened: true}
 	update := func(fn func()) { a.win.Update(fn) }
-	say := func(format string, args ...any) {
-		line := fmt.Sprintf(format, args...)
-		update(func() { a.status = line; a.logLines = append(a.logLines, line) })
-	}
 	go func() {
 		err := func() error {
 			ctx := context.Background()
-			if err := backups(scan, steps, say); err != nil {
+			if err := backups(scan, steps, r.say); err != nil {
 				return err
 			}
 			var installed string
@@ -305,7 +300,7 @@ func (a *app) run(g *game, steps []step) {
 						return err
 					}
 					zipPath = p
-					say("%s ✓ SHA-256", name)
+					r.say("%s ✓ SHA-256", name)
 				}
 				update(func() { a.progress = -1 })
 				info, err := pkg.ReadInfo(zipPath)
@@ -320,10 +315,8 @@ func (a *app) run(g *game, steps []step) {
 				if err != nil {
 					return err
 				}
-				say("%s", T("running."+string(s.action), info.Version, s.kind))
-				if err := pkg.Run(ctx, dir, s.action, gameDir, func(line string) {
-					update(func() { a.logLines = append(a.logLines, "  "+line) })
-				}); err != nil {
+				r.say("%s", T("running."+string(s.action), info.Version, s.kind))
+				if err := pkg.Run(ctx, dir, s.action, gameDir, r.out); err != nil {
 					return err
 				}
 				if s.action == pkg.Install {
@@ -331,29 +324,22 @@ func (a *app) run(g *game, steps []step) {
 				}
 			}
 			if installed != "" {
-				say("%s", T("done.install", installed, gameDir))
+				r.say("%s", T("done.install", installed, gameDir))
 				if scan.NRRecord {
-					say("%s", T("warn.nrrecord"))
+					r.warn(T("warn.nrrecord"))
 				}
 			} else {
-				say("%s", T("done.uninstall", gameDir))
+				r.say("%s", T("done.uninstall", gameDir))
 			}
 			return nil
 		}()
 		update(func() {
 			a.busy, a.progress = false, -2
-			if err != nil {
-				a.status = T("failed", err.Error())
-				a.logLines = append(a.logLines, a.status)
-			}
+			a.end(r.tk, failure(err))
 			a.rescan(g)
 			a.next()
 		})
 	}()
-}
-
-func (a *app) logf(format string, args ...any) {
-	a.logLines = append(a.logLines, fmt.Sprintf(format, args...))
 }
 
 // outdated returns the newest version when the version of ANR FG installed in r is known and older than it.
@@ -404,7 +390,7 @@ func (a *app) upgradeAll() {
 	if len(games) == 0 || a.busy {
 		return
 	}
-	a.logf("%s", T("queue.start", len(games), a.rel.Version))
+	a.note(levelInfo, T("queue.start", len(games), a.rel.Version))
 	a.queue = games
 	a.next()
 }
@@ -417,7 +403,7 @@ func (a *app) next() {
 		if _, ok := a.outdated(g.Scan); !ok || a.rel == nil {
 			continue
 		}
-		a.run(g, []step{{pkg.Install, g.Scan.Installed, a.rel, ""}})
+		a.run(g, T("upgrade", a.rel.Version), []step{{pkg.Install, g.Scan.Installed, a.rel, ""}})
 	}
 }
 

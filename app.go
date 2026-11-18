@@ -127,10 +127,9 @@ type app struct {
 	providers map[string]string
 
 	busy     bool
-	progress float64 // -1 unknown, 0..1, or -2 none
-	status   string
-	logLines []string
-	logList  ui.ListState
+	progress float64     // -1 unknown, 0..1, or -2 none
+	status   string      // what the task in progress does now
+	log      activityLog // the tasks and notes the activity panel shows
 
 	rec recState      // nr-record: its package, the tools it needs and the recordings
 	cmp *compareState // the comparison page, shown in place of a game's page; nil: none
@@ -152,7 +151,6 @@ func newApp() *app {
 		return i
 	}
 	a.list.Selected = &a.row
-	a.logList.FollowEnd = true
 	a.saved = store.Load()
 	for _, s := range a.saved.Games {
 		a.games = append(a.games, &game{Name: s.Name, Dir: s.Dir, ExeDir: s.ExeDir, Manual: true, Named: s.Named})

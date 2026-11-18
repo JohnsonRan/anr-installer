@@ -22,6 +22,11 @@
   The app looks for one at launch and every 6 hours. It can be turned off in Settings.
 - **Start with Windows** in Settings starts the app when the user signs in: hidden in the notification area when
   the close button minimizes to the tray, else minimized.
+- The activity log lists each install, uninstall, upgrade, replay, export and deletion as a task, with its start
+  time, its duration and whether it succeeded or failed, and its steps under it. What the programs printed is
+  folded under each task, and a task that fails unfolds it. **Copy log** copies the whole log as text. A failed
+  background check for a new ANR FG version is logged as a warning.
+- Deleting a recording no longer leaves the window busy without deleting it.
 
 ## 0.2.0
 

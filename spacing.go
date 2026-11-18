@@ -32,6 +32,9 @@ const (
 
 	gapLabelField = space3 // between a field's label and the field
 	padEmpty      = space6 // around an empty state
+
+	gapLogEntries = space2                          // between the entries of the activity log
+	padLogText    = padPage + logMark + gapControls // where a task's title, steps and output start, past its mark
 )
 
 // Sizes that are not spacing but that spacing lines up with.
@@ -58,4 +61,10 @@ const (
 	navPillH          = 16
 	dividerLine       = 2  // the divider between the two pictures of a comparison
 	dividerHandle     = 16 // the grip on it
+	logMark           = 16 // a task's state in the activity log: a spinner, a check or a cross
+	logTimeW          = 40 // the activity log's column of start times, "15:04"
+	logTookW          = 80 // and of durations, "59 min 59 s" or "23 小时 59 分"
+	// The open activity panel: about 10 lines of steps and output, or 8 with two tasks' headers. At the minimum
+	// window size, 760 × 520, it and its bar leave the page about 240 DIP, its header and first card.
+	activityHeight = 180
 )

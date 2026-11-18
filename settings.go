@@ -67,7 +67,7 @@ func (a *app) chooseLocale(tag string) {
 // Steam libraries are read, persist would forget the .exe folders chosen for Steam games.
 func (a *app) saveSettings() {
 	if err := a.saved.Save(); err != nil {
-		a.logf("%s", T("save.failed", err.Error()))
+		a.note(levelError, T("save.failed", err.Error()))
 	}
 }
 
@@ -78,7 +78,7 @@ func (a *app) setOpenAtLogin(s *settingsState) {
 		return
 	}
 	if err := mygo.App.SetOpenAtLogin(s.atLogin); err != nil {
-		a.logf("%s", T("settings.login.failed", err.Error()))
+		a.note(levelError, T("settings.login.failed", err.Error()))
 		s.atLogin = mygo.App.OpenAtLogin()
 	}
 }
