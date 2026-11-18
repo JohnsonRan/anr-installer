@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -28,6 +29,7 @@ func (a *app) toggleSettings() {
 	if a.win != nil { // tests: no MyGo app runs
 		s.locale = mygo.App.ChosenLocale()
 	}
+	a.autoCheck = updater.AutomaticChecks()
 	a.settings = s
 }
 
@@ -82,6 +84,11 @@ func (a *app) settingsPage(c *ui.Context, t *ui.Theme) {
 					cur = 1
 				}
 				choose(c.Key("close"), &s.closeSel, labels, cur, T("settings.close"), func(i int) { a.setCloseToTray(i == 1) })
+			})
+			settingsRow(c, t, iconUpdate, T("settings.updates"), T("settings.updates.detail"), func() {
+				if ui.Switch(c, &a.autoCheck).Label(T("settings.updates")).Disabled(!mygo.Updater.Enabled()).Changed() {
+					updater.SetAutomaticChecks(a.autoCheck)
+				}
 			})
 		})
 	})

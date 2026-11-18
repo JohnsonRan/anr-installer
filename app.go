@@ -97,7 +97,7 @@ type app struct {
 	notesRel     *pkg.Release     // the release whose notes the dialog shows, or nil
 	md           markdown.Options // how the notes are drawn
 	queue        []*game          // games waiting to be upgraded by "Update all"
-	autoCheck    bool             // the About dialog's copy of the updater's automatic checks
+	autoCheck    bool             // the settings page's copy of the updater's automatic checks
 	list         ui.ListState
 	row          int // the row chosen in the filtered list, -1 none
 	visible      []int

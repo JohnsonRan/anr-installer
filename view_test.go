@@ -241,10 +241,13 @@ func TestAboutDialog(t *testing.T) {
 	}
 	a.openAbout()
 	tt.Frame()
-	for _, s := range []string{T("about.updates"), T("about.cantUpdate"), T("about.auto"), T("about.changelog"), T("about.license"), T("about.notice")} {
+	for _, s := range []string{T("about.updates"), T("about.cantUpdate"), T("about.checkNow"), T("about.changelog"), T("about.license"), T("about.notice")} {
 		if !tt.HasText(s) {
 			t.Errorf("missing %q in %q", s, tt.Texts())
 		}
+	}
+	if tt.HasText(T("settings.updates")) {
+		t.Error("the automatic checks belong to the settings page")
 	}
 	if err := tt.Click(T("about.close")); err != nil {
 		t.Fatal(err)

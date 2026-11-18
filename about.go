@@ -19,11 +19,7 @@ var aboutLinks = []struct{ key, url string }{
 	{"about.anrfg", "https://github.com/apex-compute/ANR"},
 }
 
-// openAbout shows the About dialog, with the update preference as the updater keeps it.
-func (a *app) openAbout() {
-	a.autoCheck = updater.AutomaticChecks()
-	a.aboutOpen = true
-}
+func (a *app) openAbout() { a.aboutOpen = true }
 
 // portable reports whether this copy is the portable version, which keeps its files in its own folder.
 func portable() bool { return paths.Portable() != "" }
@@ -68,15 +64,6 @@ func (a *app) about(c *ui.Context, t *ui.Theme) {
 				ui.Row(c).Gap(gapGroup).Children(func() {
 					roleSmall.on(t, ui.Text(c, updateStatus())).TextColor(t.TextMuted).Grow(1).Shrink(1)
 					ui.Button(c, T("about.checkNow")).Disabled(!mygo.Updater.Enabled()).OnClick(updater.CheckForUpdates)
-				})
-				ui.Row(c).Gap(gapGroup).Children(func() {
-					ui.Column(c).Grow(1).Shrink(1).Gap(gapLines).Children(func() {
-						ui.Text(c, T("about.auto"))
-						roleSmall.on(t, ui.Text(c, T("about.autoHint"))).TextColor(t.TextMuted)
-					})
-					if ui.Switch(c, &a.autoCheck).Label(T("about.auto")).Disabled(!mygo.Updater.Enabled()).Changed() {
-						updater.SetAutomaticChecks(a.autoCheck)
-					}
 				})
 			})
 
