@@ -36,8 +36,9 @@ The release tier installs, upgrades, uninstalls and downgrades real packages in 
 `ANR_OLD_PKG` to an older `anr-fg-*-full.zip`. With an `nr-record-*-windows.zip` in `ANR_PKG_DIR` as well,
 it also installs nr-record into a scratch folder and removes it; without one, that test is skipped.
 
-The README screenshots are drawn from made-up games in `gui/screenshots_test.go`, in English, Simplified Chinese
-and Japanese. Draw them again when a view they show changes.
+The README screenshots are drawn by `gui/screenshots_test.go`, in English, Simplified Chinese and Japanese, from the
+Steam games on the computer that runs it, their pictures and the versions in its version cache; the release list,
+the log and the recordings are made up. It needs no network. Draw them again when a view they show changes.
 
 ## Rules
 
