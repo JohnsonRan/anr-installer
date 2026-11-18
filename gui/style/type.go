@@ -7,7 +7,7 @@ import (
 )
 
 // textRole is a role of the type scale. Every text in the window takes one, here and nowhere else, so that a
-// role has one size and weight everywhere (UI.md, "Layout, type and loading"). Sizes are multiples of the
+// role has one size and weight everywhere (gui/AGENTS.md, "Layout, type and loading"). Sizes are multiples of the
 // theme's FontSize, 14 DIP on Windows, so that they follow the system's text size setting.
 type textRole struct {
 	scale  float32 // of the theme's FontSize

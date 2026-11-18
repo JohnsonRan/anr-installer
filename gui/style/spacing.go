@@ -1,7 +1,7 @@
 package style
 
 // The spacing scale. Every padding, gap and margin in the window is one of these, named by the relationship it
-// spaces, so that the same relationship gets the same room everywhere (UI.md, "Layout, type and loading").
+// spaces, so that the same relationship gets the same room everywhere (gui/AGENTS.md, "Layout, type and loading").
 // The steps are multiples of 4 DIP.
 const (
 	Space1 = 4

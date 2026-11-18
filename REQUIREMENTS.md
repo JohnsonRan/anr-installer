@@ -1,8 +1,8 @@
 # REQUIREMENTS.md: numbers, gates and exceptions
 
 Commands, numbers, gates and exceptions for this repository. The rules themselves are in `AGENTS.md`,
-`UI.md` and `internal/AGENTS.md` and are not repeated here. When another file in this repository
-disagrees with this one on a command, a number, a gate or an exception, this file wins.
+`gui/AGENTS.md` and `internal/AGENTS.md` and are not repeated here. When another file in this
+repository disagrees with this one on a command, a number, a gate or an exception, this file wins.
 
 `scripts/check-requirements.py` checks this file in the merge gate. It reads files and runs
 nothing. Write a pipe inside a cell as `\|`. Write a command in backticks; the check confirms that
@@ -10,8 +10,7 @@ a script named in it exists.
 
 ## Rule files
 
-Every `AGENTS.md` in this repository, by path, and `UI.md`, which holds the interface rules because
-the interface code has no directory of its own. The check reads rule groups only from the files
+Every `AGENTS.md` in this repository, by path. The check reads rule groups only from the files
 marked `yes`, and fails on an `AGENTS.md` it finds that is not listed. It searches every directory
 except `.git`, `node_modules`, `vendor`, `third_party` and hidden directories other than
 `.github`. Mark a file `no`, with the reason in Note, when its rules are not this project's (a
@@ -20,7 +19,7 @@ vendored package, a generated tree).
 | File | Checked | Note |
 | --- | --- | --- |
 | AGENTS.md | yes | |
-| UI.md | yes | |
+| gui/AGENTS.md | yes | |
 | internal/AGENTS.md | yes | |
 
 ## Commands
@@ -45,11 +44,11 @@ meanwhile.
 
 | Item | Limit | Baseline (date, host, load) | Enforced by |
 | --- | --- | --- | --- |
-| Type scale (role: size / line height) | title 1.6× / 1.2, heading 1.15× / 1.25, body 1× / the theme's, small 0.86× / 1.35, caption 0.79× / 1.3, of the theme's FontSize (22, 16, 14, 12 and 11 DIP at 14) | a setting, not measured | `type.go`; `scripts/check.sh --fast` fails on a size or weight set elsewhere |
-| Spacing scale (section, card, inside card, label to field) | steps of 4, 8, 12, 16 and 24 DIP; between sections 16, between cards 12, inside a card 12 / 16 with 8 between its lines, label to field 12 | a setting, not measured | `spacing.go`; `scripts/check.sh --fast` fails on a number in a padding, gap or margin |
-| Window size (minimum; default) | 760 × 520 DIP; 1280 × 900 DIP, or 90% of the primary display's work area where that is smaller | a setting, not measured | `main.go`, `defaultSize` and its test |
+| Type scale (role: size / line height) | title 1.6× / 1.2, heading 1.15× / 1.25, body 1× / the theme's, small 0.86× / 1.35, caption 0.79× / 1.3, of the theme's FontSize (22, 16, 14, 12 and 11 DIP at 14) | a setting, not measured | `gui/style/type.go`; `scripts/check.sh --fast` fails on a size or weight set elsewhere |
+| Spacing scale (section, card, inside card, label to field) | steps of 4, 8, 12, 16 and 24 DIP; between sections 16, between cards 12, inside a card 12 / 16 with 8 between its lines, label to field 12 | a setting, not measured | `gui/style/spacing.go`; `scripts/check.sh --fast` fails on a number in a padding, gap or margin |
+| Window size (minimum; default) | 760 × 520 DIP; 1280 × 900 DIP, or 90% of the primary display's work area where that is smaller | a setting, not measured | `gui/run.go`, `defaultSize` and its test |
 | Scan of every game in the Steam libraries | 1 s | 0.62 s for 17 games in 3 libraries (2026-11-18, dev PC, CPU load 0%) | review |
-| Slowest test package | 0.6 s | 0.47 s, the main package, with the settings, tray and activity log tests (2026-11-18, dev PC, CPU load 1–4%) | review of `go test -v` |
+| Slowest test package | 0.6 s | 0.44 s, the gui package, from 0.43 to 0.44 s over three runs (2026-11-18, dev PC, CPU load 2%); 0.47 s for the main package before the interface moved into gui | review of `go test -v` |
 | Release executable size | 20 MB | 18.0 MB with the settings and four languages, 16.5 MB before them (2026-11-18, windows/amd64) | review |
 | Source file size, p90 of this repository (pass bar) | 330 lines | 329 lines over 30 Go files (2026-11-18) | review |
 | Wait timeout before a stuck step is recorded and left | 30 min | a setting, not measured | agent |
@@ -89,13 +88,13 @@ tagged rule marked as not applying needs the owner's approval, quoted in the com
 | AGENTS.md: Documentation | | `REVIEW.md`, "CI, docs and commits" | |
 | AGENTS.md: Writing (docs, comments, reports, PR and issue text) | | `REVIEW.md`, "CI, docs and commits" | |
 | AGENTS.md: Commits and pull requests | | `REVIEW.md`, "CI, docs and commits" | |
-| UI.md: Components and modularity | | `REVIEW.md`, "Checking against the rules" | |
-| UI.md: Consistency | | `REVIEW.md`, "Checking against the rules" | |
-| UI.md: Layout, type and loading | `scripts/check.sh --fast` | `REVIEW.md`, "Checking against the rules", Layout, type and loading | |
-| UI.md: i18n (if present) | | `REVIEW.md`, "Checking against the rules", Copy and i18n | |
-| UI.md: Usability | | `REVIEW.md`, "Checking against the rules" | |
-| UI.md: Accessibility | | `REVIEW.md`, "Checking against the rules", Accessibility | |
-| UI.md: Performance | | `REVIEW.md`, "Checking against the rules" | |
+| gui/AGENTS.md: Components and modularity | | `REVIEW.md`, "Checking against the rules" | |
+| gui/AGENTS.md: Consistency | | `REVIEW.md`, "Checking against the rules" | |
+| gui/AGENTS.md: Layout, type and loading | `scripts/check.sh --fast` | `REVIEW.md`, "Checking against the rules", Layout, type and loading | |
+| gui/AGENTS.md: i18n (if present) | | `REVIEW.md`, "Checking against the rules", Copy and i18n | |
+| gui/AGENTS.md: Usability | | `REVIEW.md`, "Checking against the rules" | |
+| gui/AGENTS.md: Accessibility | | `REVIEW.md`, "Checking against the rules", Accessibility | |
+| gui/AGENTS.md: Performance | | `REVIEW.md`, "Checking against the rules" | |
 | internal/AGENTS.md: APIs and modularity | | `REVIEW.md`, "Pass bar" | |
 | internal/AGENTS.md: Compatibility | | `REVIEW.md`, "Checking against the rules" | |
 | internal/AGENTS.md: Logging | | `REVIEW.md`, "Checking against the rules" | |

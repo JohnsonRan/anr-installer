@@ -42,15 +42,13 @@ settle a conflict, write it into the open-questions list and ask the owner.
 | File | Read by | Holds |
 | --- | --- | --- |
 | `AGENTS.md` (this file) | every agent, loaded through `CLAUDE.md` | priority, hard limits, workflow, reporting, writing, commits |
-| `UI.md` | agents changing the window's interface, the Go files of the main package at the root (loaded through `CLAUDE.md`) | layout, type, loading, i18n, accessibility |
+| `gui/AGENTS.md` | agents changing the window's interface, the packages under `gui/` (loaded through `gui/CLAUDE.md`) | layout, type, loading, i18n, accessibility |
 | `internal/AGENTS.md` | agents changing the packages under `internal/` (loaded through `internal/CLAUDE.md`) | compatibility, logging, background work, verification |
 | `REVIEW.md` | reviewers; a review brief names it | how to review and report |
 | `REQUIREMENTS.md` | everyone | numbers, gates, exceptions |
 
-Each rule is written in one file only. The interface code sits at the repository root rather than in
-a directory of its own, so its rules are `UI.md`, which `CLAUDE.md` loads with this file. The
-repository has no CI, so it has no `.github/AGENTS.md`; the tiers run locally (`REQUIREMENTS.md`,
-"Commands").
+Each rule is written in one file only. The repository has no CI, so it has no `.github/AGENTS.md`;
+the tiers run locally (`REQUIREMENTS.md`, "Commands").
 A rule a tool can check belongs in a gate (lint, test, hook); prose is for rules that need judgment.
 
 ## Scope

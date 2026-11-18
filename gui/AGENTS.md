@@ -1,8 +1,8 @@
-# UI.md: interface rules
+# gui/AGENTS.md: interface rules
 
-Rules for every change to the window's interface: the Go files of the main package at the
-repository root. The root `AGENTS.md` (rule priority,
-workflow, CI, writing, commits) applies as well; numbers are in `REQUIREMENTS.md`.
+Rules for every change to the files under this directory, the window's interface. The root
+`AGENTS.md` (rule priority, workflow, CI, writing, commits) applies as well; numbers are in
+`REQUIREMENTS.md`.
 
 ## Frontend
 
