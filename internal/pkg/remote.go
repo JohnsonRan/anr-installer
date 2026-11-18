@@ -188,3 +188,41 @@ feed:
 	wg.Wait()
 	return first
 }
+
+// PackageFile reads the file name, a path inside the package such as "game/OptiScaler.ini", from kind's package of
+// rel: from the downloaded package when the cache holds it, else with range requests, without downloading the
+// package. What it reads is not checked against the release's sums: callers only compare it, never install it.
+func PackageFile(ctx context.Context, rel *Release, k detect.Kind, name string) ([]byte, error) {
+	asset, ok := rel.Assets[rel.AssetName(k)]
+	if !ok {
+		return nil, fmt.Errorf("%s has no %s", rel.Tag, rel.AssetName(k))
+	}
+	if zr, err := zip.OpenReader(filepath.Join(DownloadsDir(), asset.Name)); err == nil {
+		defer zr.Close()
+		return zipFile(zr.File, asset.Name, name)
+	}
+	if asset.Size <= 0 {
+		return nil, fmt.Errorf("%s: unknown size", asset.Name)
+	}
+	rr := &rangeReader{ctx: ctx, url: asset.URL, size: asset.Size, blocks: map[int64][]byte{}}
+	zr, err := zip.NewReader(rr, asset.Size)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", asset.Name, err)
+	}
+	return zipFile(zr.File, asset.Name, name)
+}
+
+func zipFile(files []*zip.File, pkgName, name string) ([]byte, error) {
+	for _, f := range files {
+		if f.Name != name {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return nil, err
+		}
+		defer rc.Close()
+		return io.ReadAll(rc)
+	}
+	return nil, fmt.Errorf("%s has no %s", pkgName, name)
+}
