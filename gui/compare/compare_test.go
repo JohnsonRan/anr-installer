@@ -137,3 +137,17 @@ func TestStillsAfterThePageWasLeft(t *testing.T) {
 		t.Error("the stills of a page that was left should be dropped")
 	}
 }
+
+// A still read after the page was left is dropped.
+func TestStillReadAfterThePageWasLeft(t *testing.T) {
+	s, _, _ := testCompare(t)
+	read := make(chan func(), 1)
+	s.update = func(fn func()) { read <- fn }
+	s.stills = []record.Still{{Name: "real_f1-f1_t0.000", A: "missing-a.png", B: "missing-b.png"}}
+	s.show(0)
+	s.Close()
+	(<-read)()
+	if s.stillErr != "" || !s.loading {
+		t.Errorf("a still read after the page was left should be dropped: error %q, loading %v", s.stillErr, s.loading)
+	}
+}

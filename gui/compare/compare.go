@@ -91,7 +91,7 @@ func Open(cmp *record.Comparison, update func(func())) *State {
 		s.b, err = video.Open(pathB)
 	}
 	if err != nil {
-		s.Close()
+		s.closeVideos()
 		s.a, s.b, s.err = nil, nil, err.Error()
 	} else {
 		s.a.Pause()
@@ -103,6 +103,10 @@ func Open(cmp *record.Comparison, update func(func())) *State {
 // Close stops the videos as the page is left.
 func (s *State) Close() {
 	s.closed = true
+	s.closeVideos()
+}
+
+func (s *State) closeVideos() {
 	for _, p := range []*ui.VideoPlayer{s.a, s.b} {
 		if p != nil {
 			p.Close()
