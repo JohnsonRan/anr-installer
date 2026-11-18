@@ -348,3 +348,18 @@ func TestNewReleaseOpensNotes(t *testing.T) {
 		t.Errorf("upgradable %v", games)
 	}
 }
+
+// A release list that failed to load says what failed, and the page offers no version it does not know.
+func TestReleaseListFailed(t *testing.T) {
+	a := testApp(t)
+	a.releases, a.rel, a.versionRel, a.versionLabels, a.versionSel = nil, nil, nil, nil, ""
+	a.relErr = "dial tcp 20.27.177.116:443: connectex: forbidden"
+	a.providers = map[string]string{} // Delta's version is unknown
+	tt := open(t, a, "Delta")
+	if !tt.HasText(i18n.T("latest.error", a.relErr)) || tt.HasText(i18n.T("why.no-release")) {
+		t.Errorf("the page should say why the list did not load: %q", tt.Texts())
+	}
+	if !tt.HasText(i18n.T("reinstall")) || tt.HasText(i18n.T("switch", "")) || tt.HasText(i18n.T("note.downgrade", "", "")) {
+		t.Errorf("the page offers a version it does not know: %q", tt.Texts())
+	}
+}
