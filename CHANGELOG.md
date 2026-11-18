@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 - Adds a settings page, from the gear button in the title bar. The language follows the system by default, or
   is English, Simplified Chinese, Traditional Chinese or Japanese; the update window follows it too. The close button quits the app by
