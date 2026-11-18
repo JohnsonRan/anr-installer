@@ -105,19 +105,23 @@ every package again, and so do the comparisons.
 
 - **New releases**: the release list is read at launch and every 6 hours after. A check every 6 hours that fails
   keeps the list already read and adds a warning to the activity log, but shows no error on a game's page and no
-  spinner. When a check finds a newest release other than
-  `notified_release`, a Windows notification tells of it while the window is hidden or minimized, unless
-  `release_notify_off` is set; the release is recorded either way, once the games are scanned. In the window, its notes open instead (`seen_release`). Notifications are notification-area
-  balloons, which Windows 10 and later show as toasts.
+  spinner. When a check finds a newest release with a higher build number than `notified_release`, a Windows
+  notification tells of it while the window is hidden or minimized, unless `release_notify_off` is set; the
+  release is recorded either way, once the games are scanned. A release withdrawn upstream leaves an older one the
+  newest, which neither notifies nor is recorded. In the window, its notes open instead (`seen_release`).
+  Notifications are notification-area balloons, which Windows 10 and later show as toasts.
 - **Start with Windows**: MyGo writes the value `io.github.johnsonran.anrinstaller` under
   `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, the executable's path followed by
   `--mygo-opened-at-login`. Task Manager's Startup page can turn it off. Started so, the window stays hidden behind
   the tray icon when the close button hides to it, and starts minimized otherwise. The setting shows on only while
   the value names the running executable, so a portable folder moved elsewhere shows it off until it is turned
-  on again. Uninstalling the app leaves the value.
+  on again. Uninstalling the installed version deletes the value, and its entry under
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run`, when the value starts the copy
+  being uninstalled (`assets/installer.nsh`); a value that starts a portable copy stays.
 - **Quitting while a task runs**: the close button, the tray's Quit and an update's restart ask first. A quit
   stops what the installer does itself; a program it started, such as a package's `install.ps1`, is not stopped
-  by it. The end of a Windows session quits without asking.
+  by it. An update's restart answered with **Quit anyway** quits without starting the app again: the update is
+  installed already and applies at the next launch. The end of a Windows session quits without asking.
 
 `GITHUB_TOKEN`, when set, raises GitHub's API rate limit; it is sent to GitHub's API only.
 

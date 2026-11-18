@@ -21,7 +21,8 @@
 - While the window is hidden or minimized, a Windows notification tells of a new ANR FG version, once a release.
   The app looks for one at launch and every 6 hours. It can be turned off in Settings.
 - **Start with Windows** in Settings starts the app when the user signs in: hidden in the notification area when
-  the close button minimizes to the tray, else minimized.
+  the close button minimizes to the tray, else minimized. Uninstalling the installed version removes its entry;
+  the entry of a portable copy stays.
 - The activity log lists each install, uninstall, upgrade, replay, export and deletion as a task, with its start
   time, its duration and whether it succeeded or failed, and its steps under it. What the programs printed is
   folded under each task, and a task that fails unfolds it. **Copy log** copies the whole log as text. A failed

@@ -65,7 +65,8 @@ The gear button in the title bar opens **Settings**. **Language** follows the sy
 Simplified Chinese, Traditional Chinese or Japanese. **Close button** quits the app by default, or hides the window to the notification area,
 where the app's icon brings it back and its menu quits. Starting the app again while it runs brings its window
 forward. **Start with Windows** starts the app when you sign in: hidden in the notification area when the close
-button minimizes to the tray, else minimized. The portable version registers the path it runs from: after you
+button minimizes to the tray, else minimized. Uninstalling the installed version removes its entry; the entry of a
+portable copy stays. The portable version registers the path it runs from: after you
 move its folder, the setting shows off until you turn it on again. **Notify me about new ANR FG versions**, on by
 default, shows a Windows notification once for each new ANR FG release while the window is hidden or minimized;
 the app looks for one at launch and every 6 hours. **Check for updates automatically** turns the installer's own

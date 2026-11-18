@@ -82,7 +82,8 @@ func main() {
 		})
 		mygo.App.OnSecondInstance(func([]string, string) { a.showWindow() })
 		// A quit from the tray or an update's restart waits for the user's answer while a task runs; the answer
-		// "Quit anyway" lets the one quit after it through.
+		// "Quit anyway" lets the one quit after it through. That quit does not relaunch, as MyGo drops a relaunch
+		// once OnBeforeQuit prevents it: the update is installed already and applies at the next launch.
 		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
 			forced := a.quitForced
 			a.quitForced = false
